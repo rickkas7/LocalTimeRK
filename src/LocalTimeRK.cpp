@@ -43,6 +43,12 @@ int LocalTimeHMS::toSeconds() const {
     return ((int)hour) * 3600 + ((int)minute) * 60 + (int) second;
 }
 
+void LocalTimeHMS::fromTimeInfo(const struct tm *pTimeInfo) {
+    hour = (int8_t) pTimeInfo->tm_hour;
+    minute = (int8_t) pTimeInfo->tm_min;
+    second = (int8_t) pTimeInfo->tm_sec;
+}
+
 void LocalTimeHMS::toTimeInfo(struct tm *pTimeInfo) const {
     pTimeInfo->tm_hour = hour;
     pTimeInfo->tm_min = minute;
@@ -259,7 +265,13 @@ int LocalTimeValue::hourFormat12() const {
         return localTimeInfo.tm_hour - 12;
     }
 }
-    
+
+LocalTimeHMS LocalTimeValue::hms() const {
+    LocalTimeHMS result;
+    result.fromTimeInfo(&localTimeInfo);
+    return result;
+}
+
 
 //
 // LocalTimeConvert
@@ -300,7 +312,94 @@ void LocalTimeConvert::convert() {
     else {
         // Just timezones, no DST
         position = Position::NO_DST;
+    }
+    if (!isDST()) {
         LocalTime::timeToTm(time - config.standardHMS.toSeconds(), &localTimeValue.localTimeInfo);
+    }
+    else {
+        LocalTime::timeToTm(time - config.dstHMS.toSeconds(), &localTimeValue.localTimeInfo);
+    }
+
+}
+
+
+
+void LocalTimeConvert::nextDay() {
+    time += 86400;
+    convert();
+}
+
+void LocalTimeConvert::nextDay(LocalTimeHMS hms) {
+    time += 86400;
+    convert();
+
+    atLocalTime(hms);
+}
+
+void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
+    time_t origTime = time;
+    atLocalTime(hms);
+    if (time < origTime) {
+        // Need to move to tomorrow
+        time += 86400;
+        convert();
+    }
+}
+
+
+void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
+    struct tm timeInfoStandard;
+    struct tm timeInfoDST;
+    struct tm timeInfoOrig;
+
+    time_t timeIfStandard, timeIfDST;
+    bool useDST = false;
+
+    LocalTime::timeToTm(time, &timeInfoStandard);
+    hms.toTimeInfo(&timeInfoStandard);
+    timeInfoOrig = timeInfoDST = timeInfoStandard;
+
+    config.standardHMS.adjustTimeInfo(&timeInfoStandard);
+    timeIfStandard = LocalTime::tmToTime(&timeInfoStandard);
+    if (timeInfoStandard.tm_mday != timeInfoOrig.tm_mday) {
+        timeInfoStandard.tm_mday = timeInfoOrig.tm_mday;
+        timeInfoStandard.tm_mon = timeInfoOrig.tm_mon;
+        timeInfoStandard.tm_year = timeInfoOrig.tm_year;
+        timeIfStandard = LocalTime::tmToTime(&timeInfoStandard);
+    }
+
+    //printf("timeInfoStandard: %s\n", LocalTime::getTmString(&timeInfoStandard).c_str());
+
+    if (config.hasDST()) {
+        if (timeIfStandard < dstStart || timeIfStandard >= standardStart) {
+            // Is in standard time
+        }
+        else {
+            // The specified time is in DST
+            config.dstHMS.adjustTimeInfo(&timeInfoDST);
+            timeIfDST = LocalTime::tmToTime(&timeInfoDST);
+            if (timeInfoDST.tm_mday != timeInfoOrig.tm_mday) {
+                timeInfoDST.tm_mday = timeInfoOrig.tm_mday;
+                timeInfoDST.tm_mon = timeInfoOrig.tm_mon;
+                timeInfoDST.tm_year = timeInfoOrig.tm_year;
+                timeIfDST = LocalTime::tmToTime(&timeInfoDST);
+            }
+
+            //printf("timeInfoDST %s\n", LocalTime::getTmString(&timeInfoDST).c_str());
+            useDST = true;
+        }
+    }    
+    else {
+        // No DST, so standard time only
+    }
+
+    if (!useDST) {
+        time = timeIfStandard;
+        convert();
+    }
+    else {
+        time = timeIfDST;
+        convert();
     }
 }
 

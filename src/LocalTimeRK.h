@@ -42,9 +42,13 @@ public:
      */
     int toSeconds() const;
 
+    void fromTimeInfo(const struct tm *pTimeInfo);
+
     void toTimeInfo(struct tm *pTimeInfo) const;
 
     void adjustTimeInfo(struct tm *pTimeInfo, bool subtract = false) const;
+
+    void adjustTimeInfoPreserveDate(struct tm *pTimeInfo, bool subtract = false) const;
 
     int8_t hour = 0;        //!< 0-23 hour (could also be negative)
     int8_t minute = 0;      //!< 0-59 minute
@@ -164,6 +168,8 @@ public:
     int year() const { return localTimeInfo.tm_year + 1900; };
 
     // TODO: add format()
+    LocalTimeHMS hms() const;
+
 
     struct tm localTimeInfo;
 };
@@ -182,6 +188,11 @@ public:
 
     LocalTimeConvert &withConfig(LocalTimePosixTimezone config) { this->config = config; return *this; };
 
+    /**
+     * @brief Sets the UTC time to begin conversion from 
+     * 
+     * For the current time, you can instead use withCurrentTime();
+     */
     LocalTimeConvert &withTime(time_t time) { this->time = time; return *this; };
 
     LocalTimeConvert &withCurrentTime() { this->time = Time.now(); return *this; };
@@ -190,6 +201,23 @@ public:
 
     bool isDST() const { return position == Position::IN_DST; };
     bool isStandardTime() const { return !isDST(); };
+
+    void nextDay();
+    void nextDay(LocalTimeHMS hms);
+
+    // nextDay()
+    // nextDayOfWeek(int dayOfWeek)
+    // nextWeekday()
+    // nextWeekendDay()
+    // nextDayOfNextMonth(int dayOfMonth)
+    // nextDayOfMonth(int month, int dayOfMonth)
+    // nextDayOfWeekInNextMonth(int dayOfWeek, int ordinal)
+    // nextDayOfWeekInMonth(int month, int dayOfWeek, int ordinal)
+    
+    void nextLocalTime(LocalTimeHMS hms);
+
+    void atLocalTime(LocalTimeHMS hms);
+
 
     Position position = Position::NO_DST;
     LocalTimePosixTimezone config;

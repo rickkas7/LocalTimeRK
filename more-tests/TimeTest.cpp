@@ -25,8 +25,8 @@ char *readTestData(const char *filename) {
 	return data;
 }
 
-#define assertInt(msg, expected, got) _assertInt(msg, expected, got, __LINE__)
-void _assertInt(const char *msg, int expected, int got, int line) {
+#define assertInt(msg, got, expected) _assertInt(msg, got, expected, __LINE__)
+void _assertInt(const char *msg, int got, int expected, int line) {
 	if (expected != got) {
 		printf("assertion failed %s line %d\n", msg, line);
 		printf("expected: %d\n", expected);
@@ -35,12 +35,25 @@ void _assertInt(const char *msg, int expected, int got, int line) {
 	}
 }
 
-#define assertStr(msg, expected, got) _assertStr(msg, expected, got, __LINE__)
-void _assertStr(const char *msg, const char *expected, const char *got, int line) {
+#define assertStr(msg, got, expected) _assertStr(msg, got, expected, __LINE__)
+void _assertStr(const char *msg, const char *got, const char *expected, int line) {
 	if (strcmp(expected, got) != 0) {
 		printf("assertion failed %s line %d\n", msg, line);
 		printf("expected: %s\n", expected);
 		printf("     got: %s\n", got);
+		assert(false);
+	}
+}
+
+#define assertTime(msg, got, expected) _assertTime(msg, got, expected, __LINE__)
+void _assertTime(const char *msg, time_t got, const char *expected, int line) {
+	struct tm timeInfo;
+	LocalTime::timeToTm(got, &timeInfo);
+	String gotStr = LocalTime::getTmString(&timeInfo);
+	if (strcmp(expected, gotStr) != 0) {
+		printf("assertion failed %s line %d\n", msg, line);
+		printf("expected: %s\n", expected);
+		printf("     got: %s\n", gotStr.c_str());
 		assert(false);
 	}
 }
@@ -375,7 +388,7 @@ void testLocalTimePosixTimezone() {
 void test1() {
 	LocalTimePosixTimezone tzConfig("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
 	// Also works with: EST+5EDT,M3.2.0/2,M11.1.0/2
-	
+
 	LocalTimeConvert conv;
 
 	// Thu, 03 Jun 2021 18:10:52 GMT
@@ -398,13 +411,68 @@ void test1() {
 	assertStr("standardStart", LocalTime::getTmString(&conv.standardStartTimeInfo).c_str(), "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0");
 	assertInt("standardStart", (int)conv.standardStart, 1636264800);
 	
-	// Wednesday, December 3, 2021 11:10:52 PM
+	// Friday, December 3, 2021 11:10:52 PM
 	conv.withConfig(tzConfig).withTime(1638573052).convert();
 	assertInt("position", (int)conv.position, (int)LocalTimeConvert::Position::AFTER_DST);
 	assertStr("dstStart", LocalTime::getTmString(&conv.dstStartTimeInfo).c_str(), "tm_year=121 tm_mon=2 tm_mday=14 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=0");
 	assertInt("dstStart", (int)conv.dstStart, 1615705200);
 	assertStr("standardStart", LocalTime::getTmString(&conv.standardStartTimeInfo).c_str(), "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0");
 	assertInt("standardStart", (int)conv.standardStart, 1636264800);
+
+	// Thu, 03 Jun 2021 18:10:52 GMT
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.atLocalTime(LocalTimeHMS("2:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=3 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=4");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.atLocalTime(LocalTimeHMS("14:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=3 tm_hour=18 tm_min=0 tm_sec=0 tm_wday=4");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	// Rolls over to tomorrow
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextLocalTime(LocalTimeHMS("14:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=18 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	// Does not change date
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextLocalTime(LocalTimeHMS("15:00")); 
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=3 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=4");	
+
+
+	// Wednesday, February 3, 2021 11:10:52 PM
+	// This is not DST, so tm_hour == 7 UTC
+	conv.withConfig(tzConfig).withTime(1612393852).convert();
+	conv.atLocalTime(LocalTimeHMS("2:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=1 tm_mday=3 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=3");	
+
+	// Friday, December 3, 2021 11:10:52 PM
+	// Not DST, and adjusting for timezone would roll over into the next day
+	conv.withConfig(tzConfig).withTime(1638573052).convert();
+	conv.atLocalTime(LocalTimeHMS("23:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	// Will roll over to next day
+	conv.withConfig(tzConfig).withTime(1638573052).convert();
+	conv.nextLocalTime(LocalTimeHMS("23:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDay();
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=18 tm_min=10 tm_sec=52 tm_wday=5");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDay(LocalTimeHMS("2:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDay(LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=5");	
 
 }
 
