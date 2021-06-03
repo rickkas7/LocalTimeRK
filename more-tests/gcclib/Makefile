@@ -2,7 +2,7 @@
 
 CFLAGS=-std=c++11
 
-libwiringgcc.a : helpers.o spark_wiring_print.o spark_wiring_string.o 
+libwiringgcc.a : helpers.o spark_wiring_print.o spark_wiring_string.o spark_wiring_time.o time_compat.o
 	ar rcs $@ $^
 	
 	

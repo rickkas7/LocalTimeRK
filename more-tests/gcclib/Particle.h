@@ -10,6 +10,7 @@
 #include <cassert>
 
 #include "spark_wiring_string.h"
+#include "spark_wiring_time.h"
 #include "rng_hal.h"
 
 class Stream {
