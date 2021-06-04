@@ -389,6 +389,38 @@ void test1() {
 	LocalTimePosixTimezone tzConfig("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
 	// Also works with: EST+5EDT,M3.2.0/2,M11.1.0/2
 
+	//
+	// LocalTimeValue
+	//
+	LocalTimeValue v1;
+	v1.fromString("2021-01-01 00:00:00");
+	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=0 tm_mday=1 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=5");
+
+	v1.fromString("2021-03-14 01:59:59");
+	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=2 tm_mday=14 tm_hour=6 tm_min=59 tm_sec=59 tm_wday=0");
+
+	// This is a weird edge case as there isn't a 2:00 local time because it would have sprung forward to DST
+	// This test is just to make sure the code doesn't crash or do something really weird
+	v1.fromString("2021-03-14 02:00:00"); 
+	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=2 tm_mday=14 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0");
+
+	v1.fromString("2021-03-14 03:00:00"); 
+	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=2 tm_mday=14 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=0");
+
+	// In DST, before falling back
+	v1.fromString("2021-11-07 00:00:00"); 
+	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=0");
+
+	// This could be two different UTC times as the time from 1:00 to 1:59:59 local time occurs twice because
+	// of falling back. We somewhat arbitrarily pick the second time, which occurs in standard time (offset = 5:00)
+	v1.fromString("2021-11-07 01:59:59"); 
+	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=59 tm_sec=59 tm_wday=0");
+
+	// This is back on standard time
+	v1.fromString("2021-11-07 02:00:00"); 
+	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=0");
+
+
 	LocalTimeConvert conv;
 
 	// Thu, 03 Jun 2021 18:10:52 GMT
@@ -428,6 +460,18 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
 	conv.atLocalTime(LocalTimeHMS("14:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=3 tm_hour=18 tm_min=0 tm_sec=0 tm_wday=4");	
+
+	// Date and time (GMT): Saturday, December 4, 2021 4:10:52 AM
+	// Date and time (your time zone): Friday, December 3, 2021 11:10:52 PM GMT-05:00
+	// This makes sure atDate is picking the date based on local date, not GMT date
+	conv.withConfig(tzConfig).withTime(1638591052).convert();
+	conv.atLocalTime(LocalTimeHMS("2:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	// 
+	conv.withConfig(tzConfig).withTime(1638591052).convert();
+	conv.atLocalTime(LocalTimeHMS("23:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=6");	
 
 	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
 	// Rolls over to tomorrow
@@ -473,6 +517,50 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
 	conv.nextDay(LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDayOfWeek(5, LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDayOfWeek(6, LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=5 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDayOfWeek(0, LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=6 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=0");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDayOfWeek(1, LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=7 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=1");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextWeekday(LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	conv.nextWeekday(LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=7 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=1");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextWeekendDay(LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=5 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.nextWeekendDay(LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=6 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=0");	
+
+	conv.nextWeekendDay(LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=12 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDayOfNextMonth(1, LocalTimeHMS("15:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=6 tm_mday=1 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=4");	
 
 }
 

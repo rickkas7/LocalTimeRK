@@ -272,6 +272,31 @@ LocalTimeHMS LocalTimeValue::hms() const {
     return result;
 }
 
+time_t LocalTimeValue::toUTC(LocalTimePosixTimezone config) const {
+    struct tm mutableTimeInfo = localTimeInfo;
+    time_t standardTime, dstTime;
+    
+    standardTime = dstTime = LocalTime::tmToTime(&mutableTimeInfo);
+    standardTime += config.standardHMS.toSeconds();
+
+    if (config.hasDST()) {
+        LocalTimeConvert convert;
+        convert.withConfig(config).withTime(standardTime).convert();
+
+        if (convert.isDST()) {
+            // The time is in DST, so return that instead
+            dstTime += config.dstHMS.toSeconds();
+            return dstTime;
+        }
+    }
+    return standardTime;
+}
+
+void LocalTimeValue::fromString(const char *str) {
+    (void) LocalTime::stringToTime(str, &localTimeInfo);
+}
+
+
 
 //
 // LocalTimeConvert
@@ -323,7 +348,6 @@ void LocalTimeConvert::convert() {
 }
 
 
-
 void LocalTimeConvert::nextDay() {
     time += 86400;
     convert();
@@ -335,6 +359,38 @@ void LocalTimeConvert::nextDay(LocalTimeHMS hms) {
 
     atLocalTime(hms);
 }
+
+void LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms) {
+    do {
+        nextDay(hms);
+    } while(localTimeValue.localTimeInfo.tm_wday != dayOfWeek);
+}
+
+void LocalTimeConvert::nextWeekday(LocalTimeHMS hms) {
+    do {
+        nextDay(hms);
+    } while(localTimeValue.localTimeInfo.tm_wday == 0 || localTimeValue.localTimeInfo.tm_wday == 6);
+}
+
+void LocalTimeConvert::nextWeekendDay(LocalTimeHMS hms) {
+    do {
+        nextDay(hms);
+    } while(localTimeValue.localTimeInfo.tm_wday != 0 && localTimeValue.localTimeInfo.tm_wday != 6);
+}
+
+void LocalTimeConvert::nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms) {
+    struct tm timeInfo;
+    LocalTime::timeToTm(time + 86400, &timeInfo);
+    timeInfo.tm_mon++;
+    timeInfo.tm_mday = dayOfMonth;
+    time = LocalTime::tmToTime(&timeInfo);
+    convert();
+
+    // TODO: I think this is wrong when when hms + zone affects the day of month, need to fix!
+
+    atLocalTime(hms);
+}
+
 
 void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
     time_t origTime = time;
@@ -350,21 +406,20 @@ void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
 void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
     struct tm timeInfoStandard;
     struct tm timeInfoDST;
-    struct tm timeInfoOrig;
 
     time_t timeIfStandard, timeIfDST;
     bool useDST = false;
 
     LocalTime::timeToTm(time, &timeInfoStandard);
     hms.toTimeInfo(&timeInfoStandard);
-    timeInfoOrig = timeInfoDST = timeInfoStandard;
+    timeInfoDST = timeInfoStandard;
 
     config.standardHMS.adjustTimeInfo(&timeInfoStandard);
     timeIfStandard = LocalTime::tmToTime(&timeInfoStandard);
-    if (timeInfoStandard.tm_mday != timeInfoOrig.tm_mday) {
-        timeInfoStandard.tm_mday = timeInfoOrig.tm_mday;
-        timeInfoStandard.tm_mon = timeInfoOrig.tm_mon;
-        timeInfoStandard.tm_year = timeInfoOrig.tm_year;
+    if (timeInfoStandard.tm_mday != localTimeValue.localTimeInfo.tm_mday) {
+        timeInfoStandard.tm_mday = localTimeValue.localTimeInfo.tm_mday;
+        timeInfoStandard.tm_mon = localTimeValue.localTimeInfo.tm_mon;
+        timeInfoStandard.tm_year = localTimeValue.localTimeInfo.tm_year;
         timeIfStandard = LocalTime::tmToTime(&timeInfoStandard);
     }
 
@@ -378,10 +433,10 @@ void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
             // The specified time is in DST
             config.dstHMS.adjustTimeInfo(&timeInfoDST);
             timeIfDST = LocalTime::tmToTime(&timeInfoDST);
-            if (timeInfoDST.tm_mday != timeInfoOrig.tm_mday) {
-                timeInfoDST.tm_mday = timeInfoOrig.tm_mday;
-                timeInfoDST.tm_mon = timeInfoOrig.tm_mon;
-                timeInfoDST.tm_year = timeInfoOrig.tm_year;
+            if (timeInfoDST.tm_mday != localTimeValue.localTimeInfo.tm_mday) {
+                timeInfoDST.tm_mday = localTimeValue.localTimeInfo.tm_mday;
+                timeInfoDST.tm_mon = localTimeValue.localTimeInfo.tm_mon;
+                timeInfoDST.tm_year = localTimeValue.localTimeInfo.tm_year;
                 timeIfDST = LocalTime::tmToTime(&timeInfoDST);
             }
 
@@ -433,3 +488,39 @@ String LocalTime::getTmString(struct tm *pTimeInfo) {
         pTimeInfo->tm_hour, pTimeInfo->tm_min, pTimeInfo->tm_sec,
         pTimeInfo->tm_wday);
 }
+
+// [static]
+time_t LocalTime::stringToTime(const char *str, struct tm *pTimeInfo) {
+    struct tm timeInfo;
+    int parts[6];
+    if (sscanf(str, "%d-%d-%d%*c%d:%d:%d", &parts[0], &parts[1], &parts[2], &parts[3], &parts[4], &parts[5]) == 6) {
+        timeInfo.tm_year = parts[0] - 1900;
+        timeInfo.tm_mon = parts[1] - 1;
+        timeInfo.tm_mday = parts[2];
+        timeInfo.tm_hour = parts[3];
+        timeInfo.tm_min = parts[4];
+        timeInfo.tm_sec = parts[5];
+        if (pTimeInfo) {
+            *pTimeInfo = timeInfo;
+        }
+        return tmToTime(&timeInfo);
+    }
+    else {
+        return 0;
+    }
+}
+
+
+// [static]
+String LocalTime::timeToString(time_t time, char separator) {
+    struct tm timeInfo;
+
+    timeToTm(time, &timeInfo);
+
+    return String::format("%04d-%02d-%02d%c%02d:%02d:%02d", 
+        timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday,
+        separator,
+        timeInfo.tm_hour + timeInfo.tm_min, timeInfo.tm_sec);
+}
+
+

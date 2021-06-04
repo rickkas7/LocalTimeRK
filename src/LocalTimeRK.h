@@ -168,8 +168,12 @@ public:
     int year() const { return localTimeInfo.tm_year + 1900; };
 
     // TODO: add format()
+
     LocalTimeHMS hms() const;
 
+    time_t toUTC(LocalTimePosixTimezone config) const;
+
+    void fromString(const char *str);
 
     struct tm localTimeInfo;
 };
@@ -205,12 +209,14 @@ public:
     void nextDay();
     void nextDay(LocalTimeHMS hms);
 
-    // nextDay()
-    // nextDayOfWeek(int dayOfWeek)
-    // nextWeekday()
-    // nextWeekendDay()
-    // nextDayOfNextMonth(int dayOfMonth)
-    // nextDayOfMonth(int month, int dayOfMonth)
+    void nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms);
+
+    void nextWeekday(LocalTimeHMS hms);
+    void nextWeekendDay(LocalTimeHMS hms);
+
+    void nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms);
+    //void nextDayOfMonth(int month, int dayOfMonth, LocalTimeHMS hms);
+
     // nextDayOfWeekInNextMonth(int dayOfWeek, int ordinal)
     // nextDayOfWeekInMonth(int month, int dayOfWeek, int ordinal)
     
@@ -280,6 +286,11 @@ public:
      * @brief Returns a human-readable string version of a struct tm
      */
     static String getTmString(struct tm *pTimeInfo);
+
+    static time_t stringToTime(const char *str, struct tm *pTimeInfo = NULL);
+
+
+    static String timeToString(time_t time, char separator = ' ');
 };
 
 
