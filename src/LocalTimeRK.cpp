@@ -272,6 +272,13 @@ LocalTimeHMS LocalTimeValue::hms() const {
     return result;
 }
 
+void LocalTimeValue::setHMS(LocalTimeHMS hms) {
+    localTimeInfo.tm_hour = hms.hour;
+    localTimeInfo.tm_min = hms.minute;
+    localTimeInfo.tm_sec = hms.second;
+}
+
+
 time_t LocalTimeValue::toUTC(LocalTimePosixTimezone config) const {
     struct tm mutableTimeInfo = localTimeInfo;
     time_t standardTime, dstTime;
@@ -295,6 +302,17 @@ time_t LocalTimeValue::toUTC(LocalTimePosixTimezone config) const {
 void LocalTimeValue::fromString(const char *str) {
     (void) LocalTime::stringToTime(str, &localTimeInfo);
 }
+
+int LocalTimeValue::ordinal() const {
+    int ordinal = 1;
+    int tempDayOfMonth = localTimeInfo.tm_mday;
+    while((tempDayOfMonth - 7) >= 1) {
+        ordinal++;
+        tempDayOfMonth -= 7;
+    }
+    return ordinal;
+}
+
 
 
 
@@ -360,10 +378,16 @@ void LocalTimeConvert::nextDay(LocalTimeHMS hms) {
     atLocalTime(hms);
 }
 
-void LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms) {
+bool LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms) {
+    if (dayOfWeek < 0 || dayOfWeek > 6) {
+        return false;
+    }
+
     do {
         nextDay(hms);
     } while(localTimeValue.localTimeInfo.tm_wday != dayOfWeek);
+
+    return true;
 }
 
 void LocalTimeConvert::nextWeekday(LocalTimeHMS hms) {
@@ -378,84 +402,64 @@ void LocalTimeConvert::nextWeekendDay(LocalTimeHMS hms) {
     } while(localTimeValue.localTimeInfo.tm_wday != 0 && localTimeValue.localTimeInfo.tm_wday != 6);
 }
 
-void LocalTimeConvert::nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms) {
-    struct tm timeInfo;
-    LocalTime::timeToTm(time + 86400, &timeInfo);
-    timeInfo.tm_mon++;
-    timeInfo.tm_mday = dayOfMonth;
-    time = LocalTime::tmToTime(&timeInfo);
+bool LocalTimeConvert::nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms) {
+    if (dayOfMonth < 1 || dayOfMonth > 31) {
+        return false;
+    }
+
+    time_t origTime = time;
+
+    localTimeValue.localTimeInfo.tm_mday = dayOfMonth;
+    localTimeValue.setHMS(hms);
+    time = localTimeValue.toUTC(config);
     convert();
 
-    // TODO: I think this is wrong when when hms + zone affects the day of month, need to fix!
+    if (time <= origTime) {
+        // The target dayOfMonth and time is before the original time, so move to next month
+        localTimeValue.localTimeInfo.tm_mon++;
+        time = localTimeValue.toUTC(config);
+        convert();
+    }
+    return true;
+}
 
-    atLocalTime(hms);
+
+void LocalTimeConvert::nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms) {
+    localTimeValue.localTimeInfo.tm_mday = dayOfMonth;
+    localTimeValue.localTimeInfo.tm_mon++;
+    localTimeValue.setHMS(hms);
+    time = localTimeValue.toUTC(config);
+    convert();
+}
+
+bool LocalTimeConvert::nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms) {
+    for(int tries = 0; tries < 52; tries++) {
+        nextDayOfWeek(dayOfWeek, hms);
+        if (localTimeValue.ordinal() == ordinal) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
 void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
     time_t origTime = time;
-    atLocalTime(hms);
-    if (time < origTime) {
+    localTimeValue.setHMS(hms);
+    time = localTimeValue.toUTC(config);
+    if (time <= origTime) {
         // Need to move to tomorrow
         time += 86400;
-        convert();
     }
+    convert();
 }
 
 
 void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
-    struct tm timeInfoStandard;
-    struct tm timeInfoDST;
 
-    time_t timeIfStandard, timeIfDST;
-    bool useDST = false;
-
-    LocalTime::timeToTm(time, &timeInfoStandard);
-    hms.toTimeInfo(&timeInfoStandard);
-    timeInfoDST = timeInfoStandard;
-
-    config.standardHMS.adjustTimeInfo(&timeInfoStandard);
-    timeIfStandard = LocalTime::tmToTime(&timeInfoStandard);
-    if (timeInfoStandard.tm_mday != localTimeValue.localTimeInfo.tm_mday) {
-        timeInfoStandard.tm_mday = localTimeValue.localTimeInfo.tm_mday;
-        timeInfoStandard.tm_mon = localTimeValue.localTimeInfo.tm_mon;
-        timeInfoStandard.tm_year = localTimeValue.localTimeInfo.tm_year;
-        timeIfStandard = LocalTime::tmToTime(&timeInfoStandard);
-    }
-
-    //printf("timeInfoStandard: %s\n", LocalTime::getTmString(&timeInfoStandard).c_str());
-
-    if (config.hasDST()) {
-        if (timeIfStandard < dstStart || timeIfStandard >= standardStart) {
-            // Is in standard time
-        }
-        else {
-            // The specified time is in DST
-            config.dstHMS.adjustTimeInfo(&timeInfoDST);
-            timeIfDST = LocalTime::tmToTime(&timeInfoDST);
-            if (timeInfoDST.tm_mday != localTimeValue.localTimeInfo.tm_mday) {
-                timeInfoDST.tm_mday = localTimeValue.localTimeInfo.tm_mday;
-                timeInfoDST.tm_mon = localTimeValue.localTimeInfo.tm_mon;
-                timeInfoDST.tm_year = localTimeValue.localTimeInfo.tm_year;
-                timeIfDST = LocalTime::tmToTime(&timeInfoDST);
-            }
-
-            //printf("timeInfoDST %s\n", LocalTime::getTmString(&timeInfoDST).c_str());
-            useDST = true;
-        }
-    }    
-    else {
-        // No DST, so standard time only
-    }
-
-    if (!useDST) {
-        time = timeIfStandard;
-        convert();
-    }
-    else {
-        time = timeIfDST;
-        convert();
-    }
+    localTimeValue.setHMS(hms);
+    time = localTimeValue.toUTC(config);
+    convert();
 }
 
 

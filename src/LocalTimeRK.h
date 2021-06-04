@@ -171,9 +171,22 @@ public:
 
     LocalTimeHMS hms() const;
 
+    void setHMS(LocalTimeHMS hms);
+
     time_t toUTC(LocalTimePosixTimezone config) const;
 
     void fromString(const char *str);
+
+    /**
+     * @brief Returns which week of this day it is
+     * 
+     * For example, if this day is a Friday and it's the first Friday of the month, then
+     * 1 is returned. If it's the second Friday, then 2 is returned.
+     * 
+     * (This is different than the week number of the month, which depends on which day
+     * you begin the week on.)
+     */
+    int ordinal() const;
 
     struct tm localTimeInfo;
 };
@@ -209,12 +222,30 @@ public:
     void nextDay();
     void nextDay(LocalTimeHMS hms);
 
-    void nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms);
+    bool nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms);
 
     void nextWeekday(LocalTimeHMS hms);
     void nextWeekendDay(LocalTimeHMS hms);
 
+    /**
+     * @brief Moves the date and time (local time) forward to the specified day of month and local time
+     * 
+     * This version will move to the closest forward time. It could be as close as 1 second later, but 
+     * it will always advance at least once second. It could be as much as 1 month minus 1 second later.
+     */
+    bool nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms);
+
+    /**
+     * @brief Moves the date and time (local time) forward to the specified day of month and local time
+     * 
+     * This version always picks the next month, even if the target day of month hasn't been reached
+     * in this month yet. This will always more forward at least a month, and may be as much as 
+     * two months minus one day.
+     */
     void nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms);
+
+    bool nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms);
+
     //void nextDayOfMonth(int month, int dayOfMonth, LocalTimeHMS hms);
 
     // nextDayOfWeekInNextMonth(int dayOfWeek, int ordinal)
@@ -222,6 +253,20 @@ public:
     
     void nextLocalTime(LocalTimeHMS hms);
 
+    /**
+     * @brief Changes the time of day to the specified hms in local time on the same local day
+     * 
+     * @param hms A LocalTimeHMS object with hour, minute, and second
+     * 
+     * You can use the string constructor like this to set the time to 2:00 PM local time.
+     * 
+     * ```
+     * converter.atLocalTime(LocalTimeHms("14:00:00"));
+     * ```
+     * 
+     * It's possible that this will set the time to a time earlier than the object's current
+     * time. To only set a time in the future, use nextLocalTime() instead.
+     */
     void atLocalTime(LocalTimeHMS hms);
 
 

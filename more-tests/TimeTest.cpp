@@ -420,6 +420,35 @@ void test1() {
 	v1.fromString("2021-11-07 02:00:00"); 
 	assertTime("", v1.toUTC(tzConfig), "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=0");
 
+	v1.fromString("2021-01-01 00:00:00");
+	assertInt("", v1.ordinal(), 1);
+
+	v1.fromString("2021-01-07 00:00:00");
+	assertInt("", v1.ordinal(), 1);
+
+	v1.fromString("2021-01-08 00:00:00");
+	assertInt("", v1.ordinal(), 2);
+
+	v1.fromString("2021-01-09 00:00:00");
+	assertInt("", v1.ordinal(), 2);
+
+	v1.fromString("2021-01-15 00:00:00");
+	assertInt("", v1.ordinal(), 3);
+
+	v1.fromString("2021-01-22 00:00:00");
+	assertInt("", v1.ordinal(), 4);
+
+	v1.fromString("2021-01-29 00:00:00");
+	assertInt("", v1.ordinal(), 5);
+
+	v1.fromString("2021-01-04 00:00:00");
+	assertInt("", v1.ordinal(), 1);
+
+	v1.fromString("2021-01-11 00:00:00");
+	assertInt("", v1.ordinal(), 2);
+
+	v1.fromString("2021-01-25 00:00:00");
+	assertInt("", v1.ordinal(), 4);
 
 	LocalTimeConvert conv;
 
@@ -492,16 +521,22 @@ void test1() {
 	conv.atLocalTime(LocalTimeHMS("2:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=1 tm_mday=3 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=3");	
 
-	// Friday, December 3, 2021 11:10:52 PM
-	// Not DST, and adjusting for timezone would roll over into the next day
-	conv.withConfig(tzConfig).withTime(1638573052).convert();
+	// 23:10:52 UTC = 18:10:52 local time (standard time offset 5:00)
+	// setting the local time to 23:00 local time results in a UTC time of 04:00 the next day
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 23:10:52")).convert();
 	conv.atLocalTime(LocalTimeHMS("23:00"));
-	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=5");	
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=6");	
 
-	// Will roll over to next day
-	conv.withConfig(tzConfig).withTime(1638573052).convert();
+	// 23:10:52 UTC = 18:10:52 local time (standard time offset 5:00)
+	// Since it's not yet 23:00 local time, nextLocalTime is the same as atLocalTime
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 23:10:52")).convert();
 	conv.nextLocalTime(LocalTimeHMS("23:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// 4:10:52 UTC = 23:10:52 local time the previous day
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 04:10:52")).convert();
+	conv.nextLocalTime(LocalTimeHMS("23:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=0");	
 
 	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
@@ -556,6 +591,78 @@ void test1() {
 
 	conv.nextWeekendDay(LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=12 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// 
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
+	conv.nextDayOfWeekOrdinal(6, 1, LocalTimeHMS("07:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=5 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// 
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
+	conv.nextDayOfWeekOrdinal(6, 2, LocalTimeHMS("07:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=12 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// 
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
+	conv.nextDayOfWeekOrdinal(6, 3, LocalTimeHMS("07:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=19 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// 
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
+	conv.nextDayOfWeekOrdinal(6, 4, LocalTimeHMS("07:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=26 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// Special case: there is no 5th Saturday in this month but there is in July
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
+	conv.nextDayOfWeekOrdinal(6, 5, LocalTimeHMS("07:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=6 tm_mday=31 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// There's never a 6th ordinal
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
+	assert(!conv.nextDayOfWeekOrdinal(6, 6, LocalTimeHMS("07:00")));
+
+	// Does not roll forward to next month because it's not yet 5 AM local time
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
+	conv.nextDayOfMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// Converting it again jumps forward a month
+	conv.nextDayOfMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	// Rolls forward to next month immediately
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
+	conv.nextDayOfMonth(4, LocalTimeHMS("00:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	// The local date is 12-03 due to timezone, make sure this works right
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 02:10:52")).convert();
+	conv.nextDayOfMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// Even though we haven't reached this date, nextDateOfNextMonth always increments the month
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
+	conv.nextDayOfNextMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	// A few more edge cases to be sure
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert();
+	conv.nextDayOfNextMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-31 23:23:59")).convert();
+	conv.nextDayOfNextMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	// This is still 2021-13-31 local time so next month is still January
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-01-01 00:00:00")).convert();
+	conv.nextDayOfNextMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	// This is still 2021-13-31 local time so next month is still January
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-01-01 04:59:59")).convert();
+	conv.nextDayOfNextMonth(4, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=2");	
 
 	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
