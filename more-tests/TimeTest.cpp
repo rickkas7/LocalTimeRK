@@ -758,6 +758,190 @@ void test1() {
 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
 	assertStr("", conv.format(TIME_FORMAT_ISO8601_FULL).c_str(), "2021-04-01T12:00:00-04:00");
+}
+
+int monthStrToMonth(const char *token) {
+	if (strcmp(token, "Jan") == 0) {
+		return 1;
+	}
+	else
+	if (strcmp(token, "Feb") == 0) {
+		return 2;
+	}
+	else
+	if (strcmp(token, "Mar") == 0) {
+		return 3;
+	}
+	else
+	if (strcmp(token, "Apr") == 0) {
+		return 4;
+	}
+	else
+	if (strcmp(token, "May") == 0) {
+		return 5;
+	}
+	else
+	if (strcmp(token, "Jun") == 0) {
+		return 6;
+	}
+	else
+	if (strcmp(token, "Jul") == 0) {
+		return 7;
+	}
+	else
+	if (strcmp(token, "Aug") == 0) {
+		return 8;
+	}
+	else
+	if (strcmp(token, "Sep") == 0) {
+		return 9;
+	}
+	else
+	if (strcmp(token, "Oct") == 0) {
+		return 10;
+	}
+	else
+	if (strcmp(token, "Nov") == 0) {
+		return 11;
+	}
+	else
+	if (strcmp(token, "Dec") == 0) {
+		return 12;
+	}
+
+	return 0;
+}
+
+void printConv(LocalTimeConvert conv) {
+	printf("position=%d\n", conv.position);
+	printf("time utc=%s\n", LocalTime::timeToString(conv.time).c_str());
+	printf("dstStartTimeInfo=%s\n", LocalTime::getTmString(&conv.dstStartTimeInfo).c_str());
+	printf("standardStartTimeInfo=%s\n", LocalTime::getTmString(&conv.standardStartTimeInfo).c_str());
+
+	/*
+	Position position = Position::NO_DST;
+    LocalTimePosixTimezone config;
+    time_t time;
+    LocalTimeValue localTimeValue;
+    time_t dstStart;
+    struct tm dstStartTimeInfo;
+    time_t standardStart;
+    struct tm standardStartTimeInfo;
+	*/
+}
+
+void testFile(const char *configStr, const char *path) {
+	LocalTimePosixTimezone tzConfig(configStr);
+
+	char *testData = readTestData(path);
+	
+	int line = 1;
+	char *token, *save = testData;
+    while((token = strtok_r(save, "\n", &save)) != 0) {
+		// Output from tzdump -v America/New_York
+	 	// America/New_York  Sun Nov  3 06:00:00 2030 UTC = Sun Nov  3 01:00:00 2030 EST isdst=0
+		// 0                 1   2    3 4        5    6   7 8   9    10 11      12   13  14
+
+		char entry[64];
+		snprintf(entry, sizeof(entry), "%s line %d", path, line);
+
+		int utcMonth; // 2 
+		int utcDayOfMonth; // 3
+		LocalTimeHMS utcHMS; // 4 HH:MM:SSS
+		int utcYear; // 5
+
+		int localMonth; // 9 
+		int localDayOfMonth; // 10
+		LocalTimeHMS localHMS;  // 11 HH:MM:SS
+		int localYear; // 12
+		char localZone[10]; // 13
+
+		bool dstFlag; // 14 ends with 1
+
+		int index2 = 0;
+		char *token2, *save2 = token;
+		while((token2 = strtok_r(save2, " ", &save2)) != 0) {
+			// printf("token2: '%s'\n", token2);
+			switch(index2) {
+			case 2:
+				utcMonth = monthStrToMonth(token2);
+				break;
+			case 3:
+				utcDayOfMonth = atoi(token2);
+				break;
+			case 4:
+				utcHMS.parse(token2);
+				break;
+			case 5:
+				utcYear = atoi(token2);
+				break;
+			case 9:
+				localMonth = monthStrToMonth(token2);
+				break;
+			case 10:
+				localDayOfMonth = atoi(token2);
+				break;
+			case 11:
+				localHMS.parse(token2);
+				break;
+			case 12:
+				localYear = atoi(token2);
+				break;
+			case 13:
+				strcpy(localZone, token2);
+				break;
+			case 14:
+				dstFlag = token2[strlen(token2) - 1] == '1';
+				break;
+			}
+
+			index2++;
+		}
+
+		// printf("utcHMS=%s\n", utcHMS.toString().c_str());
+
+		struct tm timeInfo;
+		timeInfo.tm_year = utcYear - 1900;
+		timeInfo.tm_mon = utcMonth - 1;
+		timeInfo.tm_mday = utcDayOfMonth;
+		timeInfo.tm_hour = utcHMS.hour;
+		timeInfo.tm_min = utcHMS.minute;
+		timeInfo.tm_sec = utcHMS.second;
+		
+		// printf("timeInfo=%s\n", LocalTime::getTmString(&timeInfo).c_str());
+
+
+		LocalTimeConvert conv;
+		conv.withConfig(tzConfig).withTime(timegm(&timeInfo)).convert();
+
+		//printConv(conv);
+
+		assertInt(entry, conv.localTimeValue.year(), localYear);		
+		assertInt(entry, conv.localTimeValue.month(), localMonth);		
+		assertInt(entry, conv.localTimeValue.day(), localDayOfMonth);
+		assertInt(entry, conv.localTimeValue.hour(), localHMS.hour);		
+		assertInt(entry, conv.localTimeValue.minute(), localHMS.minute);		
+		assertInt(entry, conv.localTimeValue.second(), localHMS.second);		
+		assertInt(entry, conv.isDST(), dstFlag);
+
+		line++;
+	}
+
+
+	free(testData);
+}
+
+void testFiles() {
+	
+	testFile("EST5EDT,M3.2.0/02:00:00,M11.1.0/02:00:00", "testfiles/test01.txt"); // New York
+	testFile("CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00", "testfiles/test02.txt"); // Chicago
+	testFile("MST7MDT,M3.2.0/2:00:00,M11.1.0/2:00:00", "testfiles/test03.txt"); // Denver
+	testFile("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00", "testfiles/test04.txt"); // Los Angeles
+
+	testFile("BST0GMT,M3.5.0/1:00:00,M10.5.0/2:00:00", "testfiles/test05.txt"); // London
+
+	testFile("AEST-10AEDT,M10.1.0/02:00:00,M4.1.0/03:00:00", "testfiles/test06.txt"); // Sydney Australia
+
 
 
 }
@@ -766,5 +950,7 @@ int main(int argc, char *argv[]) {
 	testLocalTimeChange();
 	testLocalTimePosixTimezone();
 	test1();
+	testFiles();
+
 	return 0;
 }

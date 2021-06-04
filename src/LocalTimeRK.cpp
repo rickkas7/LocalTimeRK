@@ -130,6 +130,39 @@ String LocalTimeChange::toString() const {
     }
 }
 
+int LocalTimeChange::lastDayOfMonth(int year) const {
+    switch(month) {
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
+        case 12:
+            return 31;
+
+        case 2:
+            if ((year % 4) == 0) {
+                if ((year % 100) == 0) {
+                    return 28;
+                }
+                else {
+                    return 29;
+                }
+            }
+            else {
+                return 28;
+            }
+
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+            return 30;
+    }
+    return 0;
+}
+
 time_t LocalTimeChange::calculate(struct tm *pTimeInfo, LocalTimeHMS tzAdjust) const {
     // Start with the first of the month
     pTimeInfo->tm_mday = 1;
@@ -143,6 +176,11 @@ time_t LocalTimeChange::calculate(struct tm *pTimeInfo, LocalTimeHMS tzAdjust) c
     }
     if (week != 1) {
         pTimeInfo->tm_mday += (week - 1) * 7;
+        if (pTimeInfo->tm_mday > lastDayOfMonth(pTimeInfo->tm_year + 1900)) {
+            // 5 means the last week of the month, even if there is no 5th week
+            pTimeInfo->tm_mday -= 7;
+        }
+
         LocalTime::tmToTime(pTimeInfo);        
     }
 
@@ -350,18 +388,37 @@ void LocalTimeConvert::convert() {
         // you are leaving DST. For example you leave DST at 2 AM EDT (-0400) so that's the adjustment to UTC.
         standardStart = config.standardStart.calculate(&standardStartTimeInfo, config.dstHMS);
 
-        if (time < dstStart) {
-            // Before the start of DST this year
-            position = Position::BEFORE_DST;
-        }
-        else if (time < standardStart) {
-            // In DST, before the end of DST in this year
-            position = Position::IN_DST;
+        if (dstStart < standardStart) {
+            // Northern Hemisphere, DST is in summer
+            if (time < dstStart) {
+                // Before the start of DST this year
+                position = Position::BEFORE_DST;
+            }
+            else if (time < standardStart) {
+                // In DST, before the end of DST in this year
+                position = Position::IN_DST;
+            }
+            else {
+                // After the end of DST in this year
+                position = Position::AFTER_DST;
+            }
         }
         else {
-            // After the end of DST in this year
-            position = Position::AFTER_DST;
+            // Southern Hemisphere
+            if (time < standardStart) {
+                // Before the start of standard time this year
+                position = Position::BEFORE_STANDARD;
+            }
+            else if (time < dstStart) {
+                // 
+                position = Position::IN_STANDARD;
+            }
+            else {
+                position = Position::AFTER_STANDARD;
+            }
+
         }
+
     }
     else {
         // Just timezones, no DST
@@ -491,13 +548,7 @@ String LocalTimeConvert::format(const char* format_spec) {
     size_t len = strlen(format_str); // Flawfinder: ignore (ch42318)
 
     // while we are not using stdlib for managing the timezone, we have to do this manually
-    const char *time_zone_name;
-    if (config.isZ()) {
-        time_zone_name = "Z";
-    }
-    else {
-        time_zone_name = (isDST() ? config.dstName.c_str() : config.standardName.c_str());
-    }
+    const char *time_zone_name = zoneName().c_str();
 
     char time_zone_str[16];
     if (config.isZ()) {
@@ -533,6 +584,20 @@ String LocalTimeConvert::format(const char* format_spec) {
     strftime(buf, sizeof(buf), format_str, &localTimeValue);
     return String(buf);    
 }
+
+String LocalTimeConvert::zoneName() const { 
+    if (config.isZ()) {
+        return "Z";
+    }
+    else
+    if (isDST()) {
+        return config.dstName;
+    }
+    else {
+        return config.standardName;
+    }
+};
+
 
 //
 // LocalTime
@@ -605,7 +670,7 @@ String LocalTime::timeToString(time_t time, char separator) {
     return String::format("%04d-%02d-%02d%c%02d:%02d:%02d", 
         timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday,
         separator,
-        timeInfo.tm_hour + timeInfo.tm_min, timeInfo.tm_sec);
+        timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec);
 }
 
 

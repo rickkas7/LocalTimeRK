@@ -87,6 +87,8 @@ public:
      */
     String toString() const;
 
+    int lastDayOfMonth(int year) const;
+
     /**
      * @brief Calculate the time change in a given year
      * 
@@ -177,16 +179,50 @@ public:
 
     int day() const { return tm_mday; };
 
+    /**
+     * @brief Returns the day of week 1 - 7 (Sunday = 1, Monday = 2, ..., Saturday = 7)
+     * 
+     * Note: the underlying struct tm tm_wday is 0 - 6 (Sunday = 0, Monday = 1, ..., Saturday = 6)
+     * but Wiring uses 1 - 7 instead of 0 - 6.
+     */
     int weekday() const { return tm_wday + 1; };
 
+    /**
+     * @brief Returns the month of the year 1 - 12 (1 = January, 2 = February, ...)
+     * 
+     * Note: the underlying struct tm tm_mon is 0 - 11, but this returns the more common 1 - 12.
+     */
     int month() const { return tm_mon + 1; };
 
+    /**
+     * @brief Returns the 4-digit year
+     */
     int year() const { return tm_year + 1900; };
 
+    /**
+     * @brief Gets the local time as a LocalTimeHMS object
+     */
     LocalTimeHMS hms() const;
 
+    /**
+     * @brief Sets the local time from a LocalTimeHMS object
+     */
     void setHMS(LocalTimeHMS hms);
 
+    /**
+     * @brief Converts the specified local time into a UTC time
+     * 
+     * There are some caveats to this that occur on when the time change
+     * occurs. On spring forward, there is an hour that doesn't technically
+     * map to a UTC time. For example, in the United States, 2:00 AM to 3:00 AM
+     * local time doesn't exist because at 2:00 AM local time, the local time
+     * springs forward to 3:00 AM. 
+     * 
+     * When falling back, the hour from 1:00 AM to 2:00 AM is not unique, 
+     * because it happens twice, once in DST before falling back, and a second
+     * time after falling back. The toUTC() function returns the second one
+     * that occurs in standard time. 
+     */
     time_t toUTC(LocalTimePosixTimezone config) const;
 
     void fromString(const char *str);
@@ -213,10 +249,13 @@ public:
      * @brief Whether the specified time is DST or not. See also isDST().
      */
     enum class Position {
-        BEFORE_DST, //!< This time is before the start of DST
-        IN_DST,     //!< This time is in daylight saving time
-        AFTER_DST,  //!< This time is after the end of DST
-        NO_DST      //!< This config does not use daylight saving
+        BEFORE_DST, //!< This time is before the start of DST (northern hemisphere)
+        IN_DST,     //!< This time is in daylight saving time (northern hemisphere)
+        AFTER_DST,  //!< This time is after the end of DST (northern hemisphere)
+        BEFORE_STANDARD, //!< This time is before the start of standard time (southern hemisphere)
+        IN_STANDARD,     //!< This time is in standard saving time (southern hemisphere)
+        AFTER_STANDARD,  //!< This time is after the end of standard time (southern hemisphere)
+        NO_DST,     //!< This config does not use daylight saving
     };
 
     /**
@@ -258,7 +297,7 @@ public:
     /**
      * @brief Returns true if the current time is in daylight saving time
      */
-    bool isDST() const { return position == Position::IN_DST; };
+    bool isDST() const { return position == Position::IN_DST || position == Position::BEFORE_STANDARD || position == Position::AFTER_STANDARD; };
 
     /**
      * @brief Returns true of the current time in in standard time
@@ -350,6 +389,8 @@ public:
      * for compatibility.
      */
     String format(const char* formatSpec);
+
+    String zoneName() const;
 
 
     Position position = Position::NO_DST;
