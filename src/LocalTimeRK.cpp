@@ -264,35 +264,35 @@ String LocalTimePosixTimezone::toString() const {
 //
 
 int LocalTimeValue::hourFormat12() const {
-    if (localTimeInfo.tm_hour == 0) {
+    if (tm_hour == 0) {
         return 12;
     }
     else
-    if (localTimeInfo.tm_hour < 12) {
-        return localTimeInfo.tm_hour;
+    if (tm_hour < 12) {
+        return tm_hour;
     }
     else {
-        return localTimeInfo.tm_hour - 12;
+        return tm_hour - 12;
     }
 }
 
 LocalTimeHMS LocalTimeValue::hms() const {
     LocalTimeHMS result;
-    result.fromTimeInfo(&localTimeInfo);
+    result.fromTimeInfo(this);
     return result;
 }
 
 void LocalTimeValue::setHMS(LocalTimeHMS hms) {
     if (!hms.ignore) {
-        localTimeInfo.tm_hour = hms.hour;
-        localTimeInfo.tm_min = hms.minute;
-        localTimeInfo.tm_sec = hms.second;
+        tm_hour = hms.hour;
+        tm_min = hms.minute;
+        tm_sec = hms.second;
     }
 }
 
 
 time_t LocalTimeValue::toUTC(LocalTimePosixTimezone config) const {
-    struct tm mutableTimeInfo = localTimeInfo;
+    struct tm mutableTimeInfo = *this;
     time_t standardTime, dstTime;
     
     standardTime = dstTime = LocalTime::tmToTime(&mutableTimeInfo);
@@ -312,12 +312,12 @@ time_t LocalTimeValue::toUTC(LocalTimePosixTimezone config) const {
 }
 
 void LocalTimeValue::fromString(const char *str) {
-    (void) LocalTime::stringToTime(str, &localTimeInfo);
+    (void) LocalTime::stringToTime(str, this);
 }
 
 int LocalTimeValue::ordinal() const {
     int ordinal = 1;
-    int tempDayOfMonth = localTimeInfo.tm_mday;
+    int tempDayOfMonth = tm_mday;
     while((tempDayOfMonth - 7) >= 1) {
         ordinal++;
         tempDayOfMonth -= 7;
@@ -368,10 +368,10 @@ void LocalTimeConvert::convert() {
         position = Position::NO_DST;
     }
     if (!isDST()) {
-        LocalTime::timeToTm(time - config.standardHMS.toSeconds(), &localTimeValue.localTimeInfo);
+        LocalTime::timeToTm(time - config.standardHMS.toSeconds(), &localTimeValue);
     }
     else {
-        LocalTime::timeToTm(time - config.dstHMS.toSeconds(), &localTimeValue.localTimeInfo);
+        LocalTime::timeToTm(time - config.dstHMS.toSeconds(), &localTimeValue);
     }
 
 }
@@ -390,7 +390,7 @@ bool LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms) {
 
     do {
         nextDay(hms);
-    } while(localTimeValue.localTimeInfo.tm_wday != dayOfWeek);
+    } while(localTimeValue.tm_wday != dayOfWeek);
 
     return true;
 }
@@ -398,13 +398,13 @@ bool LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms) {
 void LocalTimeConvert::nextWeekday(LocalTimeHMS hms) {
     do {
         nextDay(hms);
-    } while(localTimeValue.localTimeInfo.tm_wday == 0 || localTimeValue.localTimeInfo.tm_wday == 6);
+    } while(localTimeValue.tm_wday == 0 || localTimeValue.tm_wday == 6);
 }
 
 void LocalTimeConvert::nextWeekendDay(LocalTimeHMS hms) {
     do {
         nextDay(hms);
-    } while(localTimeValue.localTimeInfo.tm_wday != 0 && localTimeValue.localTimeInfo.tm_wday != 6);
+    } while(localTimeValue.tm_wday != 0 && localTimeValue.tm_wday != 6);
 }
 
 bool LocalTimeConvert::nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms) {
@@ -414,14 +414,14 @@ bool LocalTimeConvert::nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms) {
 
     time_t origTime = time;
 
-    localTimeValue.localTimeInfo.tm_mday = dayOfMonth;
+    localTimeValue.tm_mday = dayOfMonth;
     localTimeValue.setHMS(hms);
     time = localTimeValue.toUTC(config);
     convert();
 
     if (time <= origTime) {
         // The target dayOfMonth and time is before the original time, so move to next month
-        localTimeValue.localTimeInfo.tm_mon++;
+        localTimeValue.tm_mon++;
         time = localTimeValue.toUTC(config);
         convert();
     }
@@ -430,8 +430,8 @@ bool LocalTimeConvert::nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms) {
 
 
 void LocalTimeConvert::nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms) {
-    localTimeValue.localTimeInfo.tm_mday = dayOfMonth;
-    localTimeValue.localTimeInfo.tm_mon++;
+    localTimeValue.tm_mday = dayOfMonth;
+    localTimeValue.tm_mon++;
     localTimeValue.setHMS(hms);
     time = localTimeValue.toUTC(config);
     convert();
@@ -470,7 +470,7 @@ void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
 
 String LocalTimeConvert::timeStr() {
     char ascstr[26];
-    asctime_r(&localTimeValue.localTimeInfo, ascstr);
+    asctime_r(&localTimeValue, ascstr);
     int len = strlen(ascstr);
     ascstr[len-1] = 0; // remove final newline
     return String(ascstr);
@@ -530,7 +530,7 @@ String LocalTimeConvert::format(const char* format_spec) {
     }
 
     char buf[50] = {};
-    strftime(buf, sizeof(buf), format_str, &localTimeValue.localTimeInfo);
+    strftime(buf, sizeof(buf), format_str, &localTimeValue);
     return String(buf);    
 }
 

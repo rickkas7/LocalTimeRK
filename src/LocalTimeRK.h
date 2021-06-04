@@ -161,27 +161,27 @@ public:
  * that the LocalTimeValue is only the value container and doesn't know the current timezone
  * offset for the local time.
  */
-class LocalTimeValue {
+class LocalTimeValue : public ::tm {
 public:
-    int hour() const { return localTimeInfo.tm_hour; };
+    int hour() const { return tm_hour; };
 
     int hourFormat12() const;
 
-    uint8_t isAM() const { return localTimeInfo.tm_hour < 12; };
+    uint8_t isAM() const { return tm_hour < 12; };
 
     uint8_t isPM() const { return !isAM(); };
 
-    int minute() const { return localTimeInfo.tm_min; };
+    int minute() const { return tm_min; };
 
-    int second() const { return localTimeInfo.tm_sec; };
+    int second() const { return tm_sec; };
 
-    int day() const { return localTimeInfo.tm_mday; };
+    int day() const { return tm_mday; };
 
-    int weekday() const { return localTimeInfo.tm_wday + 1; };
+    int weekday() const { return tm_wday + 1; };
 
-    int month() const { return localTimeInfo.tm_mon + 1; };
+    int month() const { return tm_mon + 1; };
 
-    int year() const { return localTimeInfo.tm_year + 1900; };
+    int year() const { return tm_year + 1900; };
 
     LocalTimeHMS hms() const;
 
@@ -202,7 +202,6 @@ public:
      */
     int ordinal() const;
 
-    struct tm localTimeInfo;
 };
 
 /**
