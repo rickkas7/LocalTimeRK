@@ -1,7 +1,7 @@
 
 
 all : TimeTest
-	./TimeTest
+	export TZ='UTC' && ./TimeTest
 
 TimeTest : TimeTest.cpp ../src/LocalTimeRK.cpp ../src/LocalTimeRK.h libwiringgcc
 	gcc TimeTest.cpp ../src/LocalTimeRK.cpp gcclib/libwiringgcc.a -DUNITTEST -std=c++11 -lc++ -Igcclib -I../src -o TimeTest

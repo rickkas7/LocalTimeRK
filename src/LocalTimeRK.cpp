@@ -1,5 +1,7 @@
 #include "LocalTimeRK.h"
 
+LocalTime *LocalTime::_instance;
+
 LocalTimeHMS::LocalTimeHMS() {
 
 }
@@ -50,21 +52,25 @@ void LocalTimeHMS::fromTimeInfo(const struct tm *pTimeInfo) {
 }
 
 void LocalTimeHMS::toTimeInfo(struct tm *pTimeInfo) const {
-    pTimeInfo->tm_hour = hour;
-    pTimeInfo->tm_min = minute;
-    pTimeInfo->tm_sec = second;
+    if (!ignore) {
+        pTimeInfo->tm_hour = hour;
+        pTimeInfo->tm_min = minute;
+        pTimeInfo->tm_sec = second;
+    }
 }
 
 void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo, bool subtract) const {
-    if (subtract) {
-        pTimeInfo->tm_hour -= hour;
-        pTimeInfo->tm_min -= minute;
-        pTimeInfo->tm_sec -= second;
-    }
-    else {
-        pTimeInfo->tm_hour += hour;
-        pTimeInfo->tm_min += minute;
-        pTimeInfo->tm_sec += second;
+    if (!ignore) {
+        if (subtract) {
+            pTimeInfo->tm_hour -= hour;
+            pTimeInfo->tm_min -= minute;
+            pTimeInfo->tm_sec -= second;
+        }
+        else {
+            pTimeInfo->tm_hour += hour;
+            pTimeInfo->tm_min += minute;
+            pTimeInfo->tm_sec += second;
+        }
     }
 }
 
@@ -154,7 +160,9 @@ time_t LocalTimeChange::calculate(struct tm *pTimeInfo, LocalTimeHMS tzAdjust) c
 }
 
 
-
+//
+// LocalTimePosixTimezone
+//
 
 LocalTimePosixTimezone::LocalTimePosixTimezone() {
 }
@@ -191,6 +199,7 @@ void LocalTimePosixTimezone::parse(const char *str) {
                 *cp = 0;
                 standardName = start;
                 *cp = save2;
+                valid = true;
 
                 if (*cp) {
                     start = cp;
@@ -239,6 +248,7 @@ void LocalTimePosixTimezone::parse(const char *str) {
     if (dstStart.valid && !standardStart.valid) {
         // If DST start is specified, standard start must also be specified
         dstStart.clear();
+        valid = false;
     }
 
 
@@ -273,9 +283,11 @@ LocalTimeHMS LocalTimeValue::hms() const {
 }
 
 void LocalTimeValue::setHMS(LocalTimeHMS hms) {
-    localTimeInfo.tm_hour = hms.hour;
-    localTimeInfo.tm_min = hms.minute;
-    localTimeInfo.tm_sec = hms.second;
+    if (!hms.ignore) {
+        localTimeInfo.tm_hour = hms.hour;
+        localTimeInfo.tm_min = hms.minute;
+        localTimeInfo.tm_sec = hms.second;
+    }
 }
 
 
@@ -319,13 +331,12 @@ int LocalTimeValue::ordinal() const {
 //
 // LocalTimeConvert
 // 
-LocalTimeConvert::LocalTimeConvert() {
-}
-
-LocalTimeConvert::~LocalTimeConvert() {
-}
 
 void LocalTimeConvert::convert() {
+    if (!config.isValid()) {
+        config = LocalTime::instance().getConfig();
+    }
+
     if (config.hasDST()) {
         // We need to worry about daylight saving time
         LocalTime::timeToTm(time, &dstStartTimeInfo);
@@ -363,12 +374,6 @@ void LocalTimeConvert::convert() {
         LocalTime::timeToTm(time - config.dstHMS.toSeconds(), &localTimeValue.localTimeInfo);
     }
 
-}
-
-
-void LocalTimeConvert::nextDay() {
-    time += 86400;
-    convert();
 }
 
 void LocalTimeConvert::nextDay(LocalTimeHMS hms) {
@@ -456,12 +461,88 @@ void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
 
 
 void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
-
-    localTimeValue.setHMS(hms);
-    time = localTimeValue.toUTC(config);
-    convert();
+    if (!hms.ignore) {
+        localTimeValue.setHMS(hms);
+        time = localTimeValue.toUTC(config);
+        convert();
+    }
 }
 
+String LocalTimeConvert::timeStr() {
+    char ascstr[26];
+    asctime_r(&localTimeValue.localTimeInfo, ascstr);
+    int len = strlen(ascstr);
+    ascstr[len-1] = 0; // remove final newline
+    return String(ascstr);
+}
+
+String LocalTimeConvert::format(const char* format_spec) {
+
+    if (!format_spec || !strcmp(format_spec, TIME_FORMAT_DEFAULT)) {
+        return timeStr();
+    }
+
+    // This implementation is from spark_wiring_time.cpp
+
+    char format_str[64];
+    // only copy up to n-1 to dest if no null terminator found
+    strncpy(format_str, format_spec, sizeof(format_str) - 1); // Flawfinder: ignore (ch42318)
+    format_str[sizeof(format_str) - 1] = '\0'; // ensure null termination
+    size_t len = strlen(format_str); // Flawfinder: ignore (ch42318)
+
+    // while we are not using stdlib for managing the timezone, we have to do this manually
+    const char *time_zone_name;
+    if (config.isZ()) {
+        time_zone_name = "Z";
+    }
+    else {
+        time_zone_name = (isDST() ? config.dstName.c_str() : config.standardName.c_str());
+    }
+
+    char time_zone_str[16];
+    if (config.isZ()) {
+        strcpy(time_zone_str, "Z");
+    }
+    else {
+        int time_zone = isDST() ? config.dstHMS.toSeconds() : config.standardHMS.toSeconds();
+
+        snprintf(time_zone_str, sizeof(time_zone_str), "%+03d:%02u", -time_zone/3600, abs(time_zone/60)%60);
+    }
+
+    // replace %z with the timezone
+    for (size_t i=0; i<len-1; i++)
+    {
+        if (format_str[i]=='%' && format_str[i+1]=='z')
+        {
+            size_t tzlen = strlen(time_zone_str);
+            memcpy(format_str+i+tzlen, format_str+i+2, len-i-1);    // +1 include the 0 char
+            memcpy(format_str+i, time_zone_str, tzlen);
+            len = strlen(format_str);
+        }
+        else
+        if (format_str[i]=='%' && format_str[i+1]=='Z')
+        {
+            size_t tzlen = strlen(time_zone_name);
+            memcpy(format_str+i+tzlen, format_str+i+2, len-i-1);    // +1 include the 0 char
+            memcpy(format_str+i, time_zone_name, tzlen);
+            len = strlen(format_str);
+        }
+    }
+
+    char buf[50] = {};
+    strftime(buf, sizeof(buf), format_str, &localTimeValue.localTimeInfo);
+    return String(buf);    
+}
+
+//
+// LocalTime
+//
+LocalTime &LocalTime::instance() {
+    if (!_instance) {
+        _instance = new LocalTime();
+    }
+    return *_instance;
+}
 
 // [static]
 void LocalTime::timeToTm(time_t time, struct tm *pTimeInfo) {

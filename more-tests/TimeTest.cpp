@@ -3,6 +3,11 @@
 
 #include <time.h>
 
+// This test program assumes it's run with TZ set to "UTC" so strftime prints the same format
+// as a Particle device when using the native strftime. The Makefile calls it this way:
+// 
+// export TZ='UTC' && ./TimeTest
+
 char *readTestData(const char *filename) {
 	char *data;
 
@@ -575,11 +580,21 @@ void test1() {
 
 	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextDayOfWeek(1);
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=7 tm_hour=18 tm_min=10 tm_sec=52 tm_wday=1");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
 	conv.nextWeekday(LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=5");	
 
 	conv.nextWeekday(LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=7 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=1");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextWeekday();
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=18 tm_min=10 tm_sec=52 tm_wday=5");	
 
 	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
@@ -591,6 +606,16 @@ void test1() {
 
 	conv.nextWeekendDay(LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=12 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
+	conv.withConfig(tzConfig).withTime(1622743852).convert();
+	conv.nextWeekendDay();
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=5 tm_hour=18 tm_min=10 tm_sec=52 tm_wday=6");	
+
+	// 
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
+	conv.nextDayOfWeekOrdinal(6, 1);
+	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=5 tm_hour=10 tm_min=10 tm_sec=52 tm_wday=6");	
 
 	// 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-06-04 10:10:52")).convert();
@@ -625,6 +650,11 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
 	conv.nextDayOfMonth(4, LocalTimeHMS("05:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	// With no HMS, will advance to next month always
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
+	conv.nextDayOfMonth(4);
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=4 tm_hour=5 tm_min=10 tm_sec=52 tm_wday=2");	
 
 	// Converting it again jumps forward a month
 	conv.nextDayOfMonth(4, LocalTimeHMS("05:00"));
@@ -668,6 +698,57 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
 	conv.nextDayOfNextMonth(1, LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=6 tm_mday=1 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=4");	
+
+	// Local time formatting default format
+
+	// Standard time, before DST, offset = 0500
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-01-01 10:00:00")).convert();
+	assertStr("", conv.timeStr().c_str(), "Fri Jan  1 05:00:00 2021");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-01-01 23:45:56")).convert();
+	assertStr("", conv.timeStr().c_str(), "Fri Jan  1 18:45:56 2021");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-01-02 03:00:00")).convert();
+	assertStr("", conv.timeStr().c_str(), "Fri Jan  1 22:00:00 2021");
+
+	// DST, offset = 0400
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 10:00:00")).convert();
+	assertStr("", conv.timeStr().c_str(), "Thu Apr  1 06:00:00 2021");
+
+	// Local time strftime formats
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-01-01 10:00:00")).convert();
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S").c_str(), "2021-01-01 05:00:00");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-01-01 00:00:00")).convert();
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S").c_str(), "2020-12-31 19:00:00");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-01-01 01:00:00")).convert();
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S").c_str(), "2021-12-31 20:00:00");
+
+	// This format doesn't match the standard C lib for %z, but it's what Wiring returns. It should be -500 not -05:00
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-01-01 10:00:00")).convert();
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S %z").c_str(), "2021-01-01 05:00:00 -05:00");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-01-01 10:00:00")).convert();
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S %Z").c_str(), "2021-01-01 05:00:00 EST");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 10:00:00")).convert();
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S %z").c_str(), "2021-04-01 06:00:00 -04:00");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 10:00:00")).convert();
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S %Z").c_str(), "2021-04-01 06:00:00 EDT");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 04:00:00")).convert();
+	assertStr("", conv.format("%I:%M %p").c_str(), "12:00 AM");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 10:00:00")).convert();
+	assertStr("", conv.format("%I:%M %p").c_str(), "06:00 AM");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
+	assertStr("", conv.format("%I:%M %p").c_str(), "12:00 PM");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
+	assertStr("", conv.format("%a %b %m").c_str(), "Thu Apr 04");
 
 }
 

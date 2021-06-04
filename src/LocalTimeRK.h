@@ -53,7 +53,14 @@ public:
     int8_t hour = 0;        //!< 0-23 hour (could also be negative)
     int8_t minute = 0;      //!< 0-59 minute
     int8_t second = 0;      //!< 0-59 second
-    int8_t reserved = 0;    //!< reserved for future use (here for alignment)
+    int8_t ignore = 0;      //!< Special case
+};
+
+class LocalTimeIgnoreHMS : public LocalTimeHMS {
+public:
+    LocalTimeIgnoreHMS() {
+        ignore = true;
+    }
 };
 
 /**
@@ -131,12 +138,17 @@ public:
 
     bool hasDST() const { return dstStart.valid; };
 
+    bool isValid() const { return valid; };
+
+    bool isZ() const { return !valid || (!hasDST() && standardHMS.toSeconds() == 0); };
+
     String dstName;
     LocalTimeHMS dstHMS;
     String standardName;
     LocalTimeHMS standardHMS;
     LocalTimeChange dstStart;
     LocalTimeChange standardStart;
+    bool valid = false;
 };
 
 /**
@@ -144,6 +156,10 @@ public:
  * 
  * Really just a C++ wrapper around struct tm with adjustments for weekday and month being 
  * 0-based in struct tm and 1-based in Wiring. Also tm_year being weird in struct tm.
+ * 
+ * If you want to format a time string, use the methods in LocalTimeConvert. The reason is
+ * that the LocalTimeValue is only the value container and doesn't know the current timezone
+ * offset for the local time.
  */
 class LocalTimeValue {
 public:
@@ -167,8 +183,6 @@ public:
 
     int year() const { return localTimeInfo.tm_year + 1900; };
 
-    // TODO: add format()
-
     LocalTimeHMS hms() const;
 
     void setHMS(LocalTimeHMS hms);
@@ -191,41 +205,80 @@ public:
     struct tm localTimeInfo;
 };
 
+/**
+ * @brief Perform time conversions. This is the main class you will need.
+ */
 class LocalTimeConvert {
 public:
+    /**
+     * @brief Whether the specified time is DST or not. See also isDST().
+     */
     enum class Position {
-        BEFORE_DST,
-        IN_DST,
-        AFTER_DST,
-        NO_DST
+        BEFORE_DST, //!< This time is before the start of DST
+        IN_DST,     //!< This time is in daylight saving time
+        AFTER_DST,  //!< This time is after the end of DST
+        NO_DST      //!< This config does not use daylight saving
     };
 
-    LocalTimeConvert();
-    virtual ~LocalTimeConvert();
-
+    /**
+     * @brief Sets the timezone configuration to use for time conversion
+     * 
+     * If you do not use withConfig() the global default set in the LocalTime class is used.
+     * If neither are set, the local time is UTC (with no DST).
+     */
     LocalTimeConvert &withConfig(LocalTimePosixTimezone config) { this->config = config; return *this; };
 
     /**
      * @brief Sets the UTC time to begin conversion from 
      * 
+     * @param time The time (UTC) to set. This is the Unix timestamp (seconds since January 1, 1970) UTC
+     * such as returned by Time.now().
+     * 
+     * This does not start the conversion; you must also call the convert() method after setting
+     * all of the settings you want to use.
+     * 
      * For the current time, you can instead use withCurrentTime();
      */
     LocalTimeConvert &withTime(time_t time) { this->time = time; return *this; };
 
+    /**
+     * @brief Use the current time as the time to start with
+     * 
+     * This does not start the conversion; you must also call the convert() method after setting
+     * all of the settings you want to use.
+     */
     LocalTimeConvert &withCurrentTime() { this->time = Time.now(); return *this; };
 
+    /**
+     * @brief Do the time conversion
+     * 
+     * You must call this after changing the configuration or the time using withTime() or withCurrentTime()
+     */
     void convert();
 
+    /**
+     * @brief Returns true if the current time is in daylight saving time
+     */
     bool isDST() const { return position == Position::IN_DST; };
+
+    /**
+     * @brief Returns true of the current time in in standard time
+     */
     bool isStandardTime() const { return !isDST(); };
 
-    void nextDay();
-    void nextDay(LocalTimeHMS hms);
+    /**
+     * @brief Moves the current time to the next day
+     * 
+     * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+     * 
+     * Upon completion,
+     */
+    void nextDay(LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
-    bool nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms);
+    bool nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
-    void nextWeekday(LocalTimeHMS hms);
-    void nextWeekendDay(LocalTimeHMS hms);
+    void nextWeekday(LocalTimeHMS hms = LocalTimeIgnoreHMS());
+    void nextWeekendDay(LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
     /**
      * @brief Moves the date and time (local time) forward to the specified day of month and local time
@@ -233,7 +286,7 @@ public:
      * This version will move to the closest forward time. It could be as close as 1 second later, but 
      * it will always advance at least once second. It could be as much as 1 month minus 1 second later.
      */
-    bool nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms);
+    bool nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
     /**
      * @brief Moves the date and time (local time) forward to the specified day of month and local time
@@ -242,9 +295,9 @@ public:
      * in this month yet. This will always more forward at least a month, and may be as much as 
      * two months minus one day.
      */
-    void nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms);
+    void nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
-    bool nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms);
+    bool nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
     //void nextDayOfMonth(int month, int dayOfMonth, LocalTimeHMS hms);
 
@@ -269,6 +322,10 @@ public:
      */
     void atLocalTime(LocalTimeHMS hms);
 
+    String timeStr();
+
+    String format(const char* format_spec);
+
 
     Position position = Position::NO_DST;
     LocalTimePosixTimezone config;
@@ -284,8 +341,14 @@ public:
 
 class LocalTime {
 public:
-    LocalTime();
-    virtual ~LocalTime();
+    static LocalTime &instance();
+
+    /**
+     * @brief Sets the default global timezone configuration
+     */
+    LocalTime &withConfig(LocalTimePosixTimezone config) { this->config = config; return *this; };
+
+    const LocalTimePosixTimezone &getConfig() const { return config; };
 
     // POSIX timezone strings
     // https://developer.ibm.com/technologies/systems/articles/au-aix-posix/
@@ -336,6 +399,11 @@ public:
 
 
     static String timeToString(time_t time, char separator = ' ');
+
+protected:
+    LocalTimePosixTimezone config;
+
+    static LocalTime *_instance;
 };
 
 
