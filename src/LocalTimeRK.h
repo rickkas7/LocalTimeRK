@@ -322,9 +322,35 @@ public:
      */
     void atLocalTime(LocalTimeHMS hms);
 
+    /**
+     * @brief Works like Time.timeStr() to generate a readable string of the local time
+     * 
+     * Uses asctime formatting, which looks like "Fri Jan  1 18:45:56 2021". The strings
+     * are not localized; they're always in English.
+     */
     String timeStr();
 
-    String format(const char* format_spec);
+    /**
+     * @brief Works like Time.format()
+     * 
+     * @param formatSpec the format specifies, which can be 
+     * 
+     * - TIME_FORMAT_DEFAULT (example: "Thu Apr  1 12:00:00 2021")
+     * - TIME_FORMAT_ISO8601_FULL (example: "2021-04-01T12:00:00-04:00")
+     * - custom format based on strftime()
+     * 
+     * There are many options to strftime described here: 
+     * https://www.cplusplus.com/reference/ctime/strftime/?kw=strftime
+     * 
+     * Unlike Time.format(), you can use %Z to output the timezone abbreviation,
+     * for example "EDT" for the Eastern United States, daylight saving instead 
+     * of -04:00.
+     * 
+     * The %z formatting matches that of Time.format(), which is wrong. The
+     * correct output should be "-400" but the output will be "-04:00" 
+     * for compatibility.
+     */
+    String format(const char* formatSpec);
 
 
     Position position = Position::NO_DST;

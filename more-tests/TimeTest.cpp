@@ -750,6 +750,16 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
 	assertStr("", conv.format("%a %b %m").c_str(), "Thu Apr 04");
 
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
+	assertStr("", conv.format("%a %b %m").c_str(), "Thu Apr 04");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
+	assertStr("", conv.format(TIME_FORMAT_DEFAULT).c_str(), "Thu Apr  1 12:00:00 2021");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
+	assertStr("", conv.format(TIME_FORMAT_ISO8601_FULL).c_str(), "2021-04-01T12:00:00-04:00");
+
+
 }
 
 int main(int argc, char *argv[]) {
