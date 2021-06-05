@@ -42,13 +42,31 @@ public:
      */
     int toSeconds() const;
 
+    /**
+     * @brief Sets the hour, minute, and second fields from a struct tm
+     */
     void fromTimeInfo(const struct tm *pTimeInfo);
 
+    /**
+     * @brief Fill in the tm_hour, tm_min, and tm_sec fields of a struct tm from the values in this object
+     * 
+     * @param pTimeInfo The struct tm to modify
+     */
     void toTimeInfo(struct tm *pTimeInfo) const;
 
+    /**
+     * @brief Adjust the values in a struct tm from the values in this object
+     * 
+     * @param pTimeInfo The struct tm to modify
+     * 
+     * @param subtract If false, the values in hour, minute, second are added to the struct tm. 
+     * If true, subtracted
+     * 
+     * After calling this, the values in the struct tm may be out of range, for example tm_hour > 23. 
+     * This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values
+     * into the other fields as necessary.
+     */
     void adjustTimeInfo(struct tm *pTimeInfo, bool subtract = false) const;
-
-    void adjustTimeInfoPreserveDate(struct tm *pTimeInfo, bool subtract = false) const;
 
     int8_t hour = 0;        //!< 0-23 hour (could also be negative)
     int8_t minute = 0;      //!< 0-59 minute
@@ -87,6 +105,12 @@ public:
      */
     String toString() const;
 
+    /**
+     * @brief Returns the last day of the month in a given month and year
+     * 
+     * For example, If the month in the current object is January, returns 31.
+     * The year is required to handle leap years when the month is February.
+     */
     int lastDayOfMonth(int year) const;
 
     /**
@@ -225,6 +249,21 @@ public:
      */
     time_t toUTC(LocalTimePosixTimezone config) const;
 
+    /**
+     * @brief Converts time from ISO-8601 format, ignoring the timezone 
+     * 
+     * @param str The string to convert
+     * 
+     * The string should be of the form:
+     * 
+     * YYYY-MM-DDTHH:MM:SS
+     * 
+     * The T can be any single character, such as a space. For example: 
+     * 
+     * 2021-04-01 10:00:00
+     * 
+     * Any characters after the seconds are ignored.
+     */
     void fromString(const char *str);
 
     /**
@@ -249,13 +288,13 @@ public:
      * @brief Whether the specified time is DST or not. See also isDST().
      */
     enum class Position {
-        BEFORE_DST, //!< This time is before the start of DST (northern hemisphere)
-        IN_DST,     //!< This time is in daylight saving time (northern hemisphere)
-        AFTER_DST,  //!< This time is after the end of DST (northern hemisphere)
+        BEFORE_DST,      //!< This time is before the start of DST (northern hemisphere)
+        IN_DST,          //!< This time is in daylight saving time (northern hemisphere)
+        AFTER_DST,       //!< This time is after the end of DST (northern hemisphere)
         BEFORE_STANDARD, //!< This time is before the start of standard time (southern hemisphere)
         IN_STANDARD,     //!< This time is in standard saving time (southern hemisphere)
         AFTER_STANDARD,  //!< This time is after the end of standard time (southern hemisphere)
-        NO_DST,     //!< This config does not use daylight saving
+        NO_DST,          //!< This config does not use daylight saving
     };
 
     /**
@@ -309,39 +348,125 @@ public:
      * 
      * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
      * 
-     * Upon completion,
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
      */
     void nextDay(LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
+    /**
+     * @brief Moves the current time to the next of the specified day of week
+     * 
+     * @param dayOfWeek The day of week (0 - 6, 0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+     * 
+     * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
     bool nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
+    /**
+     * @brief Returns the next day that is a weekday (Monday - Friday)
+     * 
+     * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
     void nextWeekday(LocalTimeHMS hms = LocalTimeIgnoreHMS());
+
+    /**
+     * @brief Returns the next day that is a weekend day (Saturday or Sunday)
+     * 
+     * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
     void nextWeekendDay(LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
     /**
      * @brief Moves the date and time (local time) forward to the specified day of month and local time
      * 
+     * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+     * 
      * This version will move to the closest forward time. It could be as close as 1 second later, but 
      * it will always advance at least once second. It could be as much as 1 month minus 1 second later.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
      */
     bool nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
     /**
      * @brief Moves the date and time (local time) forward to the specified day of month and local time
      * 
+     * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+     * 
      * This version always picks the next month, even if the target day of month hasn't been reached
      * in this month yet. This will always more forward at least a month, and may be as much as 
      * two months minus one day.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
      */
     void nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
+
+    /**
+     * @brief Moves the date and time (local time) forward to the specified day of month and local time
+     * 
+     * @param dayOfWeek The day of week (0 - 6, 0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+     * 
+     * @param ordinal 1 = first of that day of week in month, 2 = second, ...
+     * 
+     * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+     * 
+     * If you specify an ordinal that does not exist (for example, there may not be a 5th ordinal for certain days
+     * in certain months), returns false and leaves the date unchanged.
+     * 
+     * Upon successful completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
     bool nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
-    //void nextDayOfMonth(int month, int dayOfMonth, LocalTimeHMS hms);
-
-    // nextDayOfWeekInNextMonth(int dayOfWeek, int ordinal)
-    // nextDayOfWeekInMonth(int month, int dayOfWeek, int ordinal)
-    
+    /**
+     * @brief Sets the time to the nearest hms in local time in the future.
+     * 
+     * @param hms The time of day to set in local time
+     * 
+     * Moves the time forward to the next instance of hms in local time. If hms has not
+     * occurred yet, it will select the one today, but it will always move the time forward.
+     * 
+     * There is a weird special case on the beginning of daylight saving (spring forward in
+     * the northern hemisphere). If you select a hms between 2:00 AM and 2:59:59 AM local time,
+     * this time does not exist on spring forward day because it's the hour that is skipped.
+     * In order to preserve the requirement that the time will always be advanced by this
+     * call, it will jump forward to the next day when the 2:00 hour occurs next. (The hour
+     * may be different in other locations, for example it's 1:00 AM in the UK.)
+     * 
+     * In the case of fall back, if you specify a hms in the repeated hour (1:00:00 to 1:59:59)
+     * the time returned will be the second time this time occurs, in standard time in the US.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */    
     void nextLocalTime(LocalTimeHMS hms);
 
     /**
@@ -357,6 +482,11 @@ public:
      * 
      * It's possible that this will set the time to a time earlier than the object's current
      * time. To only set a time in the future, use nextLocalTime() instead.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
      */
     void atLocalTime(LocalTimeHMS hms);
 
@@ -390,16 +520,76 @@ public:
      */
     String format(const char* formatSpec);
 
+    /**
+     * @brief Returns the abbreviated time zone name for the current time
+     * 
+     * For example, for the United States east coast, EST or EDT depending on
+     * whether the current time is DST or not. See also isDST().
+     * 
+     * This string comes from the LocalTimePosixTimezone object.
+     */
     String zoneName() const;
 
-
+    /**
+     * @brief Where time is relative to DST
+     */
     Position position = Position::NO_DST;
+
+    /**
+     * @brief Timezone configuration for this time conversion
+     * 
+     * If you don't specify this using withConfig then the global setting is retrieved
+     * from the LocalTime singleton instance.
+     */
     LocalTimePosixTimezone config;
+
+    /**
+     * @brief The time that is being converted. This is always Unix time at UTC
+     * 
+     * Seconds after January 1, 1970, UTC. Using methods like nextDay() increment
+     * this value.
+     */
     time_t time;
+
+    /**
+     * @brief The local time that corresponds to time
+     * 
+     * The convert() method sets this, as do methods like nextDay(). The local time
+     * will depend on the timezone set in config, as well as the date which will
+     * determine whether it's daylight saving or not.
+     */
     LocalTimeValue localTimeValue;
+
+    /**
+     * @brief The time that daylight saving starts, Unix time, UTC
+     * 
+     * The config specifies the rule (2nd Sunday in March, for example), and the
+     * local time that the change occurs. This is the UTC value that corresponds
+     * to that rule in the year specified by time.
+     * 
+     * Note in the southern hemisphere, dstStart is after standardStart.
+     */
     time_t dstStart;
+
+    /**
+     * @brief The struct tm that corresponds to dstStart (UTC)
+     */
     struct tm dstStartTimeInfo;
+
+    /**
+     * @brief The time that standard time starts, Unix time, UTC
+     * 
+     * The config specifies the rule (1st Sunday in November, for example), and the
+     * local time that the change occurs. This is the UTC value that corresponds
+     * to that rule in the year specified by time.
+     * 
+     * Note in the southern hemisphere, dstStart is after standardStart.
+     */
     time_t standardStart;
+
+    /**
+     * @brief The struct tm that corresponds to standardStart (UTC)
+     */
     struct tm standardStartTimeInfo;
 };
 

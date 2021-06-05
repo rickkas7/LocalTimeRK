@@ -3,10 +3,9 @@
 LocalTime *LocalTime::_instance;
 
 LocalTimeHMS::LocalTimeHMS() {
-
 }
-LocalTimeHMS::~LocalTimeHMS() {
 
+LocalTimeHMS::~LocalTimeHMS() {
 }
 
 LocalTimeHMS::LocalTimeHMS(const char *str) {
@@ -404,7 +403,9 @@ void LocalTimeConvert::convert() {
             }
         }
         else {
-            // Southern Hemisphere
+            // Southern Hemisphere: DST runs from October/November through the 
+            // turn of the year, into March/April. There's a different set of
+            // position variables for this.
             if (time < standardStart) {
                 // Before the start of standard time this year
                 position = Position::BEFORE_STANDARD;

@@ -543,6 +543,17 @@ void test1() {
 	conv.nextLocalTime(LocalTimeHMS("23:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=0");	
 
+	// Weird special case on spring forward
+	// Starting at 1:40 AM local time, on spring forward there is no 2:30 on this day
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-03-14 06:40:52")).convert();
+	conv.nextLocalTime(LocalTimeHMS("02:30"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=2 tm_mday=15 tm_hour=6 tm_min=30 tm_sec=0 tm_wday=1");	
+
+	// Fall back special case 12:40 AM local time -> 1:30 AM local time
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-07 05:40:52")).convert();
+	conv.nextLocalTime(LocalTimeHMS("01:30"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=30 tm_sec=0 tm_wday=0");	
+
 	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
 	conv.nextDay();
