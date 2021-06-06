@@ -77,6 +77,19 @@ It also handles other common scheduling scenarios:
 LocalTime::instance().withConfig(LocalTimePosixTimezone("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
 ```
 
+Some configuration strings:
+
+| Location | Timezone Configuration |
+| :--- | :--- |
+| New York | "EST5EDT,M3.2.0/02:00:00,M11.1.0/02:00:00" |
+| Chicago | "CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00" |
+| Denver | "MST7MDT,M3.2.0/2:00:00,M11.1.0/2:00:00" |
+| Phoenix | "MST7" |
+| Los Angeles | "PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00" |
+| London | "BST0GMT,M3.5.0/1:00:00,M10.5.0/2:00:00" |
+| Sydney, Australia | "AEST-10AEDT,M10.1.0/02:00:00,M4.1.0/03:00:00" | 
+
+
 ### Getting the current local time
 
 Use the `LocalTimeConvert` class like this to get the current time:
