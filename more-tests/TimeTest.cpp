@@ -681,6 +681,33 @@ void test1() {
 	conv.nextDayOfMonth(4, LocalTimeHMS("05:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=6");	
 
+	// 0 = last day of month
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 02:10:52")).convert();
+	conv.nextDayOfMonth(0, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=31 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=5");	
+
+	// -1 = 2nd to last day of month
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 02:10:52")).convert();
+	conv.nextDayOfMonth(-1, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=30 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=4");	
+
+	// Moves to next month if in the past
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-31 02:10:52")).convert();
+	conv.nextDayOfMonth(-1, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=30 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0");	
+
+	// 28 day month
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-02-04 02:10:52")).convert();
+	conv.nextDayOfMonth(0, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=1 tm_mday=28 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0");	
+
+	// Still a 28 day month, but make sure it's using local time for the calculation
+	// so the UTC date is March 1
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-02-04 02:10:52")).convert();
+	conv.nextDayOfMonth(0, LocalTimeHMS("23:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=2 tm_mday=1 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=1");	
+
+
 	// Even though we haven't reached this date, nextDateOfNextMonth always increments the month
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
 	conv.nextDayOfNextMonth(4, LocalTimeHMS("05:00"));
@@ -709,6 +736,15 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
 	conv.nextDayOfNextMonth(1, LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=6 tm_mday=1 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=4");	
+
+	// Last day of next month
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
+	conv.nextDayOfNextMonth(0, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=31 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=1");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 05:10:52")).convert();
+	conv.nextDayOfNextMonth(-1, LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=30 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0");	
 
 	// Local time formatting default format
 
@@ -770,6 +806,7 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
 	assertStr("", conv.format(TIME_FORMAT_ISO8601_FULL).c_str(), "2021-04-01T12:00:00-04:00");
 }
+
 
 int monthStrToMonth(const char *token) {
 	if (strcmp(token, "Jan") == 0) {
@@ -957,11 +994,29 @@ void testFiles() {
 
 }
 
+void test2() {
+    LocalTime::instance().withConfig(LocalTimePosixTimezone("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
+
+	LocalTimeConvert conv;
+	conv.withTime(LocalTime::stringToTime("2021-12-03 05:10:52")).convert();
+	conv.nextLocalTime("06:00:00");
+
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=5");	
+
+
+	conv.nextDayOfWeek(6, LocalTimeHMS("3:00")); // every Saturday at 3:00 AM local time
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=8 tm_min=0 tm_sec=0 tm_wday=6");	
+
+}
+
 int main(int argc, char *argv[]) {
 	testLocalTimeChange();
 	testLocalTimePosixTimezone();
 	test1();
 	testFiles();
+
+	// test2 sets the global timezone configuration
+	test2();
 
 	return 0;
 }

@@ -129,38 +129,6 @@ String LocalTimeChange::toString() const {
     }
 }
 
-int LocalTimeChange::lastDayOfMonth(int year) const {
-    switch(month) {
-        case 1:
-        case 3:
-        case 5:
-        case 7:
-        case 8:
-        case 10:
-        case 12:
-            return 31;
-
-        case 2:
-            if ((year % 4) == 0) {
-                if ((year % 100) == 0) {
-                    return 28;
-                }
-                else {
-                    return 29;
-                }
-            }
-            else {
-                return 28;
-            }
-
-        case 4:
-        case 6:
-        case 9:
-        case 11:
-            return 30;
-    }
-    return 0;
-}
 
 time_t LocalTimeChange::calculate(struct tm *pTimeInfo, LocalTimeHMS tzAdjust) const {
     // Start with the first of the month
@@ -175,7 +143,7 @@ time_t LocalTimeChange::calculate(struct tm *pTimeInfo, LocalTimeHMS tzAdjust) c
     }
     if (week != 1) {
         pTimeInfo->tm_mday += (week - 1) * 7;
-        if (pTimeInfo->tm_mday > lastDayOfMonth(pTimeInfo->tm_year + 1900)) {
+        if (pTimeInfo->tm_mday > LocalTime::lastDayOfMonth(pTimeInfo->tm_year + 1900, month)) {
             // 5 means the last week of the month, even if there is no 5th week
             pTimeInfo->tm_mday -= 7;
         }
@@ -219,7 +187,7 @@ void LocalTimePosixTimezone::clear() {
     standardHMS.clear();
 }
 
-void LocalTimePosixTimezone::parse(const char *str) {
+bool LocalTimePosixTimezone::parse(const char *str) {
     char *mutableCopy = strdup(str);
 
     char *token, *save = mutableCopy;
@@ -290,10 +258,8 @@ void LocalTimePosixTimezone::parse(const char *str) {
 
 
     free(mutableCopy);
-}
 
-String LocalTimePosixTimezone::toString() const {
-    return "";
+    return valid;
 }
 
 //
@@ -372,6 +338,7 @@ int LocalTimeValue::ordinal() const {
 void LocalTimeConvert::convert() {
     if (!config.isValid()) {
         config = LocalTime::instance().getConfig();
+        //printf("get global config dstName=%s hasDST=%d\n", config.dstName.c_str(), config.hasDST());
     }
 
     if (config.hasDST()) {
@@ -466,13 +433,9 @@ void LocalTimeConvert::nextWeekendDay(LocalTimeHMS hms) {
 }
 
 bool LocalTimeConvert::nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms) {
-    if (dayOfMonth < 1 || dayOfMonth > 31) {
-        return false;
-    }
-
     time_t origTime = time;
 
-    localTimeValue.tm_mday = dayOfMonth;
+    localTimeValue.tm_mday = (dayOfMonth > 0) ? dayOfMonth : (lastDayOfMonth() + dayOfMonth);
     localTimeValue.setHMS(hms);
     time = localTimeValue.toUTC(config);
     convert();
@@ -487,12 +450,13 @@ bool LocalTimeConvert::nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms) {
 }
 
 
-void LocalTimeConvert::nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms) {
-    localTimeValue.tm_mday = dayOfMonth;
+bool LocalTimeConvert::nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms) {
     localTimeValue.tm_mon++;
+    localTimeValue.tm_mday = (dayOfMonth > 0) ? dayOfMonth : (lastDayOfMonth() + dayOfMonth);
     localTimeValue.setHMS(hms);
     time = localTimeValue.toUTC(config);
     convert();
+    return true;
 }
 
 bool LocalTimeConvert::nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms) {
@@ -599,6 +563,10 @@ String LocalTimeConvert::zoneName() const {
     }
 };
 
+int LocalTimeConvert::lastDayOfMonth() const {
+    return LocalTime::lastDayOfMonth(localTimeValue.tm_year + 1900, (localTimeValue.tm_mon % 12) + 1);
+}
+
 
 //
 // LocalTime
@@ -675,3 +643,36 @@ String LocalTime::timeToString(time_t time, char separator) {
 }
 
 
+// [static]
+int LocalTime::lastDayOfMonth(int year, int month) {
+    switch(month) {
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
+        case 12:
+            return 31;
+
+        case 2:
+            if ((year % 4) == 0) {
+                if ((year % 100) == 0) {
+                    return 28;
+                }
+                else {
+                    return 29;
+                }
+            }
+            else {
+                return 28;
+            }
+
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+            return 30;
+    }
+    return 0;
+}

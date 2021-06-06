@@ -5,11 +5,35 @@
 
 #include <time.h>
 
+/**
+ * @brief Container for holding an hour minute second time value
+ */
 class LocalTimeHMS {
 public:
+    /**
+     * @brief Default constructor. Sets time to 00:00:00
+     */
     LocalTimeHMS();
+
+    /**
+     * @brief Destructor
+     */
     virtual ~LocalTimeHMS();
 
+    /**
+     * @brief Constructs the object from a time string
+     * 
+     * @param str The time string
+     * 
+     * The time string is normally of the form HH:MM:SS, such as "04:00:00" for 4:00 AM.
+     * The hour is in 24-hour format. Other formats are supported as well, including 
+     * omitting the seconds (04:00), or including only the hour "04", or omitting the
+     * leadings zeros (4:0:0). 
+     * 
+     * Additionally, the hour could be negative, used in UTC DST offsets. The minute
+     * and second are always positive (0-59). The hour could also be > 24 when used
+     * as a timezone offset.
+     */
     LocalTimeHMS(const char *str);
 
     /**
@@ -74,8 +98,14 @@ public:
     int8_t ignore = 0;      //!< Special case
 };
 
+/**
+ * @brief This class can be passed to most functions that take a LocalTimeHMS to instead not set the HMS
+ */
 class LocalTimeIgnoreHMS : public LocalTimeHMS {
 public:
+    /**
+     * @brief Special version of LocalTimeHMS that does not set the HMS
+     */
     LocalTimeIgnoreHMS() {
         ignore = true;
     }
@@ -90,28 +120,53 @@ public:
  */
 class LocalTimeChange {
 public:
+    /**
+     * @brief Default contructor
+     */
     LocalTimeChange();
+
+    /**
+     * @brief Destructor
+     */
     virtual ~LocalTimeChange();
 
+    /**
+     * @brief Constructs a time change object with a string format (calls parse())
+     * 
+     * @param str the time change string to parse
+     * 
+     * The time change string is part of the POSIX timezone specification and looks something
+     * like "M3.2.0/2:00:00". 
+     */
     LocalTimeChange(const char *str);
 
+    /**
+     * @brief Clears all values
+     */
     void clear();
 
-    // M3.2.0/2:00:00
+    /**
+     * @brief Parses a time change string
+     * 
+     * @param str the time change string to parse
+     * 
+     * The time change string is part of the POSIX timezone specification and looks something
+     * like "M3.2.0/2:00:00". 
+     * 
+     * - M3 indicates that DST starts on the 3rd month (March)
+     * - 2 is the week number (second week)
+     * - 0 is the day of week (0 = Sunday)
+     * - 2:00:00 at 2 AM local time, the transition occurs
+     * 
+     * Setting the week to 5 essentially means the last week of the month. If the month does
+     * not have a fifth week for that day of the week, then the fourth is used instead.
+     */
     void parse(const char *str);
 
     /**
      * @brief Turns the parsed data into a normalized string like "M3.2.0/2:00:00"
      */
     String toString() const;
-
-    /**
-     * @brief Returns the last day of the month in a given month and year
-     * 
-     * For example, If the month in the current object is January, returns 31.
-     * The year is required to handle leap years when the month is February.
-     */
-    int lastDayOfMonth(int year) const;
 
     /**
      * @brief Calculate the time change in a given year
@@ -127,7 +182,7 @@ public:
     int8_t week = 0;        //!< 1-5, 1=first
     int8_t dayOfWeek = 0;   //!< 0-6, 0=Sunday, 1=Monday, ...
     int8_t valid = 0;       //!< true = valid
-    LocalTimeHMS hms;
+    LocalTimeHMS hms;       //!< Local time when timezone change occurs
 };
 
 /**
@@ -148,33 +203,67 @@ public:
  * - 2:00:00 at 2 AM local time, the transition occurs
  * 
  * There are many other acceptable formats, including formats for locations that don't have DST.
+ * 
+ * For more information, see:
+ * https://developer.ibm.com/technologies/systems/articles/au-aix-posix/
  */
 class LocalTimePosixTimezone {
 public:
+    /**
+     * @brief Default constructor (no timezone set)
+     */
     LocalTimePosixTimezone();
+
+    /**
+     * @brief Destructor
+     */
     virtual ~LocalTimePosixTimezone();
 
+    /**
+     * @brief Constructs the object with a specified timezone configuration
+     * 
+     * Calls parse() internally.
+     */
     LocalTimePosixTimezone(const char *str);
 
+    /**
+     * @brief Clears the timezone setting in this object
+     */
     void clear();
 
-    void parse(const char *str);
+    /**
+     * @brief Parses the timezone configuration string
+     * 
+     * @param str The string, for example: "EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00"
+     * 
+     * If the string is not valid this function returns false and the valid flag will
+     * be clear. You can call isValid() to check the validity at any time (such as
+     * if you are using the constructor with a string that does not return a boolean).
+     */
+    bool parse(const char *str);
 
-    String toString() const;
-
+    /**
+     * @brief Returns true if this timezone configuration has daylight saving
+     */
     bool hasDST() const { return dstStart.valid; };
 
+    /**
+     * @brief Returns true if this timezone configuration has been set and appears valid
+     */
     bool isValid() const { return valid; };
 
+    /**
+     * @brief Returns true if this timezone configuration is UTC
+     */
     bool isZ() const { return !valid || (!hasDST() && standardHMS.toSeconds() == 0); };
 
-    String dstName;
-    LocalTimeHMS dstHMS;
-    String standardName;
-    LocalTimeHMS standardHMS;
-    LocalTimeChange dstStart;
-    LocalTimeChange standardStart;
-    bool valid = false;
+    String dstName; //!< Daylight saving timezone name (empty string if no DST)
+    LocalTimeHMS dstHMS; //!< Daylight saving time shift (relative to UTC)
+    String standardName; //!< Standard time timezone name
+    LocalTimeHMS standardHMS; //!< Standard time shift (relative to UTC). Note that this is positive in the United States, which is kind of backwards.
+    LocalTimeChange dstStart; //!< Rule for when DST starts
+    LocalTimeChange standardStart; //!< Rule for when standard time starts. 
+    bool valid = false; //!< true if the configuration looks valid
 };
 
 /**
@@ -189,18 +278,39 @@ public:
  */
 class LocalTimeValue : public ::tm {
 public:
+    /**
+     * @brief Returns the hour (0 - 23)
+     */
     int hour() const { return tm_hour; };
 
+    /**
+     * @brief Returns the hour (1 - 12) used in AM/PM mode
+     */
     int hourFormat12() const;
 
+    /**
+     * @brief Returns true if the time is in the AM (before noon)
+     */
     uint8_t isAM() const { return tm_hour < 12; };
 
+    /**
+     * @brief Returns true if the time is in the PM (>= 12:00:00 in 24-hour clock).
+     */
     uint8_t isPM() const { return !isAM(); };
 
+    /**
+     * @brief Returns the minute 0 - 59
+     */
     int minute() const { return tm_min; };
 
+    /**
+     * @brief Returns the second 0 - 59
+     */
     int second() const { return tm_sec; };
 
+    /**
+     * @brief Returns the day of the month 1 - 31 (or less in some months)
+     */
     int day() const { return tm_mday; };
 
     /**
@@ -396,6 +506,8 @@ public:
     /**
      * @brief Moves the date and time (local time) forward to the specified day of month and local time
      * 
+     * @param dayOfMonth The day of the month (1 = first day of the month). See also special cases below.
+     * 
      * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
      * 
      * This version will move to the closest forward time. It could be as close as 1 second later, but 
@@ -405,11 +517,17 @@ public:
      * - time specifies the time_t of the new time at UTC
      * - localTimeValue contains the broken-out values for the local time
      * - isDST() return true if the new time is in daylight saving time
+     * 
+     * dayOfMonth is normally a a day number (1 = first day of the month). There are also special cases:
+     * 0 = the last day of the month, -1 the second to last day of month, ... The number of days in the month are
+     * based on the date in local time.
      */
     bool nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
     /**
      * @brief Moves the date and time (local time) forward to the specified day of month and local time
+     * 
+     * @param dayOfMonth The day of the month (1 = first day of the month). See also special cases below.
      * 
      * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
      * 
@@ -421,8 +539,12 @@ public:
      * - time specifies the time_t of the new time at UTC
      * - localTimeValue contains the broken-out values for the local time
      * - isDST() return true if the new time is in daylight saving time
+     * 
+     * dayOfMonth is normally a a day number (1 = first day of the month). There are also special cases:
+     * 0 = the last day of the month, -1 the second to last day of month, ... The number of days in the month are
+     * based on the date in local time.
      */
-    void nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms = LocalTimeIgnoreHMS());
+    bool nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms = LocalTimeIgnoreHMS());
 
 
     /**
@@ -531,6 +653,11 @@ public:
     String zoneName() const;
 
     /**
+     * @brief Returns the last day of the month, local time (based on localTimeValue)
+     */
+    int lastDayOfMonth() const;
+
+    /**
      * @brief Where time is relative to DST
      */
     Position position = Position::NO_DST;
@@ -594,9 +721,14 @@ public:
 };
 
 
-
+/**
+ * @brief Global time settings
+ */
 class LocalTime {
 public:
+    /**
+     * @brief Get the global singleton instance of this class
+     */
     static LocalTime &instance();
 
     /**
@@ -604,18 +736,18 @@ public:
      */
     LocalTime &withConfig(LocalTimePosixTimezone config) { this->config = config; return *this; };
 
+    /**
+     * @brief Gets the default global timezone configuration
+     */
     const LocalTimePosixTimezone &getConfig() const { return config; };
 
-    // POSIX timezone strings
-    // https://developer.ibm.com/technologies/systems/articles/au-aix-posix/
-    // Can use zdump for unit test!
     
     /**
      * @brief Converts a Unix time (seconds past Jan 1 1970) UTC value to a struct tm
      * 
      * @param time Unix time (seconds past Jan 1 1970) UTC
      * 
-     * @param pTimeTime Pointer to a struct tm that is filled in with the time broken out
+     * @param pTimeInfo Pointer to a struct tm that is filled in with the time broken out
      * into components
      * 
      * The struct tm contains the following members:
@@ -636,7 +768,7 @@ public:
     /**
      * @brief Converts a struct tm to a Unix time (seconds past Jan 1 1970) UTC
      * 
-     * @param pTimeTime Pointer to a struct tm
+     * @param pTimeInfo Pointer to a struct tm
      * 
      * Note: tm_wday, tm_yday, and tm_isdst are ignored for calculating the result,
      * however tm_wday and tm_yday are filled in with the correct values based on
@@ -648,17 +780,91 @@ public:
 
     /**
      * @brief Returns a human-readable string version of a struct tm
+     * 
+     * @param pTimeInfo Pointer to a struct tm to convert
      */
     static String getTmString(struct tm *pTimeInfo);
 
+    /**
+     * @brief Converts a string in ISO-8601 format (ignoring the timezone)
+     * 
+     * @param str String to convert
+     * 
+     * @param pTimeInfo Pointer to a struct tm to fill in or NULL if you don't need that
+     * 
+     * @returns a time_t (Unix time, seconds past January 1, 1970, UTC)
+     * 
+     * The string must be of the form "YYYY-MM-DDTHH:MM:SS". Any additional characters
+     * are ignored, so it's OK if the time includes the timezone, though it will be ignored.
+     * Same for milliseconds. The T between the day and hour can be any single 
+     * non-numeric character, such as a space, instead of a T.
+     * 
+     * See also timeToString to convert in the other direction.
+     */
     static time_t stringToTime(const char *str, struct tm *pTimeInfo = NULL);
 
 
+    /**
+     * @brief Converts a time to a string in a modified ISO-8601 format with no timezone
+     * 
+     * @param time Unix time (seconds past Jan 1 1970) UTC
+     * 
+     * @param separator the separator between the day of month and hour, typically
+     * T or a space.
+     * 
+     * @returns a time_t (Unix time, seconds past January 1, 1970, UTC)
+     * 
+     * The string will be of the form "YYYY-MM-DDTHH:MM:SS". 
+     * 
+     * See also timeToString to convert in the other direction.
+     */
     static String timeToString(time_t time, char separator = ' ');
 
+    /**
+     * @brief Returns the last day of the month in a given month and year
+     * 
+     * @param year The year (note, actual year like 2021, not the value of tm_year).
+     * 
+     * @param month The month (1 - 12)
+     * 
+     * For example, If the month in the current object is January, returns 31.
+     * The year is required to handle leap years when the month is February.
+     */
+    static int lastDayOfMonth(int year, int month);
+
 protected:
+    /**
+     * @brief This class is a singleton and should not be manually allocated
+     */
+    LocalTime() {};
+
+    /**
+     * @brief This class is a singleton and should not be manually destructed
+     */
+    virtual ~LocalTime() {};
+
+    /**
+     * @brief This class is not copyable
+     */
+    LocalTime(const LocalTime&) = delete;
+
+    /**
+     * @brief This class is not copyable
+     */
+    LocalTime& operator=(const LocalTime&) = delete;
+
+
+    /**
+     * @brief Global default timezone
+     * 
+     * The LocalTimeConverter class will use this if a config is not set for that specific 
+     * converter.
+     */
     LocalTimePosixTimezone config;
 
+    /**
+     * @brief Singleton instance of this class
+     */
     static LocalTime *_instance;
 };
 
