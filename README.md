@@ -4,6 +4,10 @@
 
 This library is designed for specific local time and daylight saving time scenarios on Particle devices. It is not intended to solve all problems in all situations, however it will work well in certain scenarios:
 
+- [Full API docs](https://rickkas7.github.io/LocalTimeRK/)
+- Github repository: [https://github.com/rickkas7/LocalTimeRK/](https://github.com/rickkas7/LocalTimeRK/)
+- License: MIT
+
 **What it's good for:**
 
 - Managing local time, and daylight saving time, if needed, on devices in a known location
@@ -66,6 +70,7 @@ It also handles other common scheduling scenarios:
 - On the next weekend day (Saturday - Sunday)
 
 ## Using the library
+
 
 ### Configure the timezone
 
