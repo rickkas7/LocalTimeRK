@@ -484,6 +484,10 @@ Upon completion, all fields are updated appropriately. For example:
 
 ## Version history
 
+### 0.0.2 (2021-06-07)
+
+- Add examples
+
 ### 0.0.1 (2021-06-06) 
 
 - Initial version

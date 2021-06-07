@@ -123,7 +123,63 @@ $(function() {
 <li>On the next weekday (Monday - Friday)</li>
 <li>On the next weekend day (Saturday - Sunday)</li>
 </ul>
-<h1>Using the library</h1>
+<h1>Clock Example</h1>
+<p>There is an example of using the library to use an Adafruit FeatherWing OLED Display 128x32 as a clock.</p>
+<p>The display is available at <a href="https://www.adafruit.com/product/2900">Adafruit</a>. You can find more technical information <a href="https://learn.adafruit.com/adafruit-oled-featherwing/overview">at Adafruit</a>. The library is available in the Web IDE as <a href="https://build.particle.io/libs/oled-wing-adafruit/0.0.4/tab/oled-wing-adafruit.cpp">oled-wing-adafruit</a>. You can find additional documentation <a href="https://github.com/rickkas7/oled-wing-adafruit">here</a>.</p>
+<p>The code example is in the more-examples directory in the Clock directory and is quite simple:</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &quot;Particle.h&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="preprocessor">#include &quot;LocalTimeRK.h&quot;</span></div>
+<div class="line"><span class="preprocessor">#include &quot;oled-wing-adafruit.h&quot;</span></div>
+<div class="line"> </div>
+<div class="line">SerialLogHandler logHandler;</div>
+<div class="line"> </div>
+<div class="line">SYSTEM_THREAD(ENABLED);</div>
+<div class="line"> </div>
+<div class="line">OledWingAdafruit display;</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">void</span> setup() {</div>
+<div class="line">    <span class="comment">// Set timezone to the Eastern United States</span></div>
+<div class="line">    <a class="code" href="class_local_time.html#a37be620abc0478abb5379c02e00470b1">LocalTime::instance</a>().<a class="code" href="class_local_time.html#a224d157197a6eb2e29a743cad7f8be96">withConfig</a>(<a class="code" href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a>(<span class="stringliteral">&quot;EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00&quot;</span>));</div>
+<div class="line"> </div>
+<div class="line">    display.setup();</div>
+<div class="line"> </div>
+<div class="line">    display.clearDisplay();</div>
+<div class="line">    display.display();</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">void</span> loop() {</div>
+<div class="line">    <span class="keyword">static</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lastUpdate = 0;</div>
+<div class="line">    <span class="keywordflow">if</span> (millis() - lastUpdate &gt;= 1000 &amp;&amp; Time.isValid()) {</div>
+<div class="line">        lastUpdate = millis();</div>
+<div class="line"> </div>
+<div class="line">        <a class="code" href="class_local_time_convert.html">LocalTimeConvert</a> conv;</div>
+<div class="line">        conv.<a class="code" href="class_local_time_convert.html#ab1e3f496bdb6f0b7ab58a67cde63a4ff">withCurrentTime</a>().<a class="code" href="class_local_time_convert.html#ab0ca70e6cdb54dbb2a81ae283250fdb8">convert</a>();</div>
+<div class="line"> </div>
+<div class="line">        <span class="comment">// Log.info(&quot;local time: %s&quot;, conv.format(TIME_FORMAT_ISO8601_FULL).c_str());</span></div>
+<div class="line">        </div>
+<div class="line">        <span class="comment">// Room for 11 characters at text size 2</span></div>
+<div class="line">        display.clearDisplay();</div>
+<div class="line">        display.setTextColor(WHITE);</div>
+<div class="line">        display.setTextSize(2);</div>
+<div class="line">        display.setFont(NULL);</div>
+<div class="line">        display.setCursor(0, 1);</div>
+<div class="line"> </div>
+<div class="line">        String msg;</div>
+<div class="line"> </div>
+<div class="line">        msg = conv.<a class="code" href="class_local_time_convert.html#a5a2f655ab7976cba45e68c6789f4a865">format</a>(<span class="stringliteral">&quot;%Y-%m-%d&quot;</span>); <span class="comment">// 2021-06-07</span></div>
+<div class="line">        display.println(msg);</div>
+<div class="line"> </div>
+<div class="line">        msg = conv.<a class="code" href="class_local_time_convert.html#a5a2f655ab7976cba45e68c6789f4a865">format</a>(<span class="stringliteral">&quot;%I:%M:%S%p&quot;</span>); <span class="comment">// 10:00:00AM</span></div>
+<div class="line">        display.println(msg);</div>
+<div class="line"> </div>
+<div class="line">        display.display();</div>
+<div class="line">    }</div>
+<div class="line">}</div>
+</div><!-- fragment --><div class="image">
+<img src="clock.png" alt=""/>
+</div>
+   <h1>Using the library</h1>
 <h2>Configure the timezone</h2>
 <ul>
 <li>Determine the POSIX timezone string for your location. For example, the US eastern timezone is shown in the example</li>
@@ -351,6 +407,7 @@ $(function() {
 <div class="ttc" id="aclass_local_time_convert_html_ab1e3f496bdb6f0b7ab58a67cde63a4ff"><div class="ttname"><a href="class_local_time_convert.html#ab1e3f496bdb6f0b7ab58a67cde63a4ff">LocalTimeConvert::withCurrentTime</a></div><div class="ttdeci">LocalTimeConvert &amp; withCurrentTime()</div><div class="ttdoc">Use the current time as the time to start with.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:437</div></div>
 <div class="ttc" id="aclass_local_time_html_a37be620abc0478abb5379c02e00470b1"><div class="ttname"><a href="class_local_time.html#a37be620abc0478abb5379c02e00470b1">LocalTime::instance</a></div><div class="ttdeci">static LocalTime &amp; instance()</div><div class="ttdoc">Get the global singleton instance of this class.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:574</div></div>
 <div class="ttc" id="aclass_local_time_convert_html_ab0ca70e6cdb54dbb2a81ae283250fdb8"><div class="ttname"><a href="class_local_time_convert.html#ab0ca70e6cdb54dbb2a81ae283250fdb8">LocalTimeConvert::convert</a></div><div class="ttdeci">void convert()</div><div class="ttdoc">Do the time conversion.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:338</div></div>
+<div class="ttc" id="aclass_local_time_convert_html_a5a2f655ab7976cba45e68c6789f4a865"><div class="ttname"><a href="class_local_time_convert.html#a5a2f655ab7976cba45e68c6789f4a865">LocalTimeConvert::format</a></div><div class="ttdeci">String format(const char *formatSpec)</div><div class="ttdoc">Works like Time.format()</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:501</div></div>
 <div class="ttc" id="aclass_local_time_posix_timezone_html"><div class="ttname"><a href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a></div><div class="ttdoc">Parses a Posix timezone string into its component parts.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:210</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
