@@ -484,6 +484,10 @@ Upon completion, all fields are updated appropriately. For example:
 
 ## Version history
 
+### 0.0.3 (2021-06-11)
+
+- Remove more-examples code from library
+
 ### 0.0.2 (2021-06-07)
 
 - Add examples
