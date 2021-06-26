@@ -408,6 +408,25 @@ void LocalTimeConvert::nextDay(LocalTimeHMS hms) {
     atLocalTime(hms);
 }
 
+void LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms) {
+    time_t timeOrig = time;
+    time_t dstStartOrig = dstStart;
+    time_t standardStartOrig = standardStart;
+
+    nextDay(hms);
+
+    if (dstStartOrig > timeOrig && dstStartOrig < time) {
+        printf("timeOrig=%ld dstStartOrig=%ld time=%ld dstStart=%ld\n", timeOrig, dstStartOrig, time, dstStart);
+        time = dstStartOrig;
+        convert();
+    }
+    if (standardStartOrig > timeOrig && standardStartOrig < time) {
+        time = standardStartOrig;
+        convert();
+    }
+}   
+
+
 bool LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms) {
     if (dayOfWeek < 0 || dayOfWeek > 6) {
         return false;

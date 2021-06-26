@@ -116,6 +116,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:aedfdeeee56bcaff38c2871497d5b360b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#aedfdeeee56bcaff38c2871497d5b360b">nextDay</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms=<a class="el" href="class_local_time_ignore_h_m_s.html">LocalTimeIgnoreHMS</a>())</td></tr>
 <tr class="memdesc:aedfdeeee56bcaff38c2871497d5b360b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current time to the next day.  <a href="class_local_time_convert.html#aedfdeeee56bcaff38c2871497d5b360b">More...</a><br /></td></tr>
 <tr class="separator:aedfdeeee56bcaff38c2871497d5b360b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee82015fe73bb364bcf6d3531b7d7c3e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#aee82015fe73bb364bcf6d3531b7d7c3e">nextDayOrTimeChange</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms=<a class="el" href="class_local_time_ignore_h_m_s.html">LocalTimeIgnoreHMS</a>())</td></tr>
+<tr class="memdesc:aee82015fe73bb364bcf6d3531b7d7c3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current to the next day, or right after the next time change, whichever comes first.  <a href="class_local_time_convert.html#aee82015fe73bb364bcf6d3531b7d7c3e">More...</a><br /></td></tr>
+<tr class="separator:aee82015fe73bb364bcf6d3531b7d7c3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7aaa0964693e24b411a748e33d2d4f35"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a7aaa0964693e24b411a748e33d2d4f35">nextDayOfWeek</a> (int dayOfWeek, <a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms=<a class="el" href="class_local_time_ignore_h_m_s.html">LocalTimeIgnoreHMS</a>())</td></tr>
 <tr class="memdesc:a7aaa0964693e24b411a748e33d2d4f35"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current time to the next of the specified day of week.  <a href="class_local_time_convert.html#a7aaa0964693e24b411a748e33d2d4f35">More...</a><br /></td></tr>
 <tr class="separator:a7aaa0964693e24b411a748e33d2d4f35"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -524,6 +527,39 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href=
 <li>localTimeValue contains the broken-out values for the local time</li>
 <li><a class="el" href="class_local_time_convert.html#ad831b90ec679c969f785c46544297c80" title="Returns true if the current time is in daylight saving time.">isDST()</a> return true if the new time is in daylight saving time </li>
 </ul>
+
+</div>
+</div>
+<a id="aee82015fe73bb364bcf6d3531b7d7c3e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee82015fe73bb364bcf6d3531b7d7c3e">&#9670;&nbsp;</a></span>nextDayOrTimeChange()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void LocalTimeConvert::nextDayOrTimeChange </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a>&#160;</td>
+          <td class="paramname"><em>hms</em> = <code><a class="el" href="class_local_time_ignore_h_m_s.html">LocalTimeIgnoreHMS</a>()</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Moves the current to the next day, or right after the next time change, whichever comes first. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">hms</td><td>If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>Upon completion, all fields are updated appropriately. For example:</p><ul>
+<li>time specifies the time_t of the new time at UTC</li>
+<li>localTimeValue contains the broken-out values for the local time</li>
+<li><a class="el" href="class_local_time_convert.html#ad831b90ec679c969f785c46544297c80" title="Returns true if the current time is in daylight saving time.">isDST()</a> return true if the new time is in daylight saving time</li>
+</ul>
+<p>This method is used when you want to synchronize an external device clock daily to keep it synchronized, or right after a time change.</p>
+<p>Do not pick the local time of the time change as the hms time! For example, in the United State do <em>not</em> select 02:00:00. The reason is that on spring forward, that time doesn't actually exist, because as soon as the clock hits 02:00:00 it jumps forward to 03:00:00 local time. Picking 03:00:00 or really any other time that's not between 02:00:00 and 02:59:59 is fine. During fall back, even though you've picked the time sync time to be 03:00 local time it will sync at the time of the actual time change correctly, which is why this function is different than <a class="el" href="class_local_time_convert.html#aedfdeeee56bcaff38c2871497d5b360b" title="Moves the current time to the next day.">nextDay()</a>. </p>
 
 </div>
 </div>

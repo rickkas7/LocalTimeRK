@@ -569,6 +569,31 @@ void test1() {
 	conv.nextDay(LocalTimeHMS("15:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=5 tm_mday=4 tm_hour=19 tm_min=0 tm_sec=0 tm_wday=5");	
 
+	// 2021 time changes: March 14, November 7
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-02-01 06:40:52")).convert();
+	conv.nextDayOrTimeChange(LocalTimeHMS("03:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=1 tm_mday=2 tm_hour=8 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-03-14 01:40:52")).convert();
+	conv.nextDayOrTimeChange(LocalTimeHMS("03:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=2 tm_mday=14 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=0");	
+
+	conv.nextDayOrTimeChange(LocalTimeHMS("03:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=2 tm_mday=15 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=1");	
+
+	conv.nextDayOrTimeChange(LocalTimeHMS("03:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=2 tm_mday=16 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=2");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-05 06:40:52")).convert();
+	conv.nextDayOrTimeChange(LocalTimeHMS("03:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=6 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.nextDayOrTimeChange(LocalTimeHMS("03:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0");	
+
+	conv.nextDayOrTimeChange(LocalTimeHMS("03:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=8 tm_hour=8 tm_min=0 tm_sec=0 tm_wday=1");	
+
 	// Thu, 03 Jun 2021 18:10:52 GMT (14:10:52 EDT)
 	conv.withConfig(tzConfig).withTime(1622743852).convert();
 	conv.nextDayOfWeek(5, LocalTimeHMS("15:00"));

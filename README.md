@@ -279,6 +279,31 @@ Upon completion, all fields are updated appropriately. For example:
 
 ---
 
+### void LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms) 
+
+Moves the current to the next day, or right after the next time change, whichever comes first.
+
+```
+void nextDayOrTimeChange(LocalTimeHMS hms)
+```
+
+#### Parameters
+* `hms` If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+
+Upon completion, all fields are updated appropriately. For example:
+
+* time specifies the time_t of the new time at UTC
+
+* localTimeValue contains the broken-out values for the local time
+
+* isDST() return true if the new time is in daylight saving time
+
+This method is used when you want to synchronize an external device clock daily to keep it synchronized, or right after a time change.
+
+Do not pick the local time of the time change as the hms time! For example, in the United State do *not* select 02:00:00. The reason is that on spring forward, that time doesn't actually exist, because as soon as the clock hits 02:00:00 it jumps forward to 03:00:00 local time. Picking 03:00:00 or really any other time that's not between 02:00:00 and 02:59:59 is fine. During fall back, even though you've picked the time sync time to be 03:00 local time it will sync at the time of the actual time change correctly, which is why this function is different than nextDay().
+
+---
+
 #### bool LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms) 
 
 Moves the current time to the next of the specified day of week.
@@ -483,6 +508,10 @@ Upon completion, all fields are updated appropriately. For example:
 
 
 ## Version history
+
+### 0.0.4 (2021-06-26)
+
+- Added nextDayOrTimeChange
 
 ### 0.0.3 (2021-06-11)
 
