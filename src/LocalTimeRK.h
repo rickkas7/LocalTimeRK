@@ -82,15 +82,12 @@ public:
      * @brief Adjust the values in a struct tm from the values in this object
      * 
      * @param pTimeInfo The struct tm to modify
-     * 
-     * @param subtract If false, the values in hour, minute, second are added to the struct tm. 
-     * If true, subtracted
-     * 
+     *      * 
      * After calling this, the values in the struct tm may be out of range, for example tm_hour > 23. 
      * This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values
      * into the other fields as necessary.
      */
-    void adjustTimeInfo(struct tm *pTimeInfo, bool subtract = false) const;
+    void adjustTimeInfo(struct tm *pTimeInfo) const;
 
     int8_t hour = 0;        //!< 0-23 hour (could also be negative)
     int8_t minute = 0;      //!< 0-59 minute

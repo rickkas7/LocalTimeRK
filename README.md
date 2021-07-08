@@ -155,7 +155,7 @@ Some configuration strings:
 | Los Angeles | "PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00" |
 | London | "BST0GMT,M3.5.0/1:00:00,M10.5.0/2:00:00" |
 | Sydney, Australia | "AEST-10AEDT,M10.1.0/02:00:00,M4.1.0/03:00:00" | 
-
+| Adelaide, Australia | "ACST-9:30ACDT,M10.1.0/02:00:00,M4.1.0/03:00:00" |
 
 ### Getting the current local time
 
@@ -508,6 +508,11 @@ Upon completion, all fields are updated appropriately. For example:
 
 
 ## Version history
+
+### 0.0.5 (2021-07-08)
+
+- Fixed bug in calculation of negative hour offsets that also included minutes
+- Added unit test for Adelaide, Australia
 
 ### 0.0.4 (2021-06-26)
 

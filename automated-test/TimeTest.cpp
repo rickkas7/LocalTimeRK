@@ -987,16 +987,37 @@ void testFile(const char *configStr, const char *path) {
 		LocalTimeConvert conv;
 		conv.withConfig(tzConfig).withTime(timegm(&timeInfo)).convert();
 
+		if (conv.localTimeValue.year() == localYear &&
+			conv.localTimeValue.month() == localMonth &&		
+			conv.localTimeValue.day() == localDayOfMonth &&
+			conv.localTimeValue.hour() == localHMS.hour &&	
+			conv.localTimeValue.minute() == localHMS.minute &&
+			conv.localTimeValue.second() == localHMS.second &&
+			conv.isDST() == dstFlag) {
+			// Good
+
+		}
+		else {
+			printf("got      year=%04d month=%02d day=%02d hour=%02d minute=%02d second=%02d dst=%d\n", 
+				conv.localTimeValue.year(), conv.localTimeValue.month(), conv.localTimeValue.day(),
+				conv.localTimeValue.hour(), conv.localTimeValue.minute(), conv.localTimeValue.second(),
+				conv.isDST());
+
+			printf("expected year=%04d month=%02d day=%02d hour=%02d minute=%02d second=%02d dst=%d\n", 
+				localYear, localMonth, localDayOfMonth,
+				localHMS.hour, localHMS.minute, localHMS.second, 
+				dstFlag);
+
+			// printf("standardStart=%d dstStart=%d time=%d\n", (int)conv.standardStart, (int)conv.dstStart, (int)conv.time);
+			printf("standardStart=%s\n", Time.format(conv.standardStart, TIME_FORMAT_ISO8601_FULL).c_str());
+			printf("dstStart=%s\n", Time.format(conv.dstStart, TIME_FORMAT_ISO8601_FULL).c_str());
+			printf("time=%s\n", Time.format(conv.time, TIME_FORMAT_ISO8601_FULL).c_str());
+			printf("line=%d path=%s\n", line, path);
+			assert(false);
+		}
+
+
 		//printConv(conv);
-
-		assertInt(entry, conv.localTimeValue.year(), localYear);		
-		assertInt(entry, conv.localTimeValue.month(), localMonth);		
-		assertInt(entry, conv.localTimeValue.day(), localDayOfMonth);
-		assertInt(entry, conv.localTimeValue.hour(), localHMS.hour);		
-		assertInt(entry, conv.localTimeValue.minute(), localHMS.minute);		
-		assertInt(entry, conv.localTimeValue.second(), localHMS.second);		
-		assertInt(entry, conv.isDST(), dstFlag);
-
 		line++;
 	}
 
@@ -1006,6 +1027,7 @@ void testFile(const char *configStr, const char *path) {
 
 void testFiles() {
 	
+	// EST=UTC-5 EDT=UTC-4 
 	testFile("EST5EDT,M3.2.0/02:00:00,M11.1.0/02:00:00", "testfiles/test01.txt"); // New York
 	testFile("CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00", "testfiles/test02.txt"); // Chicago
 	testFile("MST7MDT,M3.2.0/2:00:00,M11.1.0/2:00:00", "testfiles/test03.txt"); // Denver
@@ -1013,8 +1035,13 @@ void testFiles() {
 
 	testFile("BST0GMT,M3.5.0/1:00:00,M10.5.0/2:00:00", "testfiles/test05.txt"); // London
 
+	// AEST=UTC+10, AEDT=UTC+11
 	testFile("AEST-10AEDT,M10.1.0/02:00:00,M4.1.0/03:00:00", "testfiles/test06.txt"); // Sydney Australia
 
+	// ls /usr/share/zoneinfo
+	// zdump -v Australia/Adelaide
+	// ACST=UTC+9:30 ACDT=UTC+10:30
+	testFile("ACST-9:30ACDT,M10.1.0/02:00:00,M4.1.0/03:00:00", "testfiles/test07.txt"); // Adelaide Australia
 
 
 }
@@ -1034,10 +1061,21 @@ void test2() {
 
 }
 
+void test3() {
+	// This is not actually the timezone specifier for Adelaide, Australia, just checking that 30 minute offsets work
+    LocalTime::instance().withConfig(LocalTimePosixTimezone("ACST-9:30"));
+
+	LocalTimeConvert conv;
+	conv.withTime(LocalTime::stringToTime("2021-07-08 09:22:00")).convert();
+
+	assertStr("", conv.format("%Y-%m-%d %H:%M:%S").c_str(), "2021-07-08 18:52:00");
+}
+
 int main(int argc, char *argv[]) {
 	testLocalTimeChange();
 	testLocalTimePosixTimezone();
 	test1();
+	test3();
 	testFiles();
 
 	// test2 sets the global timezone configuration

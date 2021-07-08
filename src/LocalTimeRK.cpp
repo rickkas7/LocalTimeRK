@@ -41,7 +41,12 @@ String LocalTimeHMS::toString() const {
 }
 
 int LocalTimeHMS::toSeconds() const {
-    return ((int)hour) * 3600 + ((int)minute) * 60 + (int) second;
+    if (hour < 0) {
+        return - (((int)hour) * -3600 + ((int)minute) * 60 + (int) second);
+    }
+    else {
+        return ((int)hour) * 3600 + ((int)minute) * 60 + (int) second;
+    }
 }
 
 void LocalTimeHMS::fromTimeInfo(const struct tm *pTimeInfo) {
@@ -58,10 +63,10 @@ void LocalTimeHMS::toTimeInfo(struct tm *pTimeInfo) const {
     }
 }
 
-void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo, bool subtract) const {
+void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo) const {
     if (!ignore) {
-        if (subtract) {
-            pTimeInfo->tm_hour -= hour;
+        if (hour < 0) {
+            pTimeInfo->tm_hour += hour;
             pTimeInfo->tm_min -= minute;
             pTimeInfo->tm_sec -= second;
         }
@@ -70,6 +75,7 @@ void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo, bool subtract) const {
             pTimeInfo->tm_min += minute;
             pTimeInfo->tm_sec += second;
         }
+        
     }
 }
 
@@ -160,6 +166,7 @@ time_t LocalTimeChange::calculate(struct tm *pTimeInfo, LocalTimeHMS tzAdjust) c
     // The tzAdjust values are positive in the US, so to convert local time to UTC we need to add
     // to the hour values
     tzAdjust.adjustTimeInfo(pTimeInfo);
+
 
     return LocalTime::tmToTime(pTimeInfo);
 }
@@ -416,7 +423,7 @@ void LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms) {
     nextDay(hms);
 
     if (dstStartOrig > timeOrig && dstStartOrig < time) {
-        printf("timeOrig=%ld dstStartOrig=%ld time=%ld dstStart=%ld\n", timeOrig, dstStartOrig, time, dstStart);
+        // printf("timeOrig=%ld dstStartOrig=%ld time=%ld dstStart=%ld\n", timeOrig, dstStartOrig, time, dstStart);
         time = dstStartOrig;
         convert();
     }
