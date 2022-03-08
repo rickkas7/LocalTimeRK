@@ -771,6 +771,40 @@ void test1() {
 	conv.nextDayOfNextMonth(-1, LocalTimeHMS("05:00"));
 	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=30 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0");	
 
+	// minuteMultiple tests
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 5 AM local time
+	conv.nextMinuteMultiple(5);
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=15 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:00")).convert(); // 5 AM local time
+	conv.nextMinuteMultiple(5);
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=15 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:14:49")).convert(); // 5 AM local time
+	conv.nextMinuteMultiple(5);
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=15 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-05 23:14:49")).convert(); //
+	conv.nextMinuteMultiple(15);
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=23 tm_min=15 tm_sec=0 tm_wday=0");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-05 23:15:00")).convert(); //
+	conv.nextMinuteMultiple(15);
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=23 tm_min=30 tm_sec=0 tm_wday=0");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-05 23:56:49")).convert(); //
+	conv.nextMinuteMultiple(15);
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=1");	
+
+	// nextTime tests
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 5 AM local time
+	conv.nextTime(LocalTimeHMS("06:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert();
+	conv.nextTime(LocalTimeHMS("05:00"));
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0");	
+
 	// Local time formatting default format
 
 	// Standard time, before DST, offset = 0500

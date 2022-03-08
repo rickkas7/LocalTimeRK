@@ -477,6 +477,50 @@ Upon completion, all fields are updated appropriately. For example:
 
 ---
 
+### void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple) 
+
+Moves the current time the next specified multiple of minutes.
+
+```
+void nextMinuteMultiple(int minuteMultiple)
+```
+
+#### Parameters
+* `minuteMultiple` Typically something like 5, 15, 20, 30 that 60 is evenly divisible by
+
+Moves the time forward to the next multiple of that number of minutes. For example, if the clock is at :10 past the hour and the multiple is 15, then time will be updated to :15. If the time is equal to an even multple, the next multiple is selected.
+
+Upon completion, all fields are updated appropriately. For example:
+
+* time specifies the time_t of the new time at UTC
+
+* localTimeValue contains the broken-out values for the local time
+
+* isDST() return true if the new time is in daylight saving time
+
+---
+
+### void LocalTimeConvert::nextTime(LocalTimeHMS hms) 
+
+Moves the current time the next specified local time. This could be today or tomorrow.
+
+```
+void nextTime(LocalTimeHMS hms)
+```
+
+#### Parameters
+* `hms` Moves to the next occurrence of that time of day (local time)
+
+Upon completion, all fields are updated appropriately. For example:
+
+* time specifies the time_t of the new time at UTC
+
+* localTimeValue contains the broken-out values for the local time
+
+* isDST() return true if the new time is in daylight saving time
+
+---
+
 ### void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) 
 
 Changes the time of day to the specified hms in local time on the same local day.
@@ -508,6 +552,10 @@ Upon completion, all fields are updated appropriately. For example:
 
 
 ## Version history
+
+### 0.0.6 (2022-03-08)
+
+- Added nextMinuteMultiple() and nextTime() functions
 
 ### 0.0.5 (2021-07-08)
 

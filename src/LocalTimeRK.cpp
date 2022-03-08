@@ -408,6 +408,29 @@ void LocalTimeConvert::convert() {
 
 }
 
+void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple) {
+    time += minuteMultiple * 60;
+    convert();
+
+    localTimeValue.tm_min -= (localTimeValue.tm_min % minuteMultiple);
+    localTimeValue.tm_sec = 0;
+    time = localTimeValue.toUTC(config);
+    convert();
+}
+
+
+void LocalTimeConvert::nextTime(LocalTimeHMS hms) {
+    time_t origTime = time;
+
+    atLocalTime(hms);
+    if (time <= origTime) {
+        time += 86400;
+        convert();
+    }
+}
+
+
+
 void LocalTimeConvert::nextDay(LocalTimeHMS hms) {
     time += 86400;
     convert();
@@ -539,7 +562,7 @@ String LocalTimeConvert::format(const char* format_spec) {
     size_t len = strlen(format_str); // Flawfinder: ignore (ch42318)
 
     // while we are not using stdlib for managing the timezone, we have to do this manually
-    const char *time_zone_name = zoneName().c_str();
+    String zoneNameStr = zoneName();
 
     char time_zone_str[16];
     if (config.isZ()) {
@@ -564,9 +587,9 @@ String LocalTimeConvert::format(const char* format_spec) {
         else
         if (format_str[i]=='%' && format_str[i+1]=='Z')
         {
-            size_t tzlen = strlen(time_zone_name);
+            size_t tzlen = zoneNameStr.length();
             memcpy(format_str+i+tzlen, format_str+i+2, len-i-1);    // +1 include the 0 char
-            memcpy(format_str+i, time_zone_name, tzlen);
+            memcpy(format_str+i, zoneNameStr.c_str(), tzlen);
             len = strlen(format_str);
         }
     }

@@ -450,6 +450,35 @@ public:
      */
     bool isStandardTime() const { return !isDST(); };
 
+
+    /**
+     * @brief Moves the current time the next specified multiple of minutes
+     * 
+     * @param minuteMultiple Typically something like 5, 15, 20, 30 that 60 is evenly divisible by
+     * 
+     * Moves the time forward to the next multiple of that number of minutes. For example, if the 
+     * clock is at :10 past the hour and the multiple is 15, then time will be updated to :15. If
+     * the time is equal to an even multple, the next multiple is selected.
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
+    void nextMinuteMultiple(int minuteMultiple);
+
+    /**
+     * @brief Moves the current time the next specified local time. This could be today or tomorrow.
+     * 
+     * @param hms Moves to the next occurrence of that time of day (local time)
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
+    void nextTime(LocalTimeHMS hms);
+
     /**
      * @brief Moves the current time to the next day
      * 
