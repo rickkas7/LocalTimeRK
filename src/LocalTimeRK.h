@@ -4,6 +4,7 @@
 #include "Particle.h"
 
 #include <time.h>
+#include <initializer_list>
 
 /**
  * @brief Container for holding an hour minute second time value
@@ -480,6 +481,19 @@ public:
     void nextTime(LocalTimeHMS hms);
 
     /**
+     * @brief Moves the current time the closest local time om hmsList. This could be today or tomorrow.
+     * 
+     * @param hmsList An initialize list of LocalTimeHMS surrounded by {}
+     * 
+     * For example, this sets the time to the nearest noon or midnight local time greater than the time
+     * set in this object:
+     * 
+     * conv.nextTimeList({LocalTimeHMS("00:00"), LocalTimeHMS("12:00")});
+     */
+    void nextTimeList(std::initializer_list<LocalTimeHMS> hmsList);
+
+
+    /**
      * @brief Moves the current time to the next day
      * 
      * @param hms If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
@@ -659,6 +673,16 @@ public:
      * - isDST() return true if the new time is in daylight saving time
      */
     void atLocalTime(LocalTimeHMS hms);
+
+    /**
+     * @brief Returns true if the time in this object is within the time range in local time
+     * 
+     * @param minHMS Minimum hour minute second in local time
+     * @param maxHMS Maximum hour minute second in local time
+     * @return true If minHMS <= time < maxHMS (inclusive/exclusive)
+     * @return false If not in the time range
+     */
+    bool inLocalTimeRange(LocalTimeHMS minHMS, LocalTimeHMS maxHMS);
 
     /**
      * @brief Works like Time.timeStr() to generate a readable string of the local time

@@ -1,5 +1,7 @@
 #include "LocalTimeRK.h"
 
+#include <vector>
+
 LocalTime *LocalTime::_instance;
 
 LocalTimeHMS::LocalTimeHMS() {
@@ -418,6 +420,29 @@ void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple) {
     convert();
 }
 
+void LocalTimeConvert::nextTimeList(std::initializer_list<LocalTimeHMS> _hmsList) {
+    std::vector<LocalTimeHMS> hmsList = _hmsList;
+
+    time_t origTime = time;
+    time_t resultTime = origTime + 86400;
+
+    for(auto it = hmsList.begin(); it != hmsList.end(); ++it) {
+        LocalTimeHMS hms = *it;
+
+        nextTime(hms);
+        if (time > origTime && time < resultTime) {
+            resultTime = time;
+        }
+
+        // Restore original time
+        time = origTime;
+        convert();
+    }
+
+    time = resultTime;
+    convert();
+}
+
 
 void LocalTimeConvert::nextTime(LocalTimeHMS hms) {
     time_t origTime = time;
@@ -523,11 +548,12 @@ void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
     time_t origTime = time;
     localTimeValue.setHMS(hms);
     time = localTimeValue.toUTC(config);
+    convert();
+
     if (time <= origTime) {
         // Need to move to tomorrow
-        time += 86400;
+        nextDay(hms);
     }
-    convert();
 }
 
 
@@ -538,6 +564,22 @@ void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
         convert();
     }
 }
+
+bool LocalTimeConvert::inLocalTimeRange(LocalTimeHMS minHMS, LocalTimeHMS maxHMS) {
+    time_t origTime = time;
+
+    localTimeValue.setHMS(minHMS);
+    time_t minTime = localTimeValue.toUTC(config);
+
+    localTimeValue.setHMS(maxHMS);
+    time_t maxTime = localTimeValue.toUTC(config);
+
+    time = origTime;
+    convert();
+
+    return (minTime <= origTime) && (origTime < maxTime);
+}
+
 
 String LocalTimeConvert::timeStr() {
     char ascstr[26];

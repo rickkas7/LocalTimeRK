@@ -553,6 +553,10 @@ Upon completion, all fields are updated appropriately. For example:
 
 ## Version history
 
+### 0.0.7 (2022-03-08)
+
+- Added inLocalTimeRange and nextTimeList functions.
+
 ### 0.0.6 (2022-03-08)
 
 - Added nextMinuteMultiple() and nextTime() functions

@@ -771,7 +771,7 @@ void test1() {
 	conv.nextDayOfNextMonth(-1, LocalTimeHMS("05:00"));
 	assertTime("", conv.time, "tm_year=122 tm_mon=0 tm_mday=30 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0");	
 
-	// minuteMultiple tests
+	// nextMinuteMultiple tests
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 5 AM local time
 	conv.nextMinuteMultiple(5);
 	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=10 tm_min=15 tm_sec=0 tm_wday=6");	
@@ -804,6 +804,71 @@ void test1() {
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert();
 	conv.nextTime(LocalTimeHMS("05:00"));
 	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0");	
+
+	// nextTime spring forward time change
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-12 19:10:52")).convert(); // 1:10:52 AM EST
+	conv.nextTime(LocalTimeHMS("03:00")); // 3 AM EDT = 7:00 UTC (-0400)
+	assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=13 tm_hour=8 tm_min=0 tm_sec=0 tm_wday=0");	 // THIS IS WRONG! Should be hour 7!
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 19:10:52")).convert(); // 1:10:52 AM EST
+	conv.nextTime(LocalTimeHMS("04:00")); // 4 AM EDT = 8:00 UTC (-0400)
+	assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=14 tm_hour=8 tm_min=0 tm_sec=0 tm_wday=1");
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-12 19:10:52")).convert(); // 1:10:52 AM EST
+	conv.nextTime(LocalTimeHMS("02:00")); // 2 AM EDT - weird case because 2:00 doesn't really exist because of spring forward
+	assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=13 tm_hour=7 tm_min=0 tm_sec=0 tm_wday=0"); // is this logical?
+
+	// nextTimeList
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 5 AM local time
+	conv.nextTimeList({LocalTimeHMS("06:00")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 5 AM local time
+	conv.nextTimeList({LocalTimeHMS("04:00"), LocalTimeHMS("08:00")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 5 AM local time
+	conv.nextTimeList({LocalTimeHMS("03:00"), LocalTimeHMS("06:00")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 03:10:52")).convert(); // 10 PM local time
+	conv.nextTimeList({LocalTimeHMS("00:00"), LocalTimeHMS("12:00")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); //  local time
+	conv.nextTimeList({LocalTimeHMS("00:00"), LocalTimeHMS("12:00")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 03:10:52")).convert(); // 10 PM local time
+	conv.nextTimeList({LocalTimeHMS("00"), LocalTimeHMS("12")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); //  local time
+	conv.nextTimeList({LocalTimeHMS("00"), LocalTimeHMS("12")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=0 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 03:10:52")).convert(); // 10 PM local time
+	conv.nextTimeList({LocalTimeHMS("00:05"), LocalTimeHMS("12:05")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=5 tm_min=5 tm_sec=0 tm_wday=6");	
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); //  local time
+	conv.nextTimeList({LocalTimeHMS("00:15:30"), LocalTimeHMS("12:15:30")});
+	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=15 tm_sec=30 tm_wday=6");	
+
+	// inLocalTimeRange
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time EST
+	assert(conv.inLocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("06:00")));
+	assert(!conv.inLocalTimeRange(LocalTimeHMS("06:00"), LocalTimeHMS("07:00")));
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:00:00")).convert(); // 05:00:00 local time EST
+	assert(conv.inLocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("06:00")));
+
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 11:00:00")).convert(); // 6:00:00 local time EST
+	assert(!conv.inLocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("06:00")));
+
+	// Crossing day boundary
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 03:10:52")).convert(); // 22:10:52 local time EST
+	assert(conv.inLocalTimeRange(LocalTimeHMS("22:00"), LocalTimeHMS("23:00")));
 
 	// Local time formatting default format
 
