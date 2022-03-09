@@ -5,6 +5,8 @@
 
 #include <time.h>
 #include <initializer_list>
+#include <vector>
+
 
 /**
  * @brief Container for holding an hour minute second time value
@@ -89,6 +91,83 @@ public:
      * into the other fields as necessary.
      */
     void adjustTimeInfo(struct tm *pTimeInfo) const;
+
+    /**
+     * @brief Sets this object to be the specified hour, with minute and second set to 0
+     * 
+     * @param hour 0 <= hour < 24
+     * @return LocalTimeHMS& 
+     */
+    LocalTimeHMS &withHour(int hour) {
+        this->hour = hour;
+        this->minute = this->second = 0;
+        return *this;
+    }
+
+    /**
+     * @brief Sets this object to be the specified hour and minute, with second set to 0
+     * 
+     * @param hour 0 <= hour < 24
+     * @param minutes 0 <= minute < 60
+     * @return LocalTimeHMS& 
+     */
+    LocalTimeHMS &withHourMinute(int hour, int minute) {
+        this->hour = hour;
+        this->minute = minute;
+        this->second = 0;
+        return *this;
+    }
+
+    int compareTo(const LocalTimeHMS &other) const {
+        if (hour < other.hour) {
+            return -1;
+        }
+        else
+        if (hour > other.hour) {
+            return +1;
+        }
+        else {
+            if (minute < other.minute) {
+                return -1;
+            }
+            else 
+            if (minute > other.minute) {
+                return +1;
+            }
+            else {
+                if (second < other.second) {
+                    return -1;
+                }
+                else 
+                if (second > other.second) {
+                    return +1;
+                }
+                else { 
+                    return 0;
+                }
+            }
+        }
+    }
+
+    bool operator==(const LocalTimeHMS &other) const {
+        return compareTo(other) == 0;
+    }
+
+    bool operator<(const LocalTimeHMS &other) const {
+        return compareTo(other) < 0;
+    }
+
+    bool operator>(const LocalTimeHMS &other) const {
+        return compareTo(other) > 0;
+    }
+
+    bool operator<=(const LocalTimeHMS &other) const {
+        return compareTo(other) <= 0;
+    }
+
+    bool operator>=(const LocalTimeHMS &other) const {
+        return compareTo(other) >= 0;
+    }
 
     int8_t hour = 0;        //!< 0-23 hour (could also be negative)
     int8_t minute = 0;      //!< 0-59 minute
@@ -387,6 +466,8 @@ public:
 
 };
 
+
+
 /**
  * @brief Perform time conversions. This is the main class you will need.
  */
@@ -403,6 +484,114 @@ public:
         IN_STANDARD,     //!< This time is in standard saving time (southern hemisphere)
         AFTER_STANDARD,  //!< This time is after the end of standard time (southern hemisphere)
         NO_DST,          //!< This config does not use daylight saving
+    };
+
+    class TimeRange {
+    public: 
+        TimeRange() : hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")) {
+        }
+
+        TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
+        }
+
+        time_t getTimeSpan(const LocalTimeConvert &conv) const {
+            LocalTimeConvert convTemp;
+            
+            convTemp = conv;
+            convTemp.atLocalTime(hmsStart);
+            time_t start = convTemp.time;
+
+            convTemp = conv;
+            convTemp.atLocalTime(hmsStart);
+            time_t end = convTemp.time;
+
+            return end - start;
+        }
+
+        LocalTimeHMS hmsStart;
+        LocalTimeHMS hmsEnd;
+    };
+
+    class ScheduleItemMinuteMultiple {
+    public:
+        ScheduleItemMinuteMultiple() {
+        }
+
+        ScheduleItemMinuteMultiple(TimeRange timeRange, int minuteMultiple) : minuteMultiple(minuteMultiple), timeRange(timeRange) {                
+        }
+
+        bool isValid() const { return (minuteMultiple > 0); };
+
+        time_t getTimeSpan(const LocalTimeConvert &conv) const {
+            return timeRange.getTimeSpan(conv);
+        }
+
+        TimeRange timeRange;
+        int minuteMultiple = 0;
+    };
+
+
+    class Schedule {
+    public:
+        Schedule() {
+        }
+
+        Schedule &withMinuteMultiple(int minuteMultiple) {
+            return withMinuteMultiple(TimeRange(), minuteMultiple);
+        }
+
+        Schedule &withMinuteMultiple(TimeRange timeRange, int minuteMultiple) {
+            return withMinuteMultiple(ScheduleItemMinuteMultiple(timeRange, minuteMultiple));
+        }
+
+        Schedule &withMinuteMultiple(ScheduleItemMinuteMultiple item) {
+            minuteMultipleItems.push_back(item);
+            return *this;
+        }
+
+        Schedule &withTime(LocalTimeHMS hms) {
+            times.push_back(hms);
+            return *this;
+        }
+
+        Schedule &withTimes(std::initializer_list<LocalTimeHMS> timesParam) {
+            times.insert(times.end(), timesParam.begin(), timesParam.end());
+            return *this;
+        }
+
+        Schedule &withHours(std::initializer_list<int> hoursParam, int atMinute) {
+            std::vector<int> hours = hoursParam;
+            for(auto it = hours.begin(); it != hours.end(); ++it) {
+                int hour = *it;
+
+                LocalTimeHMS hms;
+                hms.withHourMinute(hour, atMinute);
+                times.push_back(hms);
+            }
+            return *this;
+        }
+
+        Schedule &withHourMultiple(TimeRange timeRange, int hourMultiple) {
+
+            for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
+                times.push_back(hms);
+            }
+            
+            return *this;
+        }
+
+        Schedule &withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd = 23) {
+            for(int hour = hourStart; hour <= hourEnd; hour += hourMultiple) {
+                LocalTimeHMS hms;
+                hms.withHourMinute(hour, atMinute);
+                times.push_back(hms);
+            }
+            return *this;
+        }
+
+
+        std::vector<ScheduleItemMinuteMultiple> minuteMultipleItems;
+        std::vector<LocalTimeHMS> times;
     };
 
     /**
@@ -451,6 +640,12 @@ public:
      */
     bool isStandardTime() const { return !isDST(); };
 
+    /**
+     * @brief Adds a number of seconds to the current object
+     * 
+     * @param seconds 
+     */
+    void addSeconds(int seconds);
 
     /**
      * @brief Moves the current time the next specified multiple of minutes
@@ -654,6 +849,13 @@ public:
     void nextLocalTime(LocalTimeHMS hms);
 
     /**
+     * @brief Sets the time to the nearest scheduled time in the future base on the schedule
+     * 
+     * @param schedule 
+     */
+    bool nextSchedule(const Schedule &schedule);
+
+    /**
      * @brief Changes the time of day to the specified hms in local time on the same local day
      * 
      * @param hms A LocalTimeHMS object with hour, minute, and second
@@ -675,14 +877,23 @@ public:
     void atLocalTime(LocalTimeHMS hms);
 
     /**
-     * @brief Returns true if the time in this object is within the time range in local time
+     * @brief Returns true if this object time is in the specified time range in local time
      * 
-     * @param minHMS Minimum hour minute second in local time
-     * @param maxHMS Maximum hour minute second in local time
-     * @return true If minHMS <= time < maxHMS (inclusive/exclusive)
-     * @return false If not in the time range
+     * @param localTimeRange time in this object is: start <= time <= end (inclusive)
+     * @return true 
+     * @return false 
      */
-    bool inLocalTimeRange(LocalTimeHMS minHMS, LocalTimeHMS maxHMS);
+    bool inLocalTimeRange(TimeRange localTimeRange);
+
+
+    /**
+     * @brief Returns true if this object time before the specified time range in local time
+     * 
+     * @param localTimeRange time in this object is: time < start (exclusive)
+     * @return true 
+     * @return false 
+     */    
+    bool beforeLocalTimeRange(TimeRange localTimeRange);
 
     /**
      * @brief Works like Time.timeStr() to generate a readable string of the local time

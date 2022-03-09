@@ -1,7 +1,5 @@
 #include "LocalTimeRK.h"
 
-#include <vector>
-
 LocalTime *LocalTime::_instance;
 
 LocalTimeHMS::LocalTimeHMS() {
@@ -409,6 +407,10 @@ void LocalTimeConvert::convert() {
     }
 
 }
+void LocalTimeConvert::addSeconds(int seconds) {
+    time += seconds;
+    convert();
+}
 
 void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple) {
     time += minuteMultiple * 60;
@@ -556,6 +558,96 @@ void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
     }
 }
 
+bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
+    time_t origTime = time;
+
+    for(int tries = 0; tries < 2; tries++) {
+        // Check the minute multiples
+        ScheduleItemMinuteMultiple foundItem;
+        time_t smallestTimeSpan = 86400;
+
+        time_t closestTime = 0;
+
+
+        for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
+            ScheduleItemMinuteMultiple item = *it;
+            if (inLocalTimeRange(item.timeRange)) {
+                // This minute multiple applies
+                time_t timeSpan = item.getTimeSpan(*this);
+                if (timeSpan < smallestTimeSpan) {
+                    foundItem = item;
+                    smallestTimeSpan = timeSpan;
+                    printf("found minute multiple\n");
+                }
+            }
+        }
+
+        if (foundItem.isValid()) {
+            printf("found a time range minuteMultiple=%d smallestTime=%d\n", foundItem.minuteMultiple, (int)smallestTimeSpan);
+            LocalTimeConvert tmpConvert(*this);
+            tmpConvert.nextMinuteMultiple(foundItem.minuteMultiple);
+            if (closestTime == 0 || tmpConvert.time < closestTime) {
+                printf("using this time\n");
+                closestTime = tmpConvert.time;
+            }
+        } 
+        else {
+            printf("not in time range\n");
+
+            // Not in a time range. Is there a time range after the current time?
+            for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
+                ScheduleItemMinuteMultiple item = *it;
+                LocalTimeConvert tmpConvert(*this);
+                tmpConvert.atLocalTime(item.timeRange.hmsStart);
+                if (time < tmpConvert.time) {
+                    time_t timeSpan = (tmpConvert.time - time);
+                    if (timeSpan < smallestTimeSpan) {
+                        printf("found time before item\n");
+                        foundItem = item;
+                        smallestTimeSpan = timeSpan;
+                    }
+                }
+            }
+            if (foundItem.isValid()) {
+                LocalTimeConvert tmpConvert(*this);
+                tmpConvert.atLocalTime(foundItem.timeRange.hmsStart);
+                if (closestTime == 0 || tmpConvert.time < closestTime) {
+                    printf("using time before time\n");
+                    closestTime = tmpConvert.time;
+                }
+            } 
+        }
+
+        // Check the times
+        for(auto it = schedule.times.begin(); it != schedule.times.end(); ++it) {
+            LocalTimeHMS tmpHMS = *it;
+
+            LocalTimeConvert tmpConvert(*this);
+            tmpConvert.nextTime(tmpHMS);
+            if (closestTime == 0 || tmpConvert.time < closestTime) {
+                closestTime = tmpConvert.time;
+            }        
+        }
+
+        if (closestTime != 0) {
+            printf("updated time tries=%d\n", tries);
+            time = closestTime;
+            convert();
+            return true;
+        }
+
+        printf("trying next day\n");
+
+        // Try times in the next day starting at midnight
+        nextDay(LocalTimeHMS("00:00:00"));
+    }
+
+    time = origTime;
+    convert();
+
+    return false;
+}
+
 
 void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
     if (!hms.ignore) {
@@ -565,19 +657,31 @@ void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
     }
 }
 
-bool LocalTimeConvert::inLocalTimeRange(LocalTimeHMS minHMS, LocalTimeHMS maxHMS) {
+bool LocalTimeConvert::inLocalTimeRange(TimeRange localTimeRange) {
     time_t origTime = time;
 
-    localTimeValue.setHMS(minHMS);
+    localTimeValue.setHMS(localTimeRange.hmsStart);
     time_t minTime = localTimeValue.toUTC(config);
 
-    localTimeValue.setHMS(maxHMS);
+    localTimeValue.setHMS(localTimeRange.hmsEnd);
     time_t maxTime = localTimeValue.toUTC(config);
 
     time = origTime;
     convert();
 
-    return (minTime <= origTime) && (origTime < maxTime);
+    return (minTime <= origTime) && (origTime <= maxTime);
+}
+
+bool LocalTimeConvert::beforeLocalTimeRange(TimeRange localTimeRange) {
+    time_t origTime = time;
+
+    localTimeValue.setHMS(localTimeRange.hmsStart);
+    time_t minTime = localTimeValue.toUTC(config);
+
+    time = origTime;
+    convert();
+
+    return (origTime < minTime);
 }
 
 
