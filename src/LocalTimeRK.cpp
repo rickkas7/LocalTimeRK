@@ -345,7 +345,6 @@ int LocalTimeValue::ordinal() const {
 void LocalTimeConvert::convert() {
     if (!config.isValid()) {
         config = LocalTime::instance().getConfig();
-        //printf("get global config dstName=%s hasDST=%d\n", config.dstName.c_str(), config.hasDST());
     }
 
     if (config.hasDST()) {
@@ -412,15 +411,21 @@ void LocalTimeConvert::addSeconds(int seconds) {
     convert();
 }
 
-void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple) {
+void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple, int startingModulo) {
     time += minuteMultiple * 60;
-    convert();
 
-    localTimeValue.tm_min -= (localTimeValue.tm_min % minuteMultiple);
-    localTimeValue.tm_sec = 0;
-    time = localTimeValue.toUTC(config);
+    struct tm timeInfo;
+
+    LocalTime::timeToTm(time, &timeInfo);
+
+    timeInfo.tm_min -= ((timeInfo.tm_min - startingModulo) % minuteMultiple);
+    timeInfo.tm_sec = 0;
+
+    time = LocalTime::tmToTime(&timeInfo);
+
     convert();
 }
+
 
 void LocalTimeConvert::nextTimeList(std::initializer_list<LocalTimeHMS> _hmsList) {
     std::vector<LocalTimeHMS> hmsList = _hmsList;
@@ -564,7 +569,9 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
     for(int tries = 0; tries < 2; tries++) {
         // Check the minute multiples
         ScheduleItemMinuteMultiple foundItem;
-        time_t smallestTimeSpan = 86400;
+
+        // 86400 + 3600 for fall back on time change = 90000, plus some extra
+        time_t smallestTimeSpan = 100000; 
 
         time_t closestTime = 0;
 
@@ -574,26 +581,23 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
             if (inLocalTimeRange(item.timeRange)) {
                 // This minute multiple applies
                 time_t timeSpan = item.getTimeSpan(*this);
+                //printf("found minute multiple timeSpan=%d\n", (int)timeSpan);
                 if (timeSpan < smallestTimeSpan) {
                     foundItem = item;
                     smallestTimeSpan = timeSpan;
-                    printf("found minute multiple\n");
                 }
             }
         }
 
         if (foundItem.isValid()) {
-            printf("found a time range minuteMultiple=%d smallestTime=%d\n", foundItem.minuteMultiple, (int)smallestTimeSpan);
             LocalTimeConvert tmpConvert(*this);
-            tmpConvert.nextMinuteMultiple(foundItem.minuteMultiple);
+            tmpConvert.nextMinuteMultiple(foundItem.minuteMultiple, foundItem.timeRange.hmsStart.minute % foundItem.minuteMultiple);
+            //printf("converting with multiple %d was %d now %d\n", foundItem.minuteMultiple, (int)origTime, (int)tmpConvert.time);
             if (closestTime == 0 || tmpConvert.time < closestTime) {
-                printf("using this time\n");
                 closestTime = tmpConvert.time;
             }
         } 
         else {
-            printf("not in time range\n");
-
             // Not in a time range. Is there a time range after the current time?
             for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
                 ScheduleItemMinuteMultiple item = *it;
@@ -602,7 +606,6 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
                 if (time < tmpConvert.time) {
                     time_t timeSpan = (tmpConvert.time - time);
                     if (timeSpan < smallestTimeSpan) {
-                        printf("found time before item\n");
                         foundItem = item;
                         smallestTimeSpan = timeSpan;
                     }
@@ -612,7 +615,6 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
                 LocalTimeConvert tmpConvert(*this);
                 tmpConvert.atLocalTime(foundItem.timeRange.hmsStart);
                 if (closestTime == 0 || tmpConvert.time < closestTime) {
-                    printf("using time before time\n");
                     closestTime = tmpConvert.time;
                 }
             } 
@@ -630,13 +632,10 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
         }
 
         if (closestTime != 0) {
-            printf("updated time tries=%d\n", tries);
             time = closestTime;
             convert();
             return true;
         }
-
-        printf("trying next day\n");
 
         // Try times in the next day starting at midnight
         nextDay(LocalTimeHMS("00:00:00"));

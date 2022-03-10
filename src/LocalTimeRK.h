@@ -486,38 +486,84 @@ public:
         NO_DST,          //!< This config does not use daylight saving
     };
 
+    /**
+     * @brief Class to hold a time range in local time in HH:MM:SS format
+     */
     class TimeRange {
     public: 
+        /**
+         * @brief Construct a new Time Range object with the range of the entire day (inclusive) 
+         * 
+         * This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.
+         */
         TimeRange() : hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")) {
         }
 
+        /**
+         * @brief Construct a new Time Range object with the specifies start and end times.
+         * 
+         * @param hmsStart Start time in local time 00:00:00 <= hmsStart <= 23:59:59
+         * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59
+
+         * Note that 24:00:00 is not a valid time. You should generally use inclusive times such that
+         * 23:59:59 is the end of the day.
+         * 
+         */
         TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
         }
 
+        /**
+         * @brief Get the number of seconds between start and end based on a LocalTimeConvert object
+         * 
+         * The reason for the conv object is that it contains the time to calculate at, as well as 
+         * the daylight saving time settings. This methods takes into account the actual number of
+         * seconds including when a time change is crossed.
+         * 
+         * @param conv The time and timezone settings to calculate the time span at
+         * @return time_t Time difference in seconds
+         * 
+         * In the weird case that start > end, it can return a negative value, as time_t is a signed
+         * long (or long long) value.
+         */
         time_t getTimeSpan(const LocalTimeConvert &conv) const {
-            LocalTimeConvert convTemp;
             
-            convTemp = conv;
-            convTemp.atLocalTime(hmsStart);
-            time_t start = convTemp.time;
+            LocalTimeConvert convStart(conv);
+            convStart.atLocalTime(hmsStart);
 
-            convTemp = conv;
-            convTemp.atLocalTime(hmsStart);
-            time_t end = convTemp.time;
+            LocalTimeConvert convEnd(conv);
+            convEnd.atLocalTime(hmsEnd);
 
-            return end - start;
+            return convEnd.time - convStart.time;
         }
 
-        LocalTimeHMS hmsStart;
-        LocalTimeHMS hmsEnd;
+        LocalTimeHMS hmsStart; //!< Starting time, inclusive
+        LocalTimeHMS hmsEnd; //!< Ending time, inclusive
     };
 
+    /**
+     * @brief Schedule option for "every n minutes"
+     */
     class ScheduleItemMinuteMultiple {
     public:
+        /**
+         * @brief Default constructor. Set minuteMultiple and optionally timeRange to use.
+         */
         ScheduleItemMinuteMultiple() {
         }
 
-        ScheduleItemMinuteMultiple(TimeRange timeRange, int minuteMultiple) : minuteMultiple(minuteMultiple), timeRange(timeRange) {                
+        /**
+         * @brief Construct an item with a time range and number of minutes
+         * 
+         * @param minuteMultiple Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+         * @param timeRange When to apply this minute multiple (optional)
+         * 
+         * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
+         * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
+         * an inconsistent period at the top of the hour.
+         * 
+         * If you do not specify a time range, the entire day is the range.
+         */
+        ScheduleItemMinuteMultiple(int minuteMultiple, TimeRange timeRange = TimeRange()) : timeRange(timeRange), minuteMultiple(minuteMultiple) {                
         }
 
         bool isValid() const { return (minuteMultiple > 0); };
@@ -537,11 +583,11 @@ public:
         }
 
         Schedule &withMinuteMultiple(int minuteMultiple) {
-            return withMinuteMultiple(TimeRange(), minuteMultiple);
+            return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, TimeRange()));
         }
 
-        Schedule &withMinuteMultiple(TimeRange timeRange, int minuteMultiple) {
-            return withMinuteMultiple(ScheduleItemMinuteMultiple(timeRange, minuteMultiple));
+        Schedule &withMinuteMultiple(int minuteMultiple, TimeRange timeRange) {
+            return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, timeRange));
         }
 
         Schedule &withMinuteMultiple(ScheduleItemMinuteMultiple item) {
@@ -550,6 +596,8 @@ public:
         }
 
         Schedule &withTime(LocalTimeHMS hms) {
+
+
             times.push_back(hms);
             return *this;
         }
@@ -571,12 +619,12 @@ public:
             return *this;
         }
 
-        Schedule &withHourMultiple(TimeRange timeRange, int hourMultiple) {
+        Schedule &withHourMultiple(int hourMultiple, TimeRange timeRange) {
 
             for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
                 times.push_back(hms);
             }
-            
+
             return *this;
         }
 
@@ -652,6 +700,8 @@ public:
      * 
      * @param minuteMultiple Typically something like 5, 15, 20, 30 that 60 is evenly divisible by
      * 
+     * @param startingModulo (optional). If present, must be 0 < startingModulo < minuteMultiple
+     * 
      * Moves the time forward to the next multiple of that number of minutes. For example, if the 
      * clock is at :10 past the hour and the multiple is 15, then time will be updated to :15. If
      * the time is equal to an even multple, the next multiple is selected.
@@ -661,7 +711,7 @@ public:
      * - localTimeValue contains the broken-out values for the local time
      * - isDST() return true if the new time is in daylight saving time
      */
-    void nextMinuteMultiple(int minuteMultiple);
+    void nextMinuteMultiple(int minuteMultiple, int startingModulo = 0);
 
     /**
      * @brief Moves the current time the next specified local time. This could be today or tomorrow.
