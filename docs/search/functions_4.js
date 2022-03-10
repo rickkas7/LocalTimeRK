@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['getconfig_0',['getConfig',['../class_local_time.html#aac1a18a1a08a202a64edb04d74fd099b',1,'LocalTime']]],
-  ['gettmstring_1',['getTmString',['../class_local_time.html#a0f1cbbdcc06a9f257ea0fb7de7129f1a',1,'LocalTime']]]
+  ['format_0',['format',['../class_local_time_convert.html#a5a2f655ab7976cba45e68c6789f4a865',1,'LocalTimeConvert']]],
+  ['fromstring_1',['fromString',['../class_local_time_value.html#a65165eedf245c998c6533d4e18de2799',1,'LocalTimeValue']]],
+  ['fromtimeinfo_2',['fromTimeInfo',['../class_local_time_h_m_s.html#af092e9cd92de2c68ff43944384147683',1,'LocalTimeHMS']]]
 ];

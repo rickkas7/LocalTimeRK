@@ -63,6 +63,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Data Fields</a>  </div>
@@ -75,6 +76,18 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="_local_time_r_k_8h_source.html">LocalTimeRK.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert_1_1_schedule.html">Schedule</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A complete time schedule.  <a href="class_local_time_convert_1_1_schedule.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert_1_1_schedule_item_minute_multiple.html">ScheduleItemMinuteMultiple</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="class_local_time_convert_1_1_schedule.html" title="A complete time schedule.">Schedule</a> option for "every n minutes".  <a href="class_local_time_convert_1_1_schedule_item_minute_multiple.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert_1_1_time_range.html">TimeRange</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Class to hold a time range in local time in HH:MM:SS format.  <a href="class_local_time_convert_1_1_time_range.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a0fab4e36297d6df37510528618871323"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a0fab4e36297d6df37510528618871323">Position</a> { <br />
@@ -113,12 +126,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isDST</b> () const</t
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isStandardTime</b> () const</td></tr>
 <tr class="memdesc:a7bdf2c3014396b47588130a6f7ef600a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true of the current time in in standard time. <br /></td></tr>
 <tr class="separator:a7bdf2c3014396b47588130a6f7ef600a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0dafe808c4edb94002e34e97ddf932aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a0dafe808c4edb94002e34e97ddf932aa">nextMinuteMultiple</a> (int minuteMultiple)</td></tr>
-<tr class="memdesc:a0dafe808c4edb94002e34e97ddf932aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current time the next specified multiple of minutes.  <a href="class_local_time_convert.html#a0dafe808c4edb94002e34e97ddf932aa">More...</a><br /></td></tr>
-<tr class="separator:a0dafe808c4edb94002e34e97ddf932aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e34937b251049cf8226eefac1b02e06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a1e34937b251049cf8226eefac1b02e06">addSeconds</a> (int seconds)</td></tr>
+<tr class="memdesc:a1e34937b251049cf8226eefac1b02e06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a number of seconds to the current object.  <a href="class_local_time_convert.html#a1e34937b251049cf8226eefac1b02e06">More...</a><br /></td></tr>
+<tr class="separator:a1e34937b251049cf8226eefac1b02e06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6bd2bd70d05a4f34d759429857696c83"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a6bd2bd70d05a4f34d759429857696c83">nextMinuteMultiple</a> (int minuteMultiple, int startingModulo=0)</td></tr>
+<tr class="memdesc:a6bd2bd70d05a4f34d759429857696c83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current time the next specified multiple of minutes.  <a href="class_local_time_convert.html#a6bd2bd70d05a4f34d759429857696c83">More...</a><br /></td></tr>
+<tr class="separator:a6bd2bd70d05a4f34d759429857696c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7dfc8d361db16ac2ffdd9f6f13a760a9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a7dfc8d361db16ac2ffdd9f6f13a760a9">nextTime</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms)</td></tr>
 <tr class="memdesc:a7dfc8d361db16ac2ffdd9f6f13a760a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current time the next specified local time. This could be today or tomorrow.  <a href="class_local_time_convert.html#a7dfc8d361db16ac2ffdd9f6f13a760a9">More...</a><br /></td></tr>
 <tr class="separator:a7dfc8d361db16ac2ffdd9f6f13a760a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73426cfb0de6cd90c8c6d398cda98897"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a73426cfb0de6cd90c8c6d398cda98897">nextTimeList</a> (std::initializer_list&lt; <a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> &gt; hmsList)</td></tr>
+<tr class="memdesc:a73426cfb0de6cd90c8c6d398cda98897"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current time the closest local time om hmsList. This could be today or tomorrow.  <a href="class_local_time_convert.html#a73426cfb0de6cd90c8c6d398cda98897">More...</a><br /></td></tr>
+<tr class="separator:a73426cfb0de6cd90c8c6d398cda98897"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aedfdeeee56bcaff38c2871497d5b360b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#aedfdeeee56bcaff38c2871497d5b360b">nextDay</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms=<a class="el" href="class_local_time_ignore_h_m_s.html">LocalTimeIgnoreHMS</a>())</td></tr>
 <tr class="memdesc:aedfdeeee56bcaff38c2871497d5b360b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Moves the current time to the next day.  <a href="class_local_time_convert.html#aedfdeeee56bcaff38c2871497d5b360b">More...</a><br /></td></tr>
 <tr class="separator:aedfdeeee56bcaff38c2871497d5b360b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -146,9 +165,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isStandardTime</b> ()
 <tr class="memitem:a4e9bb0cbfa1a7a6d534ce46b8538fb49"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a4e9bb0cbfa1a7a6d534ce46b8538fb49">nextLocalTime</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms)</td></tr>
 <tr class="memdesc:a4e9bb0cbfa1a7a6d534ce46b8538fb49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the time to the nearest hms in local time in the future.  <a href="class_local_time_convert.html#a4e9bb0cbfa1a7a6d534ce46b8538fb49">More...</a><br /></td></tr>
 <tr class="separator:a4e9bb0cbfa1a7a6d534ce46b8538fb49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1432c26300e3646e0094b537e1f2167a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a1432c26300e3646e0094b537e1f2167a">nextSchedule</a> (const <a class="el" href="class_local_time_convert_1_1_schedule.html">Schedule</a> &amp;schedule)</td></tr>
+<tr class="memdesc:a1432c26300e3646e0094b537e1f2167a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the time to the nearest scheduled time in the future base on the schedule.  <a href="class_local_time_convert.html#a1432c26300e3646e0094b537e1f2167a">More...</a><br /></td></tr>
+<tr class="separator:a1432c26300e3646e0094b537e1f2167a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae8cafda02231440f7291474a138b39be"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#ae8cafda02231440f7291474a138b39be">atLocalTime</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms)</td></tr>
 <tr class="memdesc:ae8cafda02231440f7291474a138b39be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Changes the time of day to the specified hms in local time on the same local day.  <a href="class_local_time_convert.html#ae8cafda02231440f7291474a138b39be">More...</a><br /></td></tr>
 <tr class="separator:ae8cafda02231440f7291474a138b39be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a2521b1f7e4894aea35b95f31c16840"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a6a2521b1f7e4894aea35b95f31c16840">inLocalTimeRange</a> (<a class="el" href="class_local_time_convert_1_1_time_range.html">TimeRange</a> localTimeRange)</td></tr>
+<tr class="memdesc:a6a2521b1f7e4894aea35b95f31c16840"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if this object time is in the specified time range in local time.  <a href="class_local_time_convert.html#a6a2521b1f7e4894aea35b95f31c16840">More...</a><br /></td></tr>
+<tr class="separator:a6a2521b1f7e4894aea35b95f31c16840"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d29e242abfc1a9ea41df8e8cddedd71"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a2d29e242abfc1a9ea41df8e8cddedd71">beforeLocalTimeRange</a> (<a class="el" href="class_local_time_convert_1_1_time_range.html">TimeRange</a> localTimeRange)</td></tr>
+<tr class="memdesc:a2d29e242abfc1a9ea41df8e8cddedd71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if this object time before the specified time range in local time.  <a href="class_local_time_convert.html#a2d29e242abfc1a9ea41df8e8cddedd71">More...</a><br /></td></tr>
+<tr class="separator:a2d29e242abfc1a9ea41df8e8cddedd71"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a16bd3ae86b62eae075e069c6ec3e33"><td class="memItemLeft" align="right" valign="top">String&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a5a16bd3ae86b62eae075e069c6ec3e33">timeStr</a> ()</td></tr>
 <tr class="memdesc:a5a16bd3ae86b62eae075e069c6ec3e33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Works like Time.timeStr() to generate a readable string of the local time.  <a href="class_local_time_convert.html#a5a16bd3ae86b62eae075e069c6ec3e33">More...</a><br /></td></tr>
 <tr class="separator:a5a16bd3ae86b62eae075e069c6ec3e33"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -237,6 +265,32 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a1e34937b251049cf8226eefac1b02e06" name="a1e34937b251049cf8226eefac1b02e06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1e34937b251049cf8226eefac1b02e06">&#9670;&nbsp;</a></span>addSeconds()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void LocalTimeConvert::addSeconds </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>seconds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Adds a number of seconds to the current object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">seconds</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="ae8cafda02231440f7291474a138b39be" name="ae8cafda02231440f7291474a138b39be"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae8cafda02231440f7291474a138b39be">&#9670;&nbsp;</a></span>atLocalTime()</h2>
 
@@ -268,6 +322,35 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 <li>localTimeValue contains the broken-out values for the local time</li>
 <li><a class="el" href="class_local_time_convert.html#ad831b90ec679c969f785c46544297c80" title="Returns true if the current time is in daylight saving time.">isDST()</a> return true if the new time is in daylight saving time </li>
 </ul>
+
+</div>
+</div>
+<a id="a2d29e242abfc1a9ea41df8e8cddedd71" name="a2d29e242abfc1a9ea41df8e8cddedd71"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d29e242abfc1a9ea41df8e8cddedd71">&#9670;&nbsp;</a></span>beforeLocalTimeRange()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool LocalTimeConvert::beforeLocalTimeRange </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="class_local_time_convert_1_1_time_range.html">TimeRange</a>&#160;</td>
+          <td class="paramname"><em>localTimeRange</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if this object time before the specified time range in local time. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">localTimeRange</td><td>time in this object is: time &lt; start (exclusive) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true </dd>
+<dd>
+false </dd></dl>
 
 </div>
 </div>
@@ -322,6 +405,35 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 <p >There are many options to strftime described here: <a href="https://www.cplusplus.com/reference/ctime/strftime/?kw=strftime">https://www.cplusplus.com/reference/ctime/strftime/?kw=strftime</a></p>
 <p >Unlike Time.format(), you can use Z to output the timezone abbreviation, for example "EDT" for the Eastern United States, daylight saving instead of -04:00.</p>
 <p >The z formatting matches that of Time.format(), which is wrong. The correct output should be "-400" but the output will be "-04:00" for compatibility. </p>
+
+</div>
+</div>
+<a id="a6a2521b1f7e4894aea35b95f31c16840" name="a6a2521b1f7e4894aea35b95f31c16840"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a2521b1f7e4894aea35b95f31c16840">&#9670;&nbsp;</a></span>inLocalTimeRange()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool LocalTimeConvert::inLocalTimeRange </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="class_local_time_convert_1_1_time_range.html">TimeRange</a>&#160;</td>
+          <td class="paramname"><em>localTimeRange</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns true if this object time is in the specified time range in local time. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">localTimeRange</td><td>time in this object is: start &lt;= time &lt;= end (inclusive) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true </dd>
+<dd>
+false </dd></dl>
 
 </div>
 </div>
@@ -603,8 +715,8 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 
 </div>
 </div>
-<a id="a0dafe808c4edb94002e34e97ddf932aa" name="a0dafe808c4edb94002e34e97ddf932aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0dafe808c4edb94002e34e97ddf932aa">&#9670;&nbsp;</a></span>nextMinuteMultiple()</h2>
+<a id="a6bd2bd70d05a4f34d759429857696c83" name="a6bd2bd70d05a4f34d759429857696c83"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6bd2bd70d05a4f34d759429857696c83">&#9670;&nbsp;</a></span>nextMinuteMultiple()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -613,8 +725,18 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
           <td class="memname">void LocalTimeConvert::nextMinuteMultiple </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>minuteMultiple</em></td><td>)</td>
+          <td class="paramname"><em>minuteMultiple</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>startingModulo</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -623,6 +745,7 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">minuteMultiple</td><td>Typically something like 5, 15, 20, 30 that 60 is evenly divisible by</td></tr>
+    <tr><td class="paramname">startingModulo</td><td>(optional). If present, must be 0 &lt; startingModulo &lt; minuteMultiple</td></tr>
   </table>
   </dd>
 </dl>
@@ -632,6 +755,32 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 <li>localTimeValue contains the broken-out values for the local time</li>
 <li><a class="el" href="class_local_time_convert.html#ad831b90ec679c969f785c46544297c80" title="Returns true if the current time is in daylight saving time.">isDST()</a> return true if the new time is in daylight saving time </li>
 </ul>
+
+</div>
+</div>
+<a id="a1432c26300e3646e0094b537e1f2167a" name="a1432c26300e3646e0094b537e1f2167a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1432c26300e3646e0094b537e1f2167a">&#9670;&nbsp;</a></span>nextSchedule()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool LocalTimeConvert::nextSchedule </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_local_time_convert_1_1_schedule.html">Schedule</a> &amp;&#160;</td>
+          <td class="paramname"><em>schedule</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the time to the nearest scheduled time in the future base on the schedule. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">schedule</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -663,6 +812,34 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 <li>localTimeValue contains the broken-out values for the local time</li>
 <li><a class="el" href="class_local_time_convert.html#ad831b90ec679c969f785c46544297c80" title="Returns true if the current time is in daylight saving time.">isDST()</a> return true if the new time is in daylight saving time </li>
 </ul>
+
+</div>
+</div>
+<a id="a73426cfb0de6cd90c8c6d398cda98897" name="a73426cfb0de6cd90c8c6d398cda98897"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a73426cfb0de6cd90c8c6d398cda98897">&#9670;&nbsp;</a></span>nextTimeList()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void LocalTimeConvert::nextTimeList </td>
+          <td>(</td>
+          <td class="paramtype">std::initializer_list&lt; <a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> &gt;&#160;</td>
+          <td class="paramname"><em>hmsList</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Moves the current time the closest local time om hmsList. This could be today or tomorrow. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">hmsList</td><td>An initialize list of <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> surrounded by {}</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>For example, this sets the time to the nearest noon or midnight local time greater than the time set in this object:</p>
+<p >conv.nextTimeList({<a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("00:00"), <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("12:00")}); </p>
 
 </div>
 </div>

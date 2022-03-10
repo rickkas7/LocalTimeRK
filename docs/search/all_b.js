@@ -7,9 +7,11 @@ var searchData=
   ['nextdayofweekordinal_4',['nextDayOfWeekOrdinal',['../class_local_time_convert.html#a9304dc205a47ed02e1ca22a4efdeeb7e',1,'LocalTimeConvert']]],
   ['nextdayortimechange_5',['nextDayOrTimeChange',['../class_local_time_convert.html#aee82015fe73bb364bcf6d3531b7d7c3e',1,'LocalTimeConvert']]],
   ['nextlocaltime_6',['nextLocalTime',['../class_local_time_convert.html#a4e9bb0cbfa1a7a6d534ce46b8538fb49',1,'LocalTimeConvert']]],
-  ['nextminutemultiple_7',['nextMinuteMultiple',['../class_local_time_convert.html#a0dafe808c4edb94002e34e97ddf932aa',1,'LocalTimeConvert']]],
-  ['nexttime_8',['nextTime',['../class_local_time_convert.html#a7dfc8d361db16ac2ffdd9f6f13a760a9',1,'LocalTimeConvert']]],
-  ['nextweekday_9',['nextWeekday',['../class_local_time_convert.html#a0ecb451348dac5a3750f8b190d940b2b',1,'LocalTimeConvert']]],
-  ['nextweekendday_10',['nextWeekendDay',['../class_local_time_convert.html#ab0f745a236128b7c6836329804651dc8',1,'LocalTimeConvert']]],
-  ['no_5fdst_11',['NO_DST',['../class_local_time_convert.html#a0fab4e36297d6df37510528618871323afb5c5a74be4d443c3e82b066de7fc2b0',1,'LocalTimeConvert']]]
+  ['nextminutemultiple_7',['nextMinuteMultiple',['../class_local_time_convert.html#a6bd2bd70d05a4f34d759429857696c83',1,'LocalTimeConvert']]],
+  ['nextschedule_8',['nextSchedule',['../class_local_time_convert.html#a1432c26300e3646e0094b537e1f2167a',1,'LocalTimeConvert']]],
+  ['nexttime_9',['nextTime',['../class_local_time_convert.html#a7dfc8d361db16ac2ffdd9f6f13a760a9',1,'LocalTimeConvert']]],
+  ['nexttimelist_10',['nextTimeList',['../class_local_time_convert.html#a73426cfb0de6cd90c8c6d398cda98897',1,'LocalTimeConvert']]],
+  ['nextweekday_11',['nextWeekday',['../class_local_time_convert.html#a0ecb451348dac5a3750f8b190d940b2b',1,'LocalTimeConvert']]],
+  ['nextweekendday_12',['nextWeekendDay',['../class_local_time_convert.html#ab0f745a236128b7c6836329804651dc8',1,'LocalTimeConvert']]],
+  ['no_5fdst_13',['NO_DST',['../class_local_time_convert.html#a0fab4e36297d6df37510528618871323afb5c5a74be4d443c3e82b066de7fc2b0',1,'LocalTimeConvert']]]
 ];

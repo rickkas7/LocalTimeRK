@@ -108,7 +108,7 @@ public:
      * @brief Sets this object to be the specified hour and minute, with second set to 0
      * 
      * @param hour 0 <= hour < 24
-     * @param minutes 0 <= minute < 60
+     * @param minute 0 <= minute < 60
      * @return LocalTimeHMS& 
      */
     LocalTimeHMS &withHourMinute(int hour, int minute) {
@@ -118,6 +118,12 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Compare two LocalTimeHMS objects
+     * 
+     * @param other The item to compare to
+     * @return int -1 if this item is < other; 0 if this = other, or +1 if this > other
+     */
     int compareTo(const LocalTimeHMS &other) const {
         if (hour < other.hour) {
             return -1;
@@ -149,22 +155,68 @@ public:
         }
     }
 
+    /**
+     * @brief Returns true if this item is equal to other. Compares hour, minute, and second.
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator==(const LocalTimeHMS &other) const {
         return compareTo(other) == 0;
     }
 
+    /**
+     * @brief Returns true if this item is not equal to other.
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
+    bool operator!=(const LocalTimeHMS &other) const {
+        return compareTo(other) != 0;
+    }
+
+    /**
+     * @brief Returns true if this item is < other. 
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator<(const LocalTimeHMS &other) const {
         return compareTo(other) < 0;
     }
 
+    /**
+     * @brief Returns true if this item is > other.
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator>(const LocalTimeHMS &other) const {
         return compareTo(other) > 0;
     }
 
+    /**
+     * @brief Returns true if this item <= other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator<=(const LocalTimeHMS &other) const {
         return compareTo(other) <= 0;
     }
 
+    /**
+     * @brief Returns true if this item is >= other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator>=(const LocalTimeHMS &other) const {
         return compareTo(other) >= 0;
     }
@@ -594,8 +646,8 @@ public:
             return timeRange.getTimeSpan(conv);
         }
 
-        TimeRange timeRange;
-        int minuteMultiple = 0;
+        TimeRange timeRange; //!< Range of local time, inclusive
+        int minuteMultiple = 0; //!< Increment for minutes. Typically a value 60 is evenly divisible by.
     };
 
     /**
@@ -682,18 +734,33 @@ public:
         }
 
         /**
-         * @brief Add multiple scheduled item at a time in local time during the day. 
+         * @brief Add multiple scheduled items at a time in local time during the day. 
          * 
          * @param timesParam an auto-initialized list of LocalTimeHMS objects
          * @return Schedule& 
          * 
          * You can call this multiple times, and also combine it with minute multiple schedules.
+         * 
+         * schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
          */
         Schedule &withTimes(std::initializer_list<LocalTimeHMS> timesParam) {
             times.insert(times.end(), timesParam.begin(), timesParam.end());
             return *this;
         }
 
+        /**
+         * @brief Adds multiple scheduled hours at a time in a local time during the day at a specified minute
+         * 
+         * @param hoursParam 
+         * @param atMinute 
+         * @return Schedule& 
+         * 
+         * Example: Schedules at 00:05, 06:05, 09:05, 10:05, 12:05, 15:05, 18:05
+         * 
+         * schedule.withHours({0, 6, 9, 10, 12, 15, 18}, 5);
+         * 
+         * This is just a shortcut that is easier to type than using the version that takes LocalTimeHMS objects.
+         */
         Schedule &withHours(std::initializer_list<int> hoursParam, int atMinute) {
             std::vector<int> hours = hoursParam;
             for(auto it = hours.begin(); it != hours.end(); ++it) {
@@ -706,7 +773,25 @@ public:
             return *this;
         }
 
-        Schedule &withHourMultiple(int hourMultiple, TimeRange timeRange) {
+        /**
+         * @brief Adds multiple times periodically in a time range with an hour increment
+         * 
+         * @param hourMultiple Hours between items must be >= 1. For example: 2 = every other hour.
+         * @param timeRange Time range to add items to. This is optional; if not specified then the entire day. 
+         * Also is used to specify a minute offset.
+         * 
+         * @return Schedule& 
+         * 
+         * Hours are per day, local time. For whole-day schedules, you will typically use a value that
+         * 24 is evenly divisible by (2, 3, 4, 6, 8, 12), because otherwise the time periods will brief
+         * unequal at the top of the hour.
+         * 
+         * Also note that times are local, and take into account daylight saving. Thus during a time switch,
+         * the interval may end up being a different number of hours than specified. For example, if the
+         * times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, 
+         * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
+         */
+        Schedule &withHourMultiple(int hourMultiple, TimeRange timeRange = TimeRange()) {
 
             for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
                 times.push_back(hms);
@@ -715,6 +800,15 @@ public:
             return *this;
         }
 
+        /**
+         * @brief Adds multiple times periodically in a time range with an hour increment
+         * 
+         * @param hourStart Hour to start at 0 <= hourStart <= 23
+         * @param hourMultiple Increment for hours 
+         * @param atMinute Minute past the hour for each item. Seconds is always 0.
+         * @param hourEnd Hour to end, inclusive. 0 <= hourEnd <= 23
+         * @return Schedule& 
+         */
         Schedule &withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd = 23) {
             for(int hour = hourStart; hour <= hourEnd; hour += hourMultiple) {
                 LocalTimeHMS hms;
@@ -725,8 +819,8 @@ public:
         }
 
 
-        std::vector<ScheduleItemMinuteMultiple> minuteMultipleItems;
-        std::vector<LocalTimeHMS> times;
+        std::vector<ScheduleItemMinuteMultiple> minuteMultipleItems; //!< Minute multiple items
+        std::vector<LocalTimeHMS> times; //!< Local time items (includes hour multiple items)
     };
 
     /**
