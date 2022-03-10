@@ -458,6 +458,7 @@ void LocalTimeConvert::nextTime(LocalTimeHMS hms) {
     if (time <= origTime) {
         time += 86400;
         convert();
+        atLocalTime(hms);
     }
 }
 

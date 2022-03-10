@@ -561,13 +561,35 @@ public:
          * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
          * an inconsistent period at the top of the hour.
          * 
-         * If you do not specify a time range, the entire day is the range.
+         * If you do not specify a time range, the entire day is the range, and it will always start at the top of the hour.
+         * 
+         * If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule
+         * starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
+         * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
          */
         ScheduleItemMinuteMultiple(int minuteMultiple, TimeRange timeRange = TimeRange()) : timeRange(timeRange), minuteMultiple(minuteMultiple) {                
         }
 
+        /**
+         * @brief Returns true if minuteMultiple is non-zero
+         * 
+         * @return true 
+         * @return false 
+         * 
+         * This is used to check if an object was constructed by the default constructor and never set.
+         */
         bool isValid() const { return (minuteMultiple > 0); };
 
+        /**
+         * @brief Get number of seconds in the time range at a given time
+         * 
+         * @param conv The timezone and date information for time span calculation
+         * @return time_t 
+         * 
+         * The conv object is necessary because getTimeSpan takes into account daylight saving transitions.
+         * When springing forward to daylight saving, from 01:15:00 to 03:15:00 is only one hour because of the 
+         * DST transition.
+         */
         time_t getTimeSpan(const LocalTimeConvert &conv) const {
             return timeRange.getTimeSpan(conv);
         }
@@ -576,32 +598,97 @@ public:
         int minuteMultiple = 0;
     };
 
-
+    /**
+     * @brief A complete time schedule
+     * 
+     * A time schedule consists of minute multiples ("every 15 minutes"), optionally within a time range (all day, 
+     * or from 09:00:00 to 17:00:00 local time, for example.
+     * 
+     * It can also have hour multiples, optionally in a time range, at a defined minute ("every 4 hours at :15 
+     * past the hour").
+     * 
+     * It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time").
+     */
     class Schedule {
     public:
+        /**
+         * @brief Construct a new, empty schedule
+         */
         Schedule() {
         }
 
+        /**
+         * @brief Adds a minute multiple schedule all day
+         * 
+         * @param minuteMultiple Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+         * 
+         * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
+         * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
+         * an inconsistent period at the top of the hour.
+         * 
+         * If you want to schedule at a minute offset as well, for example every 15 minutes at 02:00, 17:00, 32:00, 47:00,
+         * see the overload with a time range.
+         * 
+         * @return Schedule& 
+         */
         Schedule &withMinuteMultiple(int minuteMultiple) {
             return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, TimeRange()));
         }
 
+        /**
+         * @brief Adds a minute multiple schedule in a time range
+         * 
+         * @param minuteMultiple Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+         * @param timeRange When to apply this minute multiple and/or minute offset.
+         * 
+         * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
+         * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
+         * an inconsistent period at the top of the hour.
+         * 
+         * If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule
+         * starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
+         * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
+         * 
+         * The largest value for hmsEnd of the time range is 23:59:59.
+         * 
+         * @return Schedule& 
+         */        
         Schedule &withMinuteMultiple(int minuteMultiple, TimeRange timeRange) {
             return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, timeRange));
         }
 
+        /**
+         * @brief Adds a minute multiple schedule from a ScheduleItemMinuteMultiple object
+         * 
+         * @param item 
+         * @return Schedule& 
+         */
         Schedule &withMinuteMultiple(ScheduleItemMinuteMultiple item) {
             minuteMultipleItems.push_back(item);
             return *this;
         }
 
+        /**
+         * @brief Add a scheduled item at a time in local time during the day. 
+         * 
+         * @param hms The time in local time 00:00:00 to 23:59:59.
+         * @return Schedule& 
+         * 
+         * You can call this multiple times, and also combine it with minute multiple schedules.
+         */
         Schedule &withTime(LocalTimeHMS hms) {
-
-
             times.push_back(hms);
             return *this;
         }
 
+        /**
+         * @brief Add multiple scheduled item at a time in local time during the day. 
+         * 
+         * @param timesParam an auto-initialized list of LocalTimeHMS objects
+         * @return Schedule& 
+         * 
+         * You can call this multiple times, and also combine it with minute multiple schedules.
+         */
         Schedule &withTimes(std::initializer_list<LocalTimeHMS> timesParam) {
             times.insert(times.end(), timesParam.begin(), timesParam.end());
             return *this;
