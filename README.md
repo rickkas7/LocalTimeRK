@@ -968,6 +968,10 @@ In the weird case that start > end, it can return a negative value, as time_t is
 
 ## Version history
 
+### 0.0.8 (2022-03-10)
+
+- Added 
+
 ### 0.0.7 (2022-03-08)
 
 - Added inLocalTimeRange and nextTimeList functions

@@ -818,6 +818,15 @@ public:
             return *this;
         }
 
+        /**
+         * @brief Returns true if the schedule does not have any items in it
+         * 
+         * @return true 
+         * @return false 
+         */
+        bool isEmpty() const { 
+            return minuteMultipleItems.empty() && times.empty();
+        }
 
         std::vector<ScheduleItemMinuteMultiple> minuteMultipleItems; //!< Minute multiple items
         std::vector<LocalTimeHMS> times; //!< Local time items (includes hour multiple items)
