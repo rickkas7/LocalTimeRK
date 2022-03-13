@@ -7,6 +7,191 @@
 #include <initializer_list>
 #include <vector>
 
+class LocalTimeValue;
+
+/**
+ * @brief Class for holding a year month day efficiently (4 bytes of storage)
+ * 
+ * There is no method to get this object from a time_t because time_t is at UTC
+ * and this object is intended to be the YMD at local time to correspond with
+ * a LocalTimeHMS. Thus it requires a LocalTimeConvert object, and there is
+ * a method to get a LocalTimeYMD from a LocalTimeConvert, not from this object.
+ */
+class LocalTimeYMD {
+public:
+    struct YMD {
+        unsigned year:23;    // Add 1900 (like struct tm)
+        unsigned month:4;    // 1 - 12 (not like struct tm which is 0 - 11)
+        unsigned day:5;      // 1 - 31 ish
+    };
+
+    LocalTimeYMD() {
+        ymd.year = ymd.month = ymd.day = 0;
+    }
+
+    LocalTimeYMD(const char *s) {
+        (void) parse(s);
+    }
+
+    LocalTimeYMD(const LocalTimeValue &value) {
+        fromLocalTimeValue(value);
+    }
+
+
+    bool isEmpty() const {
+        return ymd.year == 0 && ymd.month == 0 && ymd.day == 0;
+    }
+
+    /**
+     * @brief Get the year as a 4-digit year, for example: 2022
+     * 
+     * @return int 
+     */
+    int getYear() const {
+        return ymd.year + 1900;
+    }
+
+    void setYear(int year) {
+        if (year < 100) {
+            ymd.year = year + 100;
+        }
+        else
+        if (year < 999) {
+            ymd.year = year;
+        }
+        else {
+            ymd.year = year - 1900;
+        }
+    }
+    int getMonth() const {
+        return ymd.month;
+    }
+    void setMonth(int month) {
+        ymd.month = month;
+    }
+    int getDay() const {
+        return ymd.day;
+    }
+    void setDay(int day) {
+        ymd.day = day;
+    }
+    /**
+     * @brief Copies the year, month, and day from a struct tm
+     * 
+     * @param tm 
+     * 
+     * The tm should be in local time. 
+     */
+    void fromTimeInfo(const struct tm *pTimeInfo);
+
+    void fromLocalTimeValue(const LocalTimeValue &value);
+
+
+    int getDayOfWeek() const;
+
+    int compareTo(const LocalTimeYMD other) const;
+
+    bool operator==(const LocalTimeYMD other) const {
+        return compareTo(other) == 0; 
+    }
+
+    bool operator!=(const LocalTimeYMD other) const {
+        return compareTo(other) != 0; 
+    }
+
+    bool operator<(const LocalTimeYMD other) const {
+        return compareTo(other) < 0; 
+    }
+
+    bool operator<=(const LocalTimeYMD other) const {
+        return compareTo(other) <= 0; 
+    }
+
+    bool operator>(const LocalTimeYMD other) const {
+        return compareTo(other) > 0; 
+    }
+
+    bool operator>=(const LocalTimeYMD other) const {
+        return compareTo(other) >= 0; 
+    }
+
+    /**
+     * @brief Parse a YMD string in the format "YYYY-MD-DD". Only this format is supported!
+     * 
+     * @param s 
+     * @return true 
+     * @return false 
+     * 
+     * Do not use this function with other date formats like "mm/dd/yyyy"!
+     */
+    bool parse(const char *s);
+
+    YMD ymd;
+};
+
+/**
+ * @brief Class for managing day of week calculations
+ * 
+ * Day 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+ */
+class LocalTimeDayOfWeek {
+public:
+    LocalTimeDayOfWeek() {        
+    }
+
+    LocalTimeDayOfWeek(uint8_t mask) : dayOfWeekMask(mask) {
+    }
+
+    LocalTimeDayOfWeek &withWeekdays() {
+        dayOfWeekMask = MASK_WEEKDAY;
+        return *this;
+    }
+    LocalTimeDayOfWeek &withWeekends() {
+        dayOfWeekMask = MASK_WEEKEND;
+        return *this;
+    }
+    LocalTimeDayOfWeek &withAllDays() {
+        dayOfWeekMask = MASK_ALL;
+        return *this;
+    }
+
+    /**
+     * @brief Returns true if the specified dayOfWeek is set in the mask
+     * 
+     * @param dayOfWeek Same as struct tm. 0 < dayOfWeek <= 6. Sunday = 0. 
+     * @return true 
+     * @return false 
+     */
+    bool isSet(int dayOfWeek) const {
+        return (dayOfWeekMask & (1 << dayOfWeek)) != 0;
+    }
+    bool isSet(LocalTimeYMD ymd) const {
+        return isSet(ymd.getDayOfWeek());
+    }
+    bool isEmpty() const {
+        return dayOfWeekMask == 0;
+    }
+    uint8_t getMask() const {
+        return dayOfWeekMask;
+    }
+    void setMask(uint8_t mask) {
+        dayOfWeekMask = mask;
+    }
+
+    static const uint8_t MASK_SUNDAY = 0x01;
+    static const uint8_t MASK_MONDAY = 0x02;
+    static const uint8_t MASK_TUESDAY = 0x04;
+    static const uint8_t MASK_WEDNESDAY = 0x08;
+    static const uint8_t MASK_THURSDAY = 0x10;
+    static const uint8_t MASK_FRIDAY = 0x20;
+    static const uint8_t MASK_SATURDAY = 0x40;
+
+    static const uint8_t MASK_ALL = MASK_SUNDAY | MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY | MASK_SUNDAY;
+    static const uint8_t MASK_WEEKDAY = MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY;
+    static const uint8_t MASK_WEEKEND = MASK_SATURDAY | MASK_SUNDAY;
+
+    uint8_t dayOfWeekMask = 0;
+};
 
 /**
  * @brief Container for holding an hour minute second time value
@@ -38,6 +223,8 @@ public:
      * as a timezone offset.
      */
     LocalTimeHMS(const char *str);
+
+    LocalTimeHMS(const LocalTimeValue &value);
 
     /**
      * @brief Sets the hour, minute, and second to 0
@@ -73,6 +260,8 @@ public:
      * @brief Sets the hour, minute, and second fields from a struct tm
      */
     void fromTimeInfo(const struct tm *pTimeInfo);
+
+    void fromLocalTimeValue(const LocalTimeValue &value);
 
     /**
      * @brief Fill in the tm_hour, tm_min, and tm_sec fields of a struct tm from the values in this object
@@ -239,6 +428,174 @@ public:
         ignore = true;
     }
 };
+
+/**
+ * @brief Day of week, date, or date exception restrictions
+ *
+ * This class can specify that something (typically a LocalTimeHMSRestricted or a TimeRangeRestricted) only
+ * applies on certain dates. This can be a mask of days of the week, optionally with specific
+ * dates that should be disallowed. Or you can schedule only on specific dates. 
+ */
+class LocalTimeRestrictedDate {
+public:
+    /**
+     * @brief Create an empty restricted date object. It will return false for any date passed to isValid.
+     */
+    LocalTimeRestrictedDate() {
+    }
+
+    /**
+     * @brief Create a date restricted object restricted to days of the week
+     * 
+     * @param mask The days of the week to enable. Pass LocalTimeDayOfWeek::MASK_ALL to allow on every day (no restrictions)
+     */
+    LocalTimeRestrictedDate(uint8_t mask) : onlyOnDates(mask) {        
+    }
+
+    LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<const char *> onlyOnDates, std::initializer_list<const char *> exceptDates) : onlyOnDates(mask) {   
+        withOnlyOnDates(onlyOnDates);
+        withExceptDates(exceptDates);
+    }
+
+    LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<LocalTimeYMD> onlyOnDates, std::initializer_list<LocalTimeYMD> exceptDates) : onlyOnDates(mask) {   
+        withOnlyOnDates(onlyOnDates);
+        withExceptDates(exceptDates);
+    }
+
+    /**
+     * @brief Restrict to days of the week
+     * 
+     * @param value A LocalTimeDayOfWeek object specifying the days of the week (mask bits for Sunday - Saturday)
+     * @return LocalTimeRestrictedDate& 
+     * 
+     * A day of the week is allowed if the day of week mask bit is set.
+     * If a date is in the except dates list, then isValid return false.
+     * If a date is in the only on days mask OR only on dates list, then isValid will return true.
+     */
+    LocalTimeRestrictedDate &withOnlyOnDays(LocalTimeDayOfWeek value);
+
+    /**
+     * @brief Restrict to certain dates
+     * 
+     * @param mask Mask value, such as  LocalTimeDayOfWeek::MASK_MONDAY
+     * @return LocalTimeRestrictedDate& 
+     * 
+     * A day of the week is allowed if the day of week mask bit is set.
+     * If a date is in the except dates list, then isValid return false.
+     * If a date is in the only on days mask OR only on dates list, then isValid will return true.
+     */
+    LocalTimeRestrictedDate &withOnlyOnDays(uint8_t mask) {
+        return withOnlyOnDays(LocalTimeDayOfWeek(mask));
+    }
+
+    /**
+     * @brief Restrict to certain dates
+     * 
+     * @param dates A {} list of strings of the form YYYY-MM-DD. No other date formats are allowed!
+     * @return LocalTimeRestrictedDate& 
+     * 
+     * If a date is in the except dates list, then isValid return false.
+     * If a date is in the only on days mask OR only on dates list, then isValid will return true.
+     */
+    LocalTimeRestrictedDate &withOnlyOnDates(std::initializer_list<const char *> dates);
+
+    /**
+     * @brief Restrict to certain dates
+     * 
+     * @param dates A {} list of LocalTimeYMD objects
+     * @return LocalTimeRestrictedDate& 
+     * 
+     * If a date is in the except dates list, then isValid return false.
+     * If a date is in the only on days mask OR only on dates list, then isValid will return true.
+     */
+    LocalTimeRestrictedDate &withOnlyOnDates(std::initializer_list<LocalTimeYMD> dates);
+
+    /**
+     * @brief Dates that will always return false for isValid
+     * 
+     * @param dates A {} list of strings of the form YYYY-MM-DD. No other date formats are allowed!
+     * @return LocalTimeRestrictedDate& 
+     * 
+     * If a date is in the except dates list, then isValid return false.
+     * If a date is in the only on days mask OR only on dates list, then isValid will return true.
+     */
+    LocalTimeRestrictedDate &withExceptDates(std::initializer_list<const char *> dates);
+
+    /**
+     * @brief Dates that will always return false for isValid
+     * 
+     * @param dates A {} list of LocalTimeYMD objects
+     * @return LocalTimeRestrictedDate& 
+     * 
+     * If a date is in the except dates list, then isValid return false.
+     * If a date is in the only on days mask OR only on dates list, then isValid will return true.
+     */
+    LocalTimeRestrictedDate &withExceptDates(std::initializer_list<LocalTimeYMD> dates);
+
+    /**
+     * @brief Returns true if onlyOnDays mask is 0 and the onlyOnDates and exceptDates lists are empty
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool isEmpty() const;
+
+    /**
+     * @brief Returns true if a date is in the onlyOnDays or onlyOnDates list, and not in the exceptDates list
+     * 
+     * @param localTimeValue Date to check (local time)
+     * @return true 
+     * @return false 
+     */
+    bool isValid(LocalTimeValue localTimeValue) const;
+
+    /**
+     * @brief Returns true if a date is in the onlyOnDays or onlyOnDates list, and not in the exceptDates list
+     * 
+     * @param ymd Date to check (local time)
+     * @return true 
+     * @return false 
+     */
+    bool isValid(LocalTimeYMD ymd) const;
+
+    /**
+     * @brief Returns true of a date is in the onlyOnDates list
+     * 
+     * @param ymd 
+     * @return true 
+     * @return false 
+     */
+    bool inOnlyOnDates(LocalTimeYMD ymd) const;
+
+    /**
+     * @brief Returns true of a date is in the exceptDates list
+     * 
+     * @param ymd 
+     * @return true 
+     * @return false 
+     */
+    bool inExceptDates(LocalTimeYMD ymd) const;
+
+    LocalTimeDayOfWeek onlyOnDays;             //!< Allow on that day of week if mask bit is set
+    std::vector<LocalTimeYMD> onlyOnDates;     //!< Dates to allow
+    std::vector<LocalTimeYMD> exceptDates;     //!< Dates to exclude
+};
+
+/**
+ * @brief HMS values, but only on specific days of week or dates (with optional exceptions)
+ */
+class LocalTimeHMSRestricted : public LocalTimeHMS, public LocalTimeRestrictedDate {
+public:
+    LocalTimeHMSRestricted() {
+    }
+
+    LocalTimeHMSRestricted(LocalTimeHMS hms) : LocalTimeHMS(hms), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
+    }
+
+    LocalTimeHMSRestricted(LocalTimeHMS hms, LocalTimeRestrictedDate restrictedDate) : LocalTimeHMS(hms), LocalTimeRestrictedDate(restrictedDate) {
+    }
+};
+
 
 /**
  * @brief Handles the time change part of the Posix timezone string like "M3.2.0/2:00:00"
@@ -472,6 +829,9 @@ public:
      */
     void setHMS(LocalTimeHMS hms);
 
+    
+    LocalTimeYMD ymd() const;
+
     /**
      * @brief Converts the specified local time into a UTC time
      * 
@@ -588,8 +948,43 @@ public:
             return convEnd.time - convStart.time;
         }
 
+        virtual bool inRange(LocalTimeValue localTimeValue) const {
+            LocalTimeHMS hms = localTimeValue.hms();
+            return (hmsStart <= hms) && (hms <= hmsEnd);
+        }
+
         LocalTimeHMS hmsStart; //!< Starting time, inclusive
         LocalTimeHMS hmsEnd; //!< Ending time, inclusive
+    };
+
+    /**
+     * @brief TimeRange (HMS) with a day of week and/or date restrictions
+     */
+    class TimeRangeRestricted : public TimeRange, public LocalTimeRestrictedDate {
+    public:
+        TimeRangeRestricted() : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL){
+        }
+
+        /**
+         * @brief Constructor that takes a TimeRange, every day (TimeRange not restricted by date or day of week)
+         * 
+         * @param timeRange 
+         */
+        TimeRangeRestricted(TimeRange timeRange) : TimeRange(timeRange), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
+        }
+
+        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : TimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
+        }
+
+        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate restrictedDate) : TimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate() {
+        }
+
+        TimeRangeRestricted(TimeRange timeRange, LocalTimeRestrictedDate restrictedDates) : TimeRange(timeRange), LocalTimeRestrictedDate(restrictedDates) {
+        }
+
+        virtual bool inRange(LocalTimeValue localTimeValue) const {
+            return LocalTimeRestrictedDate::isValid(localTimeValue) && TimeRange::inRange(localTimeValue);
+        }
     };
 
     /**
@@ -619,7 +1014,7 @@ public:
          * starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
          * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
          */
-        ScheduleItemMinuteMultiple(int minuteMultiple, TimeRange timeRange = TimeRange()) : timeRange(timeRange), minuteMultiple(minuteMultiple) {                
+        ScheduleItemMinuteMultiple(int minuteMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted()) : timeRange(timeRange), minuteMultiple(minuteMultiple) {                
         }
 
         /**
@@ -646,7 +1041,7 @@ public:
             return timeRange.getTimeSpan(conv);
         }
 
-        TimeRange timeRange; //!< Range of local time, inclusive
+        TimeRangeRestricted timeRange; //!< Range of local time, inclusive
         int minuteMultiple = 0; //!< Increment for minutes. Typically a value 60 is evenly divisible by.
     };
 
@@ -684,7 +1079,7 @@ public:
          * @return Schedule& 
          */
         Schedule &withMinuteMultiple(int minuteMultiple) {
-            return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, TimeRange()));
+            return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, TimeRangeRestricted()));
         }
 
         /**
@@ -705,7 +1100,7 @@ public:
          * 
          * @return Schedule& 
          */        
-        Schedule &withMinuteMultiple(int minuteMultiple, TimeRange timeRange) {
+        Schedule &withMinuteMultiple(int minuteMultiple, TimeRangeRestricted timeRange) {
             return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, timeRange));
         }
 
@@ -728,7 +1123,7 @@ public:
          * 
          * You can call this multiple times, and also combine it with minute multiple schedules.
          */
-        Schedule &withTime(LocalTimeHMS hms) {
+        Schedule &withTime(LocalTimeHMSRestricted hms) {
             times.push_back(hms);
             return *this;
         }
@@ -743,7 +1138,7 @@ public:
          * 
          * schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
          */
-        Schedule &withTimes(std::initializer_list<LocalTimeHMS> timesParam) {
+        Schedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam) {
             times.insert(times.end(), timesParam.begin(), timesParam.end());
             return *this;
         }
@@ -791,10 +1186,10 @@ public:
          * times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, 
          * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
          */
-        Schedule &withHourMultiple(int hourMultiple, TimeRange timeRange = TimeRange()) {
+        Schedule &withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted()) {
 
             for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
-                times.push_back(hms);
+                times.push_back(LocalTimeHMSRestricted(hms, timeRange));
             }
 
             return *this;
@@ -829,7 +1224,7 @@ public:
         }
 
         std::vector<ScheduleItemMinuteMultiple> minuteMultipleItems; //!< Minute multiple items
-        std::vector<LocalTimeHMS> times; //!< Local time items (includes hour multiple items)
+        std::vector<LocalTimeHMSRestricted> times; //!< Local time items (includes hour multiple items)
     };
 
     /**
@@ -1134,6 +1529,10 @@ public:
      * @return false 
      */    
     bool beforeLocalTimeRange(TimeRange localTimeRange);
+
+    LocalTimeHMS getLocalTimeHMS() const { return LocalTimeHMS(localTimeValue); };
+
+    LocalTimeYMD getLocalTimeYMD() const { return LocalTimeYMD(localTimeValue); };
 
     /**
      * @brief Works like Time.timeStr() to generate a readable string of the local time

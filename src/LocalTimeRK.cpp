@@ -2,6 +2,84 @@
 
 LocalTime *LocalTime::_instance;
 
+//
+// LocalTimeYMD
+//
+void LocalTimeYMD::fromTimeInfo(const struct tm *pTimeInfo) {
+    ymd.year = pTimeInfo->tm_year;
+    ymd.month = pTimeInfo->tm_mon + 1;
+    ymd.day = pTimeInfo->tm_mday;
+}
+
+void LocalTimeYMD::fromLocalTimeValue(const LocalTimeValue &value) {
+    *this = value.ymd();
+}
+
+int LocalTimeYMD::getDayOfWeek() const {
+    struct tm timeInfo = {0};
+
+    timeInfo.tm_year = ymd.year;
+    timeInfo.tm_mon = ymd.month - 1;
+    timeInfo.tm_mday = ymd.day;
+    
+    time_t time = LocalTime::tmToTime(&timeInfo);
+    LocalTime::timeToTm(time, &timeInfo);
+
+    return timeInfo.tm_wday;
+}
+
+int LocalTimeYMD::compareTo(const LocalTimeYMD other) const {
+    int cmp;
+
+    if (ymd.year < other.ymd.year) {
+        cmp = -1;
+    }
+    else
+    if (ymd.year > other.ymd.year) {
+        cmp = +1;
+    }
+    else {
+        if (ymd.month < other.ymd.month) {
+            return -1;
+        }
+        else
+        if (ymd.month > other.ymd.month) {
+            return +1;
+        }
+        else {
+            if (ymd.day < other.ymd.day) {
+                cmp = -1;
+            }  
+            else
+            if (ymd.day > other.ymd.day) {
+                cmp = +1;
+            }
+            else {
+                cmp = 0;
+            }
+        }
+    }
+
+    return cmp;
+}
+
+bool LocalTimeYMD::parse(const char *s) {
+    int year, month, day;
+    if (sscanf(s, "%d-%d-%d", &year, &month, &day) == 3) {
+        setYear(year);
+        setMonth(month);
+        setDay(day);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+//
+// LocalTimeHMS
+//
 LocalTimeHMS::LocalTimeHMS() {
 }
 
@@ -10,6 +88,10 @@ LocalTimeHMS::~LocalTimeHMS() {
 
 LocalTimeHMS::LocalTimeHMS(const char *str) {
     parse(str);
+}
+
+LocalTimeHMS::LocalTimeHMS(const LocalTimeValue &value) {
+    *this = value.hms();
 }
 
 void LocalTimeHMS::clear() {
@@ -55,6 +137,11 @@ void LocalTimeHMS::fromTimeInfo(const struct tm *pTimeInfo) {
     second = (int8_t) pTimeInfo->tm_sec;
 }
 
+void LocalTimeHMS::fromLocalTimeValue(const LocalTimeValue &value) {
+    *this = value.hms();
+}
+
+
 void LocalTimeHMS::toTimeInfo(struct tm *pTimeInfo) const {
     if (!ignore) {
         pTimeInfo->tm_hour = hour;
@@ -79,6 +166,78 @@ void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo) const {
     }
 }
 
+//
+// LocalTimeRestrictedDate
+//
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withOnlyOnDays(LocalTimeDayOfWeek value) { 
+    onlyOnDays = value; 
+    return *this;
+};
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withOnlyOnDates(std::initializer_list<const char *> dates) {
+    for(auto it = dates.begin(); it != dates.end(); ++it) {
+        onlyOnDates.push_back(LocalTimeYMD(*it));    
+    }
+    return *this;
+}
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withOnlyOnDates(std::initializer_list<LocalTimeYMD> dates) {
+    onlyOnDates.insert(onlyOnDates.end(), dates.begin(), dates.end());
+    return *this;
+}
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withExceptDates(std::initializer_list<const char *> dates) {
+    for(auto it = dates.begin(); it != dates.end(); ++it) {
+        exceptDates.push_back(LocalTimeYMD(*it));    
+    }
+    return *this;
+}
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withExceptDates(std::initializer_list<LocalTimeYMD> dates) {
+    exceptDates.insert(exceptDates.end(), dates.begin(), dates.end());
+    return *this;
+}
+
+bool LocalTimeRestrictedDate::isEmpty() const {
+    return onlyOnDays.isEmpty() && onlyOnDates.empty() && exceptDates.empty();
+}
+
+bool LocalTimeRestrictedDate::isValid(LocalTimeValue localTimeValue) const {
+    return isValid(localTimeValue.ymd());
+}
+
+
+bool LocalTimeRestrictedDate::isValid(LocalTimeYMD ymd) const {
+    bool result = false;
+
+    // Is it in the except days list?
+    if (inExceptDates(ymd)) {
+        result = false;
+    }
+    else {
+        result = onlyOnDays.isSet(ymd) || inOnlyOnDates(ymd);
+    }
+
+    return result;
+}
+
+bool LocalTimeRestrictedDate::inOnlyOnDates(LocalTimeYMD ymd) const {
+    for(auto it = onlyOnDates.begin(); it != onlyOnDates.end(); ++it) {
+        if (*it == ymd) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool LocalTimeRestrictedDate::inExceptDates(LocalTimeYMD ymd) const {
+    for(auto it = exceptDates.begin(); it != exceptDates.end(); ++it) {
+        if (*it == ymd) {
+            return true;
+        }
+    }
+    return false;
+}
 
 //
 // LocalTimeChange
@@ -298,6 +457,12 @@ void LocalTimeValue::setHMS(LocalTimeHMS hms) {
         tm_min = hms.minute;
         tm_sec = hms.second;
     }
+}
+
+LocalTimeYMD LocalTimeValue::ymd() const {
+    LocalTimeYMD result;
+    result.fromTimeInfo(this);
+    return result;
 }
 
 
@@ -659,6 +824,7 @@ void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
 
 bool LocalTimeConvert::inLocalTimeRange(TimeRange localTimeRange) {
     time_t origTime = time;
+
 
     localTimeValue.setHMS(localTimeRange.hmsStart);
     time_t minTime = localTimeValue.toUTC(config);
