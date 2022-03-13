@@ -210,12 +210,15 @@ bool LocalTimeRestrictedDate::isValid(LocalTimeValue localTimeValue) const {
 bool LocalTimeRestrictedDate::isValid(LocalTimeYMD ymd) const {
     bool result = false;
 
+
     // Is it in the except days list?
     if (inExceptDates(ymd)) {
         result = false;
     }
     else {
-        result = onlyOnDays.isSet(ymd) || inOnlyOnDates(ymd);
+        bool isValidDays = onlyOnDays.isSet(ymd);
+        bool isValidDates = inOnlyOnDates(ymd);
+        result = isValidDays || isValidDates;
     }
 
     return result;
@@ -644,7 +647,6 @@ void LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms) {
     nextDay(hms);
 
     if (dstStartOrig > timeOrig && dstStartOrig < time) {
-        // printf("timeOrig=%ld dstStartOrig=%ld time=%ld dstStart=%ld\n", timeOrig, dstStartOrig, time, dstStart);
         time = dstStartOrig;
         convert();
     }
@@ -744,10 +746,9 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
 
         for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
             ScheduleItemMinuteMultiple item = *it;
-            if (inLocalTimeRange(item.timeRange)) {
+            if (item.timeRange.inRange(localTimeValue)) {
                 // This minute multiple applies
                 time_t timeSpan = item.getTimeSpan(*this);
-                //printf("found minute multiple timeSpan=%d\n", (int)timeSpan);
                 if (timeSpan < smallestTimeSpan) {
                     foundItem = item;
                     smallestTimeSpan = timeSpan;
@@ -758,7 +759,6 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
         if (foundItem.isValid()) {
             LocalTimeConvert tmpConvert(*this);
             tmpConvert.nextMinuteMultiple(foundItem.minuteMultiple, foundItem.timeRange.hmsStart.minute % foundItem.minuteMultiple);
-            //printf("converting with multiple %d was %d now %d\n", foundItem.minuteMultiple, (int)origTime, (int)tmpConvert.time);
             if (closestTime == 0 || tmpConvert.time < closestTime) {
                 closestTime = tmpConvert.time;
             }
@@ -767,6 +767,7 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
             // Not in a time range. Is there a time range after the current time?
             for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
                 ScheduleItemMinuteMultiple item = *it;
+
                 LocalTimeConvert tmpConvert(*this);
                 tmpConvert.atLocalTime(item.timeRange.hmsStart);
                 if (time < tmpConvert.time) {
@@ -820,34 +821,6 @@ void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
         time = localTimeValue.toUTC(config);
         convert();
     }
-}
-
-bool LocalTimeConvert::inLocalTimeRange(TimeRange localTimeRange) {
-    time_t origTime = time;
-
-
-    localTimeValue.setHMS(localTimeRange.hmsStart);
-    time_t minTime = localTimeValue.toUTC(config);
-
-    localTimeValue.setHMS(localTimeRange.hmsEnd);
-    time_t maxTime = localTimeValue.toUTC(config);
-
-    time = origTime;
-    convert();
-
-    return (minTime <= origTime) && (origTime <= maxTime);
-}
-
-bool LocalTimeConvert::beforeLocalTimeRange(TimeRange localTimeRange) {
-    time_t origTime = time;
-
-    localTimeValue.setHMS(localTimeRange.hmsStart);
-    time_t minTime = localTimeValue.toUTC(config);
-
-    time = origTime;
-    convert();
-
-    return (origTime < minTime);
 }
 
 

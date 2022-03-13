@@ -126,6 +126,10 @@ public:
      */
     bool parse(const char *s);
 
+    String toString() const {
+        return String::format("LocalTimeYMD year=%u month=%u day=%u", ymd.year, ymd.month, ymd.day);
+    }
+
     YMD ymd;
 };
 
@@ -166,7 +170,9 @@ public:
         return (dayOfWeekMask & (1 << dayOfWeek)) != 0;
     }
     bool isSet(LocalTimeYMD ymd) const {
-        return isSet(ymd.getDayOfWeek());
+        int dayOfWeek = ymd.getDayOfWeek();
+        bool result = isSet(dayOfWeek);
+        return result;
     }
     bool isEmpty() const {
         return dayOfWeekMask == 0;
@@ -178,6 +184,10 @@ public:
         dayOfWeekMask = mask;
     }
 
+    String toString() const {
+        return String::format("LocalTimeDayOfWeek dayOfWeekMask=%02x", dayOfWeekMask);
+    }
+
     static const uint8_t MASK_SUNDAY = 0x01;
     static const uint8_t MASK_MONDAY = 0x02;
     static const uint8_t MASK_TUESDAY = 0x04;
@@ -186,7 +196,7 @@ public:
     static const uint8_t MASK_FRIDAY = 0x20;
     static const uint8_t MASK_SATURDAY = 0x40;
 
-    static const uint8_t MASK_ALL = MASK_SUNDAY | MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY | MASK_SUNDAY;
+    static const uint8_t MASK_ALL = MASK_SUNDAY | MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY | MASK_SATURDAY | MASK_SUNDAY;
     static const uint8_t MASK_WEEKDAY = MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY;
     static const uint8_t MASK_WEEKEND = MASK_SATURDAY | MASK_SUNDAY;
 
@@ -427,6 +437,10 @@ public:
     LocalTimeIgnoreHMS() {
         ignore = true;
     }
+
+    virtual String toString() const {
+        return String::format("LocalTimeIgnoreHMS ignore=%d", ignore);
+    }
 };
 
 /**
@@ -449,15 +463,15 @@ public:
      * 
      * @param mask The days of the week to enable. Pass LocalTimeDayOfWeek::MASK_ALL to allow on every day (no restrictions)
      */
-    LocalTimeRestrictedDate(uint8_t mask) : onlyOnDates(mask) {        
+    LocalTimeRestrictedDate(uint8_t mask) : onlyOnDays(mask) {        
     }
 
-    LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<const char *> onlyOnDates, std::initializer_list<const char *> exceptDates) : onlyOnDates(mask) {   
+    LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<const char *> onlyOnDates, std::initializer_list<const char *> exceptDates) : onlyOnDays(mask) {   
         withOnlyOnDates(onlyOnDates);
         withExceptDates(exceptDates);
     }
 
-    LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<LocalTimeYMD> onlyOnDates, std::initializer_list<LocalTimeYMD> exceptDates) : onlyOnDates(mask) {   
+    LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<LocalTimeYMD> onlyOnDates, std::initializer_list<LocalTimeYMD> exceptDates) : onlyOnDays(mask) {   
         withOnlyOnDates(onlyOnDates);
         withExceptDates(exceptDates);
     }
@@ -962,7 +976,7 @@ public:
      */
     class TimeRangeRestricted : public TimeRange, public LocalTimeRestrictedDate {
     public:
-        TimeRangeRestricted() : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL){
+        TimeRangeRestricted() : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
         }
 
         /**
@@ -976,14 +990,21 @@ public:
         TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : TimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
         }
 
-        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate restrictedDate) : TimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate() {
+        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate restrictedDate) : TimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(restrictedDate) {
         }
 
         TimeRangeRestricted(TimeRange timeRange, LocalTimeRestrictedDate restrictedDates) : TimeRange(timeRange), LocalTimeRestrictedDate(restrictedDates) {
         }
 
+        bool inRangeDate(LocalTimeValue localTimeValue) const {
+            
+            return LocalTimeRestrictedDate::isValid(localTimeValue);
+        }
+
         virtual bool inRange(LocalTimeValue localTimeValue) const {
-            return LocalTimeRestrictedDate::isValid(localTimeValue) && TimeRange::inRange(localTimeValue);
+            bool dateInRange = LocalTimeRestrictedDate::isValid(localTimeValue);
+            bool timeInRange = TimeRange::inRange(localTimeValue);
+            return dateInRange && timeInRange;
         }
     };
 
@@ -1510,25 +1531,6 @@ public:
      * - isDST() return true if the new time is in daylight saving time
      */
     void atLocalTime(LocalTimeHMS hms);
-
-    /**
-     * @brief Returns true if this object time is in the specified time range in local time
-     * 
-     * @param localTimeRange time in this object is: start <= time <= end (inclusive)
-     * @return true 
-     * @return false 
-     */
-    bool inLocalTimeRange(TimeRange localTimeRange);
-
-
-    /**
-     * @brief Returns true if this object time before the specified time range in local time
-     * 
-     * @param localTimeRange time in this object is: time < start (exclusive)
-     * @return true 
-     * @return false 
-     */    
-    bool beforeLocalTimeRange(TimeRange localTimeRange);
 
     LocalTimeHMS getLocalTimeHMS() const { return LocalTimeHMS(localTimeValue); };
 
