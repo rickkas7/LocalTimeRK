@@ -166,6 +166,10 @@ void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo) const {
     }
 }
 
+void LocalTimeHMS::fromJson(JSONValue jsonObj) {
+    parse(jsonObj.toString().data());
+}
+
 //
 // LocalTimeRestrictedDate
 //
@@ -201,6 +205,13 @@ LocalTimeRestrictedDate &LocalTimeRestrictedDate::withExceptDates(std::initializ
 bool LocalTimeRestrictedDate::isEmpty() const {
     return onlyOnDays.isEmpty() && onlyOnDates.empty() && exceptDates.empty();
 }
+
+void LocalTimeRestrictedDate::clear() {
+    onlyOnDays.setMask(0);
+    onlyOnDates.clear();
+    exceptDates.clear();
+}
+
 
 bool LocalTimeRestrictedDate::isValid(LocalTimeValue localTimeValue) const {
     return isValid(localTimeValue.ymd());
@@ -241,6 +252,54 @@ bool LocalTimeRestrictedDate::inExceptDates(LocalTimeYMD ymd) const {
     }
     return false;
 }
+
+void LocalTimeRestrictedDate::fromJson(JSONValue jsonObj) {
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *)iter.name();
+
+        if (key == "y") {
+            onlyOnDays.setMask((uint8_t)iter.value().toInt());
+        }
+        else
+        if (key == "a" || key == "x") {
+            JSONArrayIterator iter2(iter.value());
+            while(iter2.next()){
+                LocalTimeYMD ymd(iter2.value().toString().data());
+                if (key == "a") {
+                    onlyOnDates.push_back(ymd);
+                }
+                else {
+                    exceptDates.push_back(ymd);
+                }
+            }
+        }
+    }
+    if (isEmpty()) {
+        // If there are no restrictions, set to all days
+        onlyOnDays.setMask(LocalTimeDayOfWeek::MASK_ALL);
+    }
+}
+
+// 
+// LocalTimeHMSRestricted
+//
+void LocalTimeHMSRestricted::fromJson(JSONValue jsonObj) {
+    // Clearing is necessary in case there is no t key so the fi
+    LocalTimeHMS::clear();
+
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *) iter.name();
+        if (key == "t") {
+            LocalTimeHMS::fromJson(iter.value());
+        }
+    }
+
+    LocalTimeRestrictedDate::fromJson(jsonObj);
+}
+
+
 
 //
 // LocalTimeChange
@@ -503,12 +562,101 @@ int LocalTimeValue::ordinal() const {
     return ordinal;
 }
 
+//
+// ScheduleItemMinuteMultiple
+//
+void LocalTimeConvert::ScheduleItemMinuteMultiple::fromJson(JSONValue jsonObj) {
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *) iter.name();
+        if (key == "m") {
+            minuteMultiple = iter.value().toInt();
+        }
+    }
+    timeRange.fromJson(jsonObj);
+}
 
+//
+// LocalTimeConvert::Schedule
+//
+void LocalTimeConvert::Schedule::fromJson(const char *jsonStr) {
+    JSONValue outerObj = JSONValue::parseCopy(jsonStr);
+
+    fromJson(outerObj);
+}
+
+void LocalTimeConvert::Schedule::fromJson(JSONValue jsonObj) {
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *) iter.name();
+
+        if (key == "m") {
+            JSONArrayIterator iter2(iter.value());
+            while(iter2.next()){
+                ScheduleItemMinuteMultiple mm;
+                mm.fromJson(iter2.value());
+                minuteMultipleItems.push_back(mm);
+            }
+        }
+        else
+        if (key == "h") {
+            JSONArrayIterator iter2(iter.value());
+            while(iter2.next()){
+                int hourMultiple = 0;
+                TimeRangeRestricted timeRange;
+                timeRange.fromJson(iter2.value());
+
+                JSONObjectIterator iter3(iter2.value());
+                while(iter3.next()) {
+                    String key3 = (const char *) iter3.name();
+                    if (key3 == "h") {
+                        hourMultiple = iter3.value().toInt();
+                    }
+                }
+                
+                if (hourMultiple > 0) {
+                    withHourMultiple(hourMultiple, timeRange);
+                }
+            }
+        }
+        else 
+        if (key == "t") {
+            JSONArrayIterator iter2(iter.value());
+            while(iter2.next()){
+                LocalTimeHMSRestricted t;
+                t.fromJson(iter2.value());
+                times.push_back(t);
+            }
+        }           
+    }
+}
 
 
 //
 // LocalTimeConvert
 // 
+
+void LocalTimeConvert::TimeRange::fromJson(JSONValue jsonObj) {    
+    clear();
+
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *)iter.name();
+
+        if (key == "s" || key == "e") {
+            String hmsStr = iter.value().toString().data();
+
+            if (key == "s") {
+                hmsStart = LocalTimeHMS(hmsStr);
+            }
+            else
+            if (key == "e") {
+                hmsEnd = LocalTimeHMS(hmsStr);
+            }
+        }
+    }
+}
+
 
 void LocalTimeConvert::convert() {
     if (!config.isValid()) {

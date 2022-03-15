@@ -196,9 +196,9 @@ public:
     static const uint8_t MASK_FRIDAY = 0x20;
     static const uint8_t MASK_SATURDAY = 0x40;
 
-    static const uint8_t MASK_ALL = MASK_SUNDAY | MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY | MASK_SATURDAY | MASK_SUNDAY;
-    static const uint8_t MASK_WEEKDAY = MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY;
-    static const uint8_t MASK_WEEKEND = MASK_SATURDAY | MASK_SUNDAY;
+    static const uint8_t MASK_ALL = MASK_SUNDAY | MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY | MASK_SATURDAY | MASK_SUNDAY; // 0x7f = 127
+    static const uint8_t MASK_WEEKDAY = MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY; // 0x3e = 62
+    static const uint8_t MASK_WEEKEND = MASK_SATURDAY | MASK_SUNDAY; // 0x41 = 65
 
     uint8_t dayOfWeekMask = 0;
 };
@@ -290,6 +290,14 @@ public:
      * into the other fields as necessary.
      */
     void adjustTimeInfo(struct tm *pTimeInfo) const;
+
+    /**
+     * @brief Parses a JSON value of type string in HH:MM:SS format
+     * 
+     * @param jsonObj 
+     */
+    void fromJson(JSONValue jsonObj);
+
 
     /**
      * @brief Sets this object to be the specified hour, with minute and second set to 0
@@ -555,6 +563,11 @@ public:
     bool isEmpty() const;
 
     /**
+     * @brief Clear all settings
+     */
+    void clear();
+
+    /**
      * @brief Returns true if a date is in the onlyOnDays or onlyOnDates list, and not in the exceptDates list
      * 
      * @param localTimeValue Date to check (local time)
@@ -590,6 +603,18 @@ public:
      */
     bool inExceptDates(LocalTimeYMD ymd) const;
 
+    /**
+     * @brief Fills in this object from JSON data
+     * 
+     * @param jsonObj 
+     * 
+     * Keys: 
+     * - y (integer) mask value for onlyOnDays (optional)
+     * - a (array) Array of YYYY-MM-DD value strings to allow (optional)
+     * - x (array) Array of YYYY-MM-DD values to exclude (optional)
+     */
+    void fromJson(JSONValue jsonObj);
+
     LocalTimeDayOfWeek onlyOnDays;             //!< Allow on that day of week if mask bit is set
     std::vector<LocalTimeYMD> onlyOnDates;     //!< Dates to allow
     std::vector<LocalTimeYMD> exceptDates;     //!< Dates to exclude
@@ -608,6 +633,20 @@ public:
 
     LocalTimeHMSRestricted(LocalTimeHMS hms, LocalTimeRestrictedDate restrictedDate) : LocalTimeHMS(hms), LocalTimeRestrictedDate(restrictedDate) {
     }
+
+    /**
+     * @brief Fills in this object from JSON data
+     * 
+     * @param jsonObj 
+     * 
+     * Keys: 
+     * - t (string) Time string in HH:MM:SS format (can omit MM and SS parts, see LocalTimeHMS)
+     * - y (integer) mask value for onlyOnDays (optional, from LocalTimeRestrictedDate)
+     * - a (array) Array of YYYY-MM-DD value strings to allow (optional, from LocalTimeRestrictedDate)
+     * - x (array) Array of YYYY-MM-DD values to exclude (optional, from LocalTimeRestrictedDate)
+     */
+    void fromJson(JSONValue jsonObj);
+
 };
 
 
@@ -938,6 +977,11 @@ public:
         TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
         }
 
+        void clear() {
+            hmsStart = LocalTimeHMS("00:00:00");
+            hmsEnd = LocalTimeHMS("23:59:59");
+        }
+
         /**
          * @brief Get the number of seconds between start and end based on a LocalTimeConvert object
          * 
@@ -966,6 +1010,17 @@ public:
             LocalTimeHMS hms = localTimeValue.hms();
             return (hmsStart <= hms) && (hms <= hmsEnd);
         }
+
+        /**
+         * @brief Fills in the time range from a JSON object
+         * 
+         * @param jsonObj 
+         * 
+         * Keys:
+         * - s (string) The start time (HH:MM:SS format, can omit MM or SS)
+         * - e (string) The end time (HH:MM:SS format, can omit MM or SS)
+         */
+        void fromJson(JSONValue jsonObj);
 
         LocalTimeHMS hmsStart; //!< Starting time, inclusive
         LocalTimeHMS hmsEnd; //!< Ending time, inclusive
@@ -1006,6 +1061,25 @@ public:
             bool timeInRange = TimeRange::inRange(localTimeValue);
             return dateInRange && timeInRange;
         }
+
+        /**
+         * @brief Fills in the restricted time range from a JSON object
+         * 
+         * @param jsonObj 
+         * 
+         * Keys:
+         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange]
+         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange]
+         * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate]
+         * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate]
+         * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate]
+         */
+        void fromJson(JSONValue jsonObj) {
+            TimeRange::fromJson(jsonObj);
+            LocalTimeRestrictedDate::fromJson(jsonObj);
+        }
+
+
     };
 
     /**
@@ -1061,6 +1135,21 @@ public:
         time_t getTimeSpan(const LocalTimeConvert &conv) const {
             return timeRange.getTimeSpan(conv);
         }
+
+        /**
+         * @brief Creates an object from JSON
+         * 
+         * @param jsonObj 
+         * 
+         * Keys:
+         * - m (integer) minute multiple
+         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         */
+        void fromJson(JSONValue jsonObj);
 
         TimeRangeRestricted timeRange; //!< Range of local time, inclusive
         int minuteMultiple = 0; //!< Increment for minutes. Typically a value 60 is evenly divisible by.
@@ -1243,6 +1332,53 @@ public:
         bool isEmpty() const { 
             return minuteMultipleItems.empty() && times.empty();
         }
+
+        /**
+         * @brief Clear the existing settings
+         */
+        void clear() {
+            minuteMultipleItems.clear();   
+            times.clear();
+        }
+
+        /**
+         * @brief Set the schedule of this object from a JSON string
+         * 
+         * @param jsonStr 
+         * 
+         * See the overload that takes a JSONValue for the keys
+         */
+        void fromJson(const char *jsonStr);
+
+        /**
+         * @brief Set the schedule of this object from a JSONValue, typically the outer object
+         * 
+         * @param jsonObject 
+         * 
+         * Keys:
+         * - m (Array) Array of ScheduleItemMinuteMultiple objects
+         *  - m (integer) minute multiple
+         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         * - h (Array) Array of hour multiples
+         *  - h (integer) hour increment
+         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         * - t (Array) Array of LocalTimeHMSRestricted objects
+         *  - t (string) Time string in HH:MM:SS format (can omit MM and SS parts, see LocalTimeHMS)
+         *  - y (integer) mask value for onlyOnDays (optional, from LocalTimeRestrictedDate)
+         *  - a (array) Array of YYYY-MM-DD value strings to allow (optional, from LocalTimeRestrictedDate)
+         *  - x (array) Array of YYYY-MM-DD values to exclude (optional, from LocalTimeRestrictedDate)
+         */
+        void fromJson(JSONValue jsonObj);
+
+
 
         std::vector<ScheduleItemMinuteMultiple> minuteMultipleItems; //!< Minute multiple items
         std::vector<LocalTimeHMSRestricted> times; //!< Local time items (includes hour multiple items)
