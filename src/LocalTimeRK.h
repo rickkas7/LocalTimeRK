@@ -1266,17 +1266,7 @@ public:
          * 
          * This is just a shortcut that is easier to type than using the version that takes LocalTimeHMS objects.
          */
-        Schedule &withHours(std::initializer_list<int> hoursParam, int atMinute) {
-            std::vector<int> hours = hoursParam;
-            for(auto it = hours.begin(); it != hours.end(); ++it) {
-                int hour = *it;
-
-                LocalTimeHMS hms;
-                hms.withHourMinute(hour, atMinute);
-                times.push_back(hms);
-            }
-            return *this;
-        }
+        Schedule &withHours(std::initializer_list<int> hoursParam, int atMinute);
 
         /**
          * @brief Adds multiple times periodically in a time range with an hour increment
@@ -1296,14 +1286,7 @@ public:
          * times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, 
          * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
          */
-        Schedule &withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted()) {
-                        
-            for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
-                times.push_back(LocalTimeHMSRestricted(hms, timeRange));
-            }
-
-            return *this;
-        }
+        Schedule &withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted());
 
         /**
          * @brief Adds multiple times periodically in a time range with an hour increment
@@ -1314,14 +1297,7 @@ public:
          * @param hourEnd Hour to end, inclusive. 0 <= hourEnd <= 23
          * @return Schedule& 
          */
-        Schedule &withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd = 23) {
-            for(int hour = hourStart; hour <= hourEnd; hour += hourMultiple) {
-                LocalTimeHMS hms;
-                hms.withHourMinute(hour, atMinute);
-                times.push_back(hms);
-            }
-            return *this;
-        }
+        Schedule &withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd = 23);
 
         /**
          * @brief Returns true if the schedule does not have any items in it

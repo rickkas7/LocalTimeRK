@@ -579,6 +579,36 @@ void LocalTimeConvert::ScheduleItemMinuteMultiple::fromJson(JSONValue jsonObj) {
 //
 // LocalTimeConvert::Schedule
 //
+LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHours(std::initializer_list<int> hoursParam, int atMinute) {
+    std::vector<int> hours = hoursParam;
+    for(auto it = hours.begin(); it != hours.end(); ++it) {
+        int hour = *it;
+
+        LocalTimeHMS hms;
+        hms.withHourMinute(hour, atMinute);
+        times.push_back(hms);
+    }
+    return *this;
+}
+
+LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange) {
+                
+    for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
+        times.push_back(LocalTimeHMSRestricted(hms, timeRange));
+    }
+
+    return *this;
+}
+
+LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd) {
+    for(int hour = hourStart; hour <= hourEnd; hour += hourMultiple) {
+        LocalTimeHMS hms;
+        hms.withHourMinute(hour, atMinute);
+        times.push_back(hms);
+    }
+    return *this;
+}
+
 void LocalTimeConvert::Schedule::fromJson(const char *jsonStr) {
     JSONValue outerObj = JSONValue::parseCopy(jsonStr);
 
