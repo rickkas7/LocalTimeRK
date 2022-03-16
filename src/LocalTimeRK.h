@@ -1297,7 +1297,7 @@ public:
          * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
          */
         Schedule &withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted()) {
-
+                        
             for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
                 times.push_back(LocalTimeHMSRestricted(hms, timeRange));
             }

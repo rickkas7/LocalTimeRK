@@ -1494,6 +1494,59 @@ void test1() {
 	}
 
 	{
+		LocalTimeConvert::Schedule schedule;
+		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every 4 hours otherwise (00:00, 04:00, ...)
+		printf("starting test\n");
+
+		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
+
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=5");	// 08:00:00 local time
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 21:40:52")).convert(); // 04:40:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=21 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=22 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=1 tm_min=0 tm_sec=0 tm_wday=6");	 // 20:00:00 local time
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=6");	 // 00:00:00 local time
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-06 13:40:52")).convert(); // 08:40:52 local time Monday
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=1");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=17 tm_min=0 tm_sec=0 tm_wday=1");
+	}
+
+	{
 		// At specified times of the day (local time)
 		LocalTimeConvert::Schedule schedule;
 		schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")}); // 11:00 UTC and 23:30 UTC

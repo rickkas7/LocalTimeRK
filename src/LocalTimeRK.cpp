@@ -603,9 +603,6 @@ void LocalTimeConvert::Schedule::fromJson(JSONValue jsonObj) {
             JSONArrayIterator iter2(iter.value());
             while(iter2.next()){
                 int hourMultiple = 0;
-                TimeRangeRestricted timeRange;
-                timeRange.fromJson(iter2.value());
-
                 JSONObjectIterator iter3(iter2.value());
                 while(iter3.next()) {
                     String key3 = (const char *) iter3.name();
@@ -613,8 +610,11 @@ void LocalTimeConvert::Schedule::fromJson(JSONValue jsonObj) {
                         hourMultiple = iter3.value().toInt();
                     }
                 }
-                
+
                 if (hourMultiple > 0) {
+                    TimeRangeRestricted timeRange;
+                    timeRange.fromJson(iter2.value());
+
                     withHourMultiple(hourMultiple, timeRange);
                 }
             }
