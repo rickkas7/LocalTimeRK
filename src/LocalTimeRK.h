@@ -436,6 +436,7 @@ public:
         return compareTo(other) >= 0;
     }
 
+
     int8_t hour = 0;        //!< 0-23 hour (could also be negative)
     int8_t minute = 0;      //!< 0-59 minute
     int8_t second = 0;      //!< 0-59 second

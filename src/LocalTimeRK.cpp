@@ -627,8 +627,10 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
                         startingModulo = timeRange.hmsStart.hour % increment;
 
                         tempConv.time += increment * 3600;
+                        tempConv.convert();
+
                         LocalTime::timeToTm(tempConv.time, &timeInfo);
-                        timeInfo.tm_hour -= ((timeInfo.tm_hour - startingModulo) % increment);
+                        timeInfo.tm_hour -= ((tempConv.localTimeValue.hour() - startingModulo) % increment);
                         timeInfo.tm_min = timeRange.hmsStart.minute;
                         timeInfo.tm_sec = 0;
 
@@ -639,8 +641,10 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
                         startingModulo = timeRange.hmsStart.minute % increment;
 
                         tempConv.time += increment * 60;
+                        tempConv.convert();
+
                         LocalTime::timeToTm(tempConv.time, &timeInfo);
-                        timeInfo.tm_min -= ((timeInfo.tm_min - startingModulo) % increment);
+                        timeInfo.tm_min -= ((tempConv.localTimeValue.minute() - startingModulo) % increment);
                         timeInfo.tm_sec = 0;
 
                         tempConv.time = LocalTime::tmToTime(&timeInfo);
