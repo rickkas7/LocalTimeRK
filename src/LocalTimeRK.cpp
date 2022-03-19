@@ -28,6 +28,22 @@ int LocalTimeYMD::getDayOfWeek() const {
     return timeInfo.tm_wday;
 }
 
+void LocalTimeYMD::addDay(int numberOfDays) {
+    struct tm timeInfo = {0};
+
+    timeInfo.tm_year = ymd.year;
+    timeInfo.tm_mon = ymd.month - 1;
+    timeInfo.tm_mday = ymd.day;
+
+    timeInfo.tm_mday += numberOfDays;
+
+    time_t time = LocalTime::tmToTime(&timeInfo);
+    LocalTime::timeToTm(time, &timeInfo);
+
+    fromTimeInfo(&timeInfo);
+}
+
+
 int LocalTimeYMD::compareTo(const LocalTimeYMD other) const {
     int cmp;
 
@@ -119,7 +135,7 @@ void LocalTimeHMS::parse(const char *str) {
 }
 
 String LocalTimeHMS::toString() const {
-    return String::format("%d:%02d:%02d", (int)hour, (int)minute, (int)second);
+    return String::format("%02d:%02d:%02d", (int)hour, (int)minute, (int)second);
 }
 
 int LocalTimeHMS::toSeconds() const {
@@ -169,6 +185,7 @@ void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo) const {
 void LocalTimeHMS::fromJson(JSONValue jsonObj) {
     parse(jsonObj.toString().data());
 }
+
 
 //
 // LocalTimeRestrictedDate
@@ -563,14 +580,111 @@ int LocalTimeValue::ordinal() const {
 }
 
 //
-// ScheduleItemMinuteMultiple
+// ScheduleItemMultiple
 //
-void LocalTimeConvert::ScheduleItemMinuteMultiple::fromJson(JSONValue jsonObj) {
+bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConvert &conv) const {
+
+    LocalTimeConvert tempConv(conv);
+
+    LocalTimeYMD endYMD = tempConv.getLocalTimeYMD();
+    endYMD.addDay(3);
+
+    while(true) {
+        LocalTimeYMD curYMD = tempConv.getLocalTimeYMD();
+        if (curYMD > endYMD) {
+            break;
+        }
+
+        if (!timeRange.isValidDate(curYMD)) {
+            // This is a time range restricted that excludes this date, so skip this date
+            continue;
+        }
+
+        switch(multipleType) {
+        case MultipleType::NONE:
+            break;
+
+        case MultipleType::HOUR_OF_DAY:
+        case MultipleType::MINUTE_OF_HOUR:
+            {
+                int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
+                if (cmp < 0) {
+                    // Before time range, return beginning of time range
+                    tempConv.atLocalTime(timeRange.hmsStart);
+                    conv.time = tempConv.time;
+                    conv.convert();
+                    return true;
+                }
+                else 
+                if (cmp == 0) {
+                    // In time range hmsStart <= hms <= hmsEnd
+                    // Handle multiples here
+                    struct tm timeInfo;
+                    int startingModulo;
+
+                    switch(multipleType) {
+                    case MultipleType::HOUR_OF_DAY:
+                        startingModulo = timeRange.hmsStart.hour % increment;
+
+                        tempConv.time += increment * 3600;
+                        LocalTime::timeToTm(tempConv.time, &timeInfo);
+                        timeInfo.tm_hour -= ((timeInfo.tm_hour - startingModulo) % increment);
+                        timeInfo.tm_min = timeRange.hmsStart.minute;
+                        timeInfo.tm_sec = 0;
+
+                        tempConv.time = LocalTime::tmToTime(&timeInfo);
+                        break;
+
+                    case MultipleType::MINUTE_OF_HOUR:
+                        startingModulo = timeRange.hmsStart.minute % increment;
+
+                        tempConv.time += increment * 60;
+                        LocalTime::timeToTm(tempConv.time, &timeInfo);
+                        timeInfo.tm_min -= ((timeInfo.tm_min - startingModulo) % increment);
+                        timeInfo.tm_sec = 0;
+
+                        tempConv.time = LocalTime::tmToTime(&timeInfo);
+                        break;
+
+                    default:
+                        break;
+                    }
+                    conv.time = tempConv.time;
+                    conv.convert();
+                    return true;
+                }
+                else {
+                    // cmp > 0, after time range, don't check and try next day
+                }
+            }
+            break;            
+            
+        case MultipleType::DAY_OF_WEEK:
+            break;
+            
+        case MultipleType::DAY_OF_MONTH:
+            break;
+            
+        case MultipleType::WEEK_OF_MONTH:
+            break;
+
+        }
+
+        // Start at the beginning of the next day
+        tempConv.nextDay(LocalTimeHMS("00:00:00"));
+    }
+
+    // No next time found (no schedule, or all days excluded within the next 3 days)
+    return false;
+}
+
+
+void LocalTimeConvert::ScheduleItemMultiple::fromJson(JSONValue jsonObj) {
     JSONObjectIterator iter(jsonObj);
     while(iter.next()) {
         String key = (const char *) iter.name();
         if (key == "m") {
-            minuteMultiple = iter.value().toInt();
+            increment = iter.value().toInt();
         }
     }
     timeRange.fromJson(jsonObj);
@@ -623,9 +737,9 @@ void LocalTimeConvert::Schedule::fromJson(JSONValue jsonObj) {
         if (key == "m") {
             JSONArrayIterator iter2(iter.value());
             while(iter2.next()){
-                ScheduleItemMinuteMultiple mm;
+                ScheduleItemMultiple mm;
                 mm.fromJson(iter2.value());
-                minuteMultipleItems.push_back(mm);
+                multipleItems.push_back(mm);
             }
         }
         else
@@ -757,14 +871,14 @@ void LocalTimeConvert::addSeconds(int seconds) {
     convert();
 }
 
-void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple, int startingModulo) {
-    time += minuteMultiple * 60;
+void LocalTimeConvert::nextMinuteMultiple(int increment, int startingModulo) {
+    time += increment * 60;
 
     struct tm timeInfo;
 
     LocalTime::timeToTm(time, &timeInfo);
 
-    timeInfo.tm_min -= ((timeInfo.tm_min - startingModulo) % minuteMultiple);
+    timeInfo.tm_min -= ((timeInfo.tm_min - startingModulo) % increment);
     timeInfo.tm_sec = 0;
 
     time = LocalTime::tmToTime(&timeInfo);
@@ -914,16 +1028,15 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
 
     for(int tries = 0; tries < 2; tries++) {
         // Check the minute multiples
-        ScheduleItemMinuteMultiple foundItem;
+        ScheduleItemMultiple foundItem;
 
         // 86400 + 3600 for fall back on time change = 90000, plus some extra
         time_t smallestTimeSpan = 100000; 
 
         time_t closestTime = 0;
 
-
-        for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
-            ScheduleItemMinuteMultiple item = *it;
+        for(auto it = schedule.multipleItems.begin(); it != schedule.multipleItems.end(); ++it) {
+            ScheduleItemMultiple item = *it;
             if (item.timeRange.inRange(localTimeValue)) {
                 // This minute multiple applies
                 time_t timeSpan = item.getTimeSpan(*this);
@@ -936,15 +1049,15 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
 
         if (foundItem.isValid()) {
             LocalTimeConvert tmpConvert(*this);
-            tmpConvert.nextMinuteMultiple(foundItem.minuteMultiple, foundItem.timeRange.hmsStart.minute % foundItem.minuteMultiple);
+            tmpConvert.nextMinuteMultiple(foundItem.increment, foundItem.timeRange.hmsStart.minute % foundItem.increment);
             if (closestTime == 0 || tmpConvert.time < closestTime) {
                 closestTime = tmpConvert.time;
             }
         } 
         else {
             // Not in a time range. Is there a time range after the current time?
-            for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
-                ScheduleItemMinuteMultiple item = *it;
+            for(auto it = schedule.multipleItems.begin(); it != schedule.multipleItems.end(); ++it) {
+                ScheduleItemMultiple item = *it;
 
                 LocalTimeConvert tmpConvert(*this);
                 tmpConvert.atLocalTime(item.timeRange.hmsStart);

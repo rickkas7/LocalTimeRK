@@ -74,6 +74,26 @@ void _assertTime(const char *msg, time_t got, const char *expected, int line) {
 }
 
 
+#define assertTime2(msg, got, expected) _assertTime2(msg, got, expected, __LINE__)
+void _assertTime2(const char *msg, time_t got, const char *expected, int line) {
+	struct tm timeInfo;
+	LocalTimeYMD ymd;
+	LocalTimeHMS hms;
+
+	LocalTime::timeToTm(got, &timeInfo);
+	ymd.fromTimeInfo(&timeInfo);
+	hms.fromTimeInfo(&timeInfo);
+	
+	String gotStr = ymd.toString() + String(" ") + hms.toString();
+	if (strcmp(expected, gotStr) != 0) {
+		printf("assertion failed %s line %d\n", msg, line);
+		printf("expected: %s\n", expected);
+		printf("     got: %s\n", gotStr.c_str());
+		assert(false);
+	}
+}
+
+
 const char *timeChanges[4] = {
 	"M3.2.0/2:00:00",
 	"M11.1.0/2:00:00",
@@ -967,6 +987,63 @@ void test1() {
 		assertInt("", LocalTimeYMD("2022-03-14") >= LocalTimeYMD("2022-03-13"), true);
 		assertInt("", LocalTimeYMD("2022-02-14") < LocalTimeYMD("2022-03-13"), true);
 		assertInt("", LocalTimeYMD("2021-03-14") < LocalTimeYMD("2022-03-13"), true);
+
+		bResult = ymd.parse("2022-03-11");
+		ymd.addDay(1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2022-03-10");
+		ymd.addDay(2);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2022-02-28");
+		ymd.addDay(12);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2022-03-13");
+		ymd.addDay(-1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2024-02-28");
+		ymd.addDay(1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2024);
+		assertInt("", ymd.getMonth(), 2);
+		assertInt("", ymd.getDay(), 29);
+		assertInt("", ymd.getDayOfWeek(), 4);
+
+		ymd.addDay(1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2024);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 1);
+		assertInt("", ymd.getDayOfWeek(), 5);
+
+		bResult = ymd.parse("2024-02-28");
+		ymd.addDay(2);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2024);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 1);
+		assertInt("", ymd.getDayOfWeek(), 5);
+
+
 	}
 
 	// LocalTimeRestrictedDate - Day Of Week
@@ -1903,6 +1980,37 @@ void test1() {
 
 	}
 
+	// ScheduleItemMultiple - low level tests
+	// 
+	{
+		LocalTimeConvert::ScheduleItemMultiple item;
+		
+
+		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::MINUTE_OF_HOUR;
+		item.increment = 5;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2021-12-04 16:15:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:15:00")).convert();
+		item.getNextScheduledTime(conv);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:15:01")).convert(); 
+		item.getNextScheduledTime(conv);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:19:59")).convert();
+		item.getNextScheduledTime(conv);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 23:58:52")).convert();
+		item.getNextScheduledTime(conv);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=0");	
+	}
+
 	// LocalTimeConvert::TimeRange JSON operations
 
 	{
@@ -1926,7 +2034,7 @@ void test1() {
 				LocalTimeConvert::TimeRange tr(LocalTimeHMS("09:00:00"), LocalTimeHMS("09:29:29"));
 
 				tr.fromJson(iter.value());
-				assertStr("", tr.hmsStart.toString(), "0:00:00");
+				assertStr("", tr.hmsStart.toString(), "00:00:00");
 				assertStr("", tr.hmsEnd.toString(), "23:59:59");
 			}			
 			else
@@ -1934,7 +2042,7 @@ void test1() {
 				LocalTimeConvert::TimeRange tr;
 
 				tr.fromJson(iter.value());
-				assertStr("", tr.hmsStart.toString(), "9:00:00");
+				assertStr("", tr.hmsStart.toString(), "09:00:00");
 				assertStr("", tr.hmsEnd.toString(), "16:59:59");
 			}			
 			else

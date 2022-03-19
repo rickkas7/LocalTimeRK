@@ -86,6 +86,14 @@ public:
 
     void fromLocalTimeValue(const LocalTimeValue &value);
 
+    /**
+     * @brief Add a number of days to the current YMD (updating month or year as necessary)
+     * 
+     * @param numberOfDays Number of days to add (positive) or subtract (negative)
+     * 
+     * Works correctly with leap years.
+     */
+    void addDay(int numberOfDays = 1);
 
     int getDayOfWeek() const;
 
@@ -127,7 +135,7 @@ public:
     bool parse(const char *s);
 
     String toString() const {
-        return String::format("LocalTimeYMD year=%u month=%u day=%u", ymd.year, ymd.month, ymd.day);
+        return String::format("%04d-%02d-%02d", ymd.year + 1900, ymd.month, ymd.day);
     }
 
     YMD ymd;
@@ -257,7 +265,7 @@ public:
     void parse(const char *str);
 
     /**
-     * @brief Turns the parsed data into a normalized string of the form: "H:MM:SS" (24-hour clock)
+     * @brief Turns the parsed data into a normalized string of the form: "HH:MM:SS" (24-hour clock, with leading zeroes)
      */
     String toString() const;
 
@@ -1006,6 +1014,25 @@ public:
             return convEnd.time - convStart.time;
         }
 
+        /**
+         * @brief Compares a time (LocalTimeHHS, local time) to this time range
+         * 
+         * @param hms 
+         * @return int -1 if hms is before hmsStart, 0 if in range, +1 if hms is after hmsEnd
+         */
+        int compareTo(LocalTimeHMS hms) const {
+            if (hms < hmsStart) {
+                return -1;
+            }
+            else
+            if (hms > hmsEnd) {
+                return +1;
+            }
+            else {
+                return 0;
+            }
+        }
+
         virtual bool inRange(LocalTimeValue localTimeValue) const {
             LocalTimeHMS hms = localTimeValue.hms();
             return (hmsStart <= hms) && (hms <= hmsEnd);
@@ -1051,6 +1078,10 @@ public:
         TimeRangeRestricted(TimeRange timeRange, LocalTimeRestrictedDate restrictedDates) : TimeRange(timeRange), LocalTimeRestrictedDate(restrictedDates) {
         }
 
+        bool isValidDate(LocalTimeYMD ymd) const {
+            return LocalTimeRestrictedDate::isValid(ymd);
+        }
+
         bool inRangeDate(LocalTimeValue localTimeValue) const {
             
             return LocalTimeRestrictedDate::isValid(localTimeValue);
@@ -1085,18 +1116,27 @@ public:
     /**
      * @brief Schedule option for "every n minutes"
      */
-    class ScheduleItemMinuteMultiple {
+    class ScheduleItemMultiple {
     public:
+        enum class MultipleType : int {
+            NONE = 0,           //!< No multiple defined
+            MINUTE_OF_HOUR,     //!< Minute of the hour (1)
+            HOUR_OF_DAY,        //!< Hour of day (2)
+            DAY_OF_WEEK,        //!< Day of week Sunday - Saturday (3)
+            DAY_OF_MONTH,       //!< Day of the month (4)
+            WEEK_OF_MONTH       //!< Week of the month (5)
+        };
+
         /**
-         * @brief Default constructor. Set minuteMultiple and optionally timeRange to use.
+         * @brief Default constructor. Set increment and optionally timeRange to use.
          */
-        ScheduleItemMinuteMultiple() {
+        ScheduleItemMultiple() {
         }
 
         /**
          * @brief Construct an item with a time range and number of minutes
          * 
-         * @param minuteMultiple Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+         * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
          * @param timeRange When to apply this minute multiple (optional)
          * 
          * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
@@ -1109,18 +1149,19 @@ public:
          * starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
          * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
          */
-        ScheduleItemMinuteMultiple(int minuteMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted()) : timeRange(timeRange), minuteMultiple(minuteMultiple) {                
+        ScheduleItemMultiple(int increment, TimeRangeRestricted timeRange = TimeRangeRestricted()) : timeRange(timeRange), increment(increment) {                
         }
 
+
         /**
-         * @brief Returns true if minuteMultiple is non-zero
+         * @brief Returns true if increment is non-zero
          * 
          * @return true 
          * @return false 
          * 
          * This is used to check if an object was constructed by the default constructor and never set.
          */
-        bool isValid() const { return (minuteMultiple > 0); };
+        bool isValid() const { return (increment > 0); };
 
         /**
          * @brief Get number of seconds in the time range at a given time
@@ -1137,6 +1178,14 @@ public:
         }
 
         /**
+         * @brief Get the scheduled time
+         * 
+         * @param conv 
+         * @return time_t 
+         */
+        bool getNextScheduledTime(LocalTimeConvert &conv) const;
+
+        /**
          * @brief Creates an object from JSON
          * 
          * @param jsonObj 
@@ -1151,8 +1200,10 @@ public:
          */
         void fromJson(JSONValue jsonObj);
 
+    
         TimeRangeRestricted timeRange; //!< Range of local time, inclusive
-        int minuteMultiple = 0; //!< Increment for minutes. Typically a value 60 is evenly divisible by.
+        int increment = 0; //!< Increment for minutes. Typically a value 60 is evenly divisible by.
+        MultipleType multipleType = MultipleType::NONE;
     };
 
     /**
@@ -1177,7 +1228,7 @@ public:
         /**
          * @brief Adds a minute multiple schedule all day
          * 
-         * @param minuteMultiple Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+         * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
          * 
          * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
          * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
@@ -1188,14 +1239,14 @@ public:
          * 
          * @return Schedule& 
          */
-        Schedule &withMinuteMultiple(int minuteMultiple) {
-            return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, TimeRangeRestricted()));
+        Schedule &withMinuteMultiple(int increment) {
+            return withMinuteMultiple(ScheduleItemMultiple(increment, TimeRangeRestricted()));
         }
 
         /**
          * @brief Adds a minute multiple schedule in a time range
          * 
-         * @param minuteMultiple Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+         * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
          * @param timeRange When to apply this minute multiple and/or minute offset.
          * 
          * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
@@ -1210,18 +1261,18 @@ public:
          * 
          * @return Schedule& 
          */        
-        Schedule &withMinuteMultiple(int minuteMultiple, TimeRangeRestricted timeRange) {
-            return withMinuteMultiple(ScheduleItemMinuteMultiple(minuteMultiple, timeRange));
+        Schedule &withMinuteMultiple(int increment, TimeRangeRestricted timeRange) {
+            return withMinuteMultiple(ScheduleItemMultiple(increment, timeRange));
         }
 
         /**
-         * @brief Adds a minute multiple schedule from a ScheduleItemMinuteMultiple object
+         * @brief Adds a minute multiple schedule from a ScheduleItemMultiple object
          * 
          * @param item 
          * @return Schedule& 
          */
-        Schedule &withMinuteMultiple(ScheduleItemMinuteMultiple item) {
-            minuteMultipleItems.push_back(item);
+        Schedule &withMinuteMultiple(ScheduleItemMultiple item) {
+            multipleItems.push_back(item);
             return *this;
         }
 
@@ -1300,20 +1351,29 @@ public:
         Schedule &withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd = 23);
 
         /**
+         * @brief Schedule every nth day
+         * 
+         * @param dayMultiple 
+         * @param timeRange 
+         * @return Schedule& 
+         */
+        // Schedule &withDayMultiple(int dayMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted());
+
+        /**
          * @brief Returns true if the schedule does not have any items in it
          * 
          * @return true 
          * @return false 
          */
         bool isEmpty() const { 
-            return minuteMultipleItems.empty() && times.empty();
+            return multipleItems.empty() && times.empty();
         }
 
         /**
          * @brief Clear the existing settings
          */
         void clear() {
-            minuteMultipleItems.clear();   
+            multipleItems.clear();   
             times.clear();
         }
 
@@ -1332,7 +1392,7 @@ public:
          * @param jsonObject 
          * 
          * Keys:
-         * - m (Array) Array of ScheduleItemMinuteMultiple objects
+         * - m (Array) Array of ScheduleItemMultiple objects
          *  - m (integer) minute multiple
          *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
@@ -1356,7 +1416,7 @@ public:
 
 
 
-        std::vector<ScheduleItemMinuteMultiple> minuteMultipleItems; //!< Minute multiple items
+        std::vector<ScheduleItemMultiple> multipleItems; //!< Minute multiple items
         std::vector<LocalTimeHMSRestricted> times; //!< Local time items (includes hour multiple items)
     };
 
@@ -1416,9 +1476,9 @@ public:
     /**
      * @brief Moves the current time the next specified multiple of minutes
      * 
-     * @param minuteMultiple Typically something like 5, 15, 20, 30 that 60 is evenly divisible by
+     * @param increment Typically something like 5, 15, 20, 30 that 60 is evenly divisible by
      * 
-     * @param startingModulo (optional). If present, must be 0 < startingModulo < minuteMultiple
+     * @param startingModulo (optional). If present, must be 0 < startingModulo < increment
      * 
      * Moves the time forward to the next multiple of that number of minutes. For example, if the 
      * clock is at :10 past the hour and the multiple is 15, then time will be updated to :15. If
@@ -1429,7 +1489,7 @@ public:
      * - localTimeValue contains the broken-out values for the local time
      * - isDST() return true if the new time is in daylight saving time
      */
-    void nextMinuteMultiple(int minuteMultiple, int startingModulo = 0);
+    void nextMinuteMultiple(int increment, int startingModulo = 0);
 
     /**
      * @brief Moves the current time the next specified local time. This could be today or tomorrow.
