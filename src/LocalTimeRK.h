@@ -1188,10 +1188,13 @@ public:
         /**
          * @brief Creates an object from JSON
          * 
+         * @param key Key name that determines the MultipleType 
          * @param jsonObj 
          * 
          * Keys:
-         * - m (integer) minute multiple
+         * - m (integer) MultipleType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
+         * - i (integer) increment or ordinal value
+         * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK)
          * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
@@ -1202,7 +1205,7 @@ public:
 
     
         TimeRangeRestricted timeRange; //!< Range of local time, inclusive
-        int increment = 0; //!< Increment for minutes. Typically a value 60 is evenly divisible by.
+        int increment = 0; //!< Increment value, or sometimes ordinal value
         int dayOfWeek = 0; //!< Used for DAY_OF_WEEK only
         MultipleType multipleType = MultipleType::NONE;
     };
@@ -1226,23 +1229,6 @@ public:
         Schedule() {
         }
 
-        /**
-         * @brief Adds a minute multiple schedule all day
-         * 
-         * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
-         * 
-         * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
-         * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
-         * an inconsistent period at the top of the hour.
-         * 
-         * If you want to schedule at a minute offset as well, for example every 15 minutes at 02:00, 17:00, 32:00, 47:00,
-         * see the overload with a time range.
-         * 
-         * @return Schedule& 
-         */
-        Schedule &withMinuteMultiple(int increment) {
-            return withMinuteMultiple(ScheduleItemMultiple(increment, TimeRangeRestricted()));
-        }
 
         /**
          * @brief Adds a minute multiple schedule in a time range
@@ -1262,20 +1248,7 @@ public:
          * 
          * @return Schedule& 
          */        
-        Schedule &withMinuteMultiple(int increment, TimeRangeRestricted timeRange) {
-            return withMinuteMultiple(ScheduleItemMultiple(increment, timeRange));
-        }
-
-        /**
-         * @brief Adds a minute multiple schedule from a ScheduleItemMultiple object
-         * 
-         * @param item 
-         * @return Schedule& 
-         */
-        Schedule &withMinuteMultiple(ScheduleItemMultiple item) {
-            multipleItems.push_back(item);
-            return *this;
-        }
+        Schedule &withMinuteMultiple(int increment, TimeRangeRestricted timeRange = TimeRangeRestricted());
 
         /**
          * @brief Add a scheduled item at a time in local time during the day. 
@@ -1341,17 +1314,6 @@ public:
         Schedule &withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted());
 
         /**
-         * @brief Adds multiple times periodically in a time range with an hour increment
-         * 
-         * @param hourStart Hour to start at 0 <= hourStart <= 23
-         * @param hourMultiple Increment for hours 
-         * @param atMinute Minute past the hour for each item. Seconds is always 0.
-         * @param hourEnd Hour to end, inclusive. 0 <= hourEnd <= 23
-         * @return Schedule& 
-         */
-        Schedule &withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd = 23);
-
-        /**
          * @brief Schedule every nth day
          * 
          * @param dayMultiple 
@@ -1394,14 +1356,8 @@ public:
          * 
          * Keys:
          * - m (Array) Array of ScheduleItemMultiple objects
-         *  - m (integer) minute multiple
-         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
-         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
-         *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         * - h (Array) Array of hour multiples
-         *  - h (integer) hour increment
+         *  - m (integer) type of multiple
+         *  - i (integer) increment
          *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]

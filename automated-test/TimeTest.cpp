@@ -1199,7 +1199,6 @@ void test1() {
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=0");	
 	}
-
 	{
 		// Every 15 minutes all day, at 05:00, 20:00, 35:00, 50:00
 		LocalTimeConvert::Schedule schedule;
@@ -1580,7 +1579,7 @@ void test1() {
 		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
 
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 EDT local time
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=5");	// 08:00:00 local time
 
@@ -1616,11 +1615,12 @@ void test1() {
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=6");	 // 00:00:00 local time
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-06 13:40:52")).convert(); // 08:40:52 local time Monday
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=1");	
 
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=17 tm_min=0 tm_sec=0 tm_wday=1");
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=21 tm_min=0 tm_sec=0 tm_wday=1");	
 	}
 
 	{
@@ -1734,65 +1734,7 @@ void test1() {
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=8 tm_min=5 tm_sec=0 tm_wday=0");	
 	}
 
-	{
-		LocalTimeConvert::Schedule schedule;
-		// At 0:05, 3:05, ... 
-		schedule.withHourMultiple(0, 3, 5);
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=11 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=20 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=23 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=2 tm_min=5 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=5 tm_min=5 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=8 tm_min=5 tm_sec=0 tm_wday=0");	
-	}
-
-
-	{
-		LocalTimeConvert::Schedule schedule;
-		// At 01:00, 04:00, ... 
-		schedule.withHourMultiple(1, 3, 0);
-
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=12 tm_min=0 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=18 tm_min=0 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=21 tm_min=0 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=3 tm_min=0 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0");	
-	}
 
 	{
 		LocalTimeConvert::Schedule schedule;
