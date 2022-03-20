@@ -670,9 +670,19 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
             
         case MultipleType::DAY_OF_WEEK:
             // "dayOfWeek" specifies the day of the week (0 = Sunday, 1 = Monday, ...)
-            // "increment" specifies which one (0 = first, 1 = second, ...)
+            // "increment" specifies which one (1 = first, 2 = second, ... or -1 = last, -2 = second to last, ...)
             // Time is at the HMS of the hmsStart (local time)
-
+            {
+                int day = LocalTime::dayOfWeekOfMonth(tempConv.localTimeValue.year(), tempConv.localTimeValue.month(), dayOfWeek, increment);
+                if (day == tempConv.localTimeValue.day()) {
+                    tempConv.atLocalTime(timeRange.hmsStart);
+                    if (tempConv.time > conv.time) {
+                        conv.time = tempConv.time;
+                        conv.convert();
+                        return true;
+                    }
+                }
+            }
             break;
             
         case MultipleType::DAY_OF_MONTH:
@@ -683,9 +693,11 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
                 if (cmp < 0) {
                     // Before the beginning of time range, return beginning of time range
                     tempConv.atLocalTime(timeRange.hmsStart);
-                    conv.time = tempConv.time;
-                    conv.convert();
-                    return true;
+                    if (tempConv.time > conv.time) {
+                        conv.time = tempConv.time;
+                        conv.convert();
+                        return true;
+                    }
                 }
             }
             break;
@@ -1333,27 +1345,54 @@ int LocalTime::dayOfWeekOfMonth(int year, int month, int dayOfWeek, int ordinal)
         return 0;
     }
 
-    timeInfo.tm_year = year - 1900;
-    timeInfo.tm_mon = month - 1;
-    timeInfo.tm_mday = 1;
-    tmToTime(&timeInfo);
-
-    while(timeInfo.tm_wday != dayOfWeek) {
-        timeInfo.tm_mday++;
-        tmToTime(&timeInfo);
-    }
-
     int lastDay = lastDayOfMonth(year, month);
-    for(int loops = 1; loops <= 5; loops++) {
-        if (loops >= ordinal) {
-            return timeInfo.tm_mday;
+
+    if (ordinal > 0) {
+        timeInfo.tm_year = year - 1900;
+        timeInfo.tm_mon = month - 1;
+        timeInfo.tm_mday = 1;
+        tmToTime(&timeInfo);
+
+        while(timeInfo.tm_wday != dayOfWeek) {
+            timeInfo.tm_mday++;
+            tmToTime(&timeInfo);
         }
-        timeInfo.tm_mday += 7;
-        if (timeInfo.tm_mday > lastDay) {
-            // This ordinal does not exist
-            return 0;
+
+        for(int loops = 1; loops <= 5; loops++) {
+            if (loops >= ordinal) {
+                return timeInfo.tm_mday;
+            }
+            timeInfo.tm_mday += 7;
+            if (timeInfo.tm_mday > lastDay) {
+                // This ordinal does not exist
+                return 0;
+            }
         }
     }
+    else
+    if (ordinal < 0) {
+        timeInfo.tm_year = year - 1900;
+        timeInfo.tm_mon = month - 1;
+        timeInfo.tm_mday = lastDay;
+        tmToTime(&timeInfo);
+
+        while(timeInfo.tm_wday != dayOfWeek) {
+            timeInfo.tm_mday--;
+            tmToTime(&timeInfo);
+        }
+        for(int loops = 1; loops <= 5; loops++) {
+            if (loops >= -ordinal) {
+                return timeInfo.tm_mday;
+            }
+            timeInfo.tm_mday -= 7;
+            if (timeInfo.tm_mday < 1) {
+                // This ordinal does not exist
+                return 0;
+            }
+        }
+
+    }
+
     
     return 0;
 }
