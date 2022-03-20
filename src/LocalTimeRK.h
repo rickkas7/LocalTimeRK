@@ -983,7 +983,7 @@ public:
          * 23:59:59 is the end of the day.
          * 
          */
-        TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
+        TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
         }
 
         void clear() {
@@ -1124,8 +1124,7 @@ public:
             MINUTE_OF_HOUR,     //!< Minute of the hour (1)
             HOUR_OF_DAY,        //!< Hour of day (2)
             DAY_OF_WEEK,        //!< Day of week Sunday - Saturday (3)
-            DAY_OF_MONTH,       //!< Day of the month (4)
-            WEEK_OF_MONTH       //!< Week of the month (5)
+            DAY_OF_MONTH        //!< Day of the month (4)
         };
 
         /**
@@ -1204,6 +1203,7 @@ public:
     
         TimeRangeRestricted timeRange; //!< Range of local time, inclusive
         int increment = 0; //!< Increment for minutes. Typically a value 60 is evenly divisible by.
+        int dayOfWeek = 0; //!< Used for DAY_OF_WEEK only
         MultipleType multipleType = MultipleType::NONE;
     };
 
@@ -1928,6 +1928,17 @@ public:
      * The year is required to handle leap years when the month is February.
      */
     static int lastDayOfMonth(int year, int month);
+
+    /**
+     * @brief Return the nth instance of a day of week in a month and year
+     * 
+     * @param year The 4-digit year (2020, for example)
+     * @param month Month 1 - 12 inclusive, 1 = January, 12 = December
+     * @param dayOfWeek 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
+     * @param ordinal 1 = first instance of that day of week in the month, 2 = second, ...
+     * @return int The day of the month, or 0 if that ordinal does not exist in the month
+     */
+    static int dayOfWeekOfMonth(int year, int month, int dayOfWeek, int ordinal);
 
 protected:
     /**

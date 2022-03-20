@@ -2067,6 +2067,9 @@ void test1() {
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 04:00:00")).convert(); // UTC; 23:00:00 local time
 
 		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-13 05:00:00"); // UTC; 00:00:00 EST local time
+
+		item.getNextScheduledTime(conv);
 		assertTime2("", conv.time, "2022-03-13 07:00:00"); // UTC; 3:00:00 EDT local time
 
 		item.getNextScheduledTime(conv);
@@ -2084,10 +2087,7 @@ void test1() {
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 04:00:00")).convert(); // UTC; 23:00:00 local time
 
 		item.getNextScheduledTime(conv);
-		assertTime2("", conv.time, "2022-03-13 05:00:00"); // UTC; 01:00:00 EST local time <-- I think this is wrong, DST switch is off a bit
-
-		item.getNextScheduledTime(conv);
-		assertTime2("", conv.time, "2022-03-13 06:00:00"); // UTC; 02:00:00 EDT local time <-- I think this is wrong
+		assertTime2("", conv.time, "2022-03-13 06:00:00"); // UTC; 01:00:00 EDT local time
 
 		item.getNextScheduledTime(conv);
 		assertTime2("", conv.time, "2022-03-13 08:00:00"); // UTC; 04:00:00 EDT (this is right)
@@ -2165,6 +2165,45 @@ void test1() {
 	}
 
 
+	{
+		LocalTimeConvert::ScheduleItemMultiple item;
+		bool bResult;
+		
+		// On the 5th of the month at 4:00 AM local time
+		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_MONTH;
+		item.increment = 5;
+		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("04:00:00"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:10:52")).convert(); // UTC; 03:10:52 local time
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, false);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-04 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-03 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-02 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-01 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, false);
+
+	}
+
 	// LocalTimeConvert::Schedule JSON operations
 
 
@@ -2229,6 +2268,57 @@ void test1() {
 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
 	assertStr("", conv.format(TIME_FORMAT_ISO8601_FULL).c_str(), "2021-04-01T12:00:00-04:00");
+
+	// dayOfWeekOfMonth
+	{
+		/*
+		February 2022      
+		Su Mo Tu We Th Fr Sa  
+			1  2  3  4  5  
+		6  7  8  9 10 11 12  
+		13 14 15 16 17 18 19  
+		20 21 22 23 24 25 26  
+		27 28 
+		*/	
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 1), 1);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 3, 1), 2);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 4, 1), 3);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 5, 1), 4);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 6, 1), 5);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, 1), 6);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 1, 1), 7);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 2), 8);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 3, 2), 9);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 3), 15);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 4), 22);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 5), 29);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 6), 0);
+
+
+		/*
+		February 2024      
+		Su Mo Tu We Th Fr Sa  
+					1  2  3  
+		4  5  6  7  8  9 10  
+		11 12 13 14 15 16 17  
+		18 19 20 21 22 23 24  
+		25 26 27 28 29  
+		*/
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 1), 4);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 2), 11);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 3), 18);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 4), 25);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 5), 0);
+
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 1), 1);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 2), 8);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 3), 15);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 4), 22);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 5), 29);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 6), 0);
+
+	}
+
 }
 
 

@@ -607,6 +607,8 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
         case MultipleType::HOUR_OF_DAY:
         case MultipleType::MINUTE_OF_HOUR:
             {
+                bool bResult = false;
+
                 int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
                 if (cmp < 0) {
                     // Before time range, return beginning of time range
@@ -621,23 +623,22 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
                     // Handle multiples here
                     struct tm timeInfo;
                     int startingModulo;
-
+                     
                     switch(multipleType) {
                     case MultipleType::HOUR_OF_DAY:
-                        startingModulo = timeRange.hmsStart.hour % increment;
-
-                        tempConv.time += increment * 3600;
-                        tempConv.convert();
-
-                        LocalTime::timeToTm(tempConv.time, &timeInfo);
-                        timeInfo.tm_hour -= ((tempConv.localTimeValue.hour() - startingModulo) % increment);
-                        timeInfo.tm_min = timeRange.hmsStart.minute;
-                        timeInfo.tm_sec = 0;
-
-                        tempConv.time = LocalTime::tmToTime(&timeInfo);
+                        // Loop here instead of doing the modulo math to correctly handle timezone and daylight saving switch
+                        for(LocalTimeHMS tempHMS = timeRange.hmsStart; tempHMS <= timeRange.hmsEnd; tempHMS.hour += increment) {
+                            tempConv.atLocalTime(tempHMS);
+                            if (tempConv.time > conv.time) {
+                                // Found match
+                                bResult = true;
+                                break;
+                            }
+                        }
                         break;
 
                     case MultipleType::MINUTE_OF_HOUR:
+                        // TODO: I think this is wrong for timezones with a minute offset
                         startingModulo = timeRange.hmsStart.minute % increment;
 
                         tempConv.time += increment * 60;
@@ -648,14 +649,18 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
                         timeInfo.tm_sec = 0;
 
                         tempConv.time = LocalTime::tmToTime(&timeInfo);
+                        bResult = true;
                         break;
 
                     default:
                         break;
                     }
-                    conv.time = tempConv.time;
-                    conv.convert();
-                    return true;
+
+                    if (bResult) {
+                        conv.time = tempConv.time;
+                        conv.convert();
+                        return true;
+                    }
                 }
                 else {
                     // cmp > 0, after time range, don't check and try next day
@@ -664,14 +669,27 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
             break;            
             
         case MultipleType::DAY_OF_WEEK:
+            // "dayOfWeek" specifies the day of the week (0 = Sunday, 1 = Monday, ...)
+            // "increment" specifies which one (0 = first, 1 = second, ...)
+            // Time is at the HMS of the hmsStart (local time)
+
             break;
             
         case MultipleType::DAY_OF_MONTH:
+            // "increment" specifies which day of month (1, 2, 3, ...)
+            // Time is at the HMS of the hmsStart (local time)
+            if (tempConv.localTimeValue.ymd().getDay() == increment) {
+                int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
+                if (cmp < 0) {
+                    // Before the beginning of time range, return beginning of time range
+                    tempConv.atLocalTime(timeRange.hmsStart);
+                    conv.time = tempConv.time;
+                    conv.convert();
+                    return true;
+                }
+            }
             break;
             
-        case MultipleType::WEEK_OF_MONTH:
-            break;
-
         }
 
         // Start at the beginning of the next day
@@ -1303,5 +1321,39 @@ int LocalTime::lastDayOfMonth(int year, int month) {
         case 11:
             return 30;
     }
+    return 0;
+}
+
+// [static]
+int LocalTime::dayOfWeekOfMonth(int year, int month, int dayOfWeek, int ordinal) {
+    struct tm timeInfo = {0};
+
+    if (dayOfWeek < 0 || dayOfWeek >= 7) {
+        // Invalid values of dayOfWeek can cause infinite loop below
+        return 0;
+    }
+
+    timeInfo.tm_year = year - 1900;
+    timeInfo.tm_mon = month - 1;
+    timeInfo.tm_mday = 1;
+    tmToTime(&timeInfo);
+
+    while(timeInfo.tm_wday != dayOfWeek) {
+        timeInfo.tm_mday++;
+        tmToTime(&timeInfo);
+    }
+
+    int lastDay = lastDayOfMonth(year, month);
+    for(int loops = 1; loops <= 5; loops++) {
+        if (loops >= ordinal) {
+            return timeInfo.tm_mday;
+        }
+        timeInfo.tm_mday += 7;
+        if (timeInfo.tm_mday > lastDay) {
+            // This ordinal does not exist
+            return 0;
+        }
+    }
+    
     return 0;
 }
