@@ -1849,37 +1849,6 @@ void test1() {
 		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=23 tm_min=30 tm_sec=0 tm_wday=0"); // 
 	}
 
-	{
-		LocalTimeConvert::Schedule schedule;
-		// At 0:05, 3:05, ... 
-		schedule.withHours({0, 3, 6, 9, 12, 15, 18, 21}, 5);
-
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=11 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=20 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=23 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=2 tm_min=5 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=5 tm_min=5 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=8 tm_min=5 tm_sec=0 tm_wday=0");	
-	}
-
 
 
 	{
@@ -2089,13 +2058,13 @@ void test1() {
 
 	}
 
-	// ScheduleItemMultiple - low level tests
+	// ScheduleItem - low level tests
 	// 
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		
 		// Increment 15 minutes
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::MINUTE_OF_HOUR;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
 		item.increment = 5;
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
@@ -2121,10 +2090,10 @@ void test1() {
 	}
 
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		
 		// Increment 15 minutes, starting at 00:05 past the hour
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::MINUTE_OF_HOUR;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
 		item.increment = 15;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59"));
 
@@ -2150,10 +2119,10 @@ void test1() {
 	}
 
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		
 		// Increment 3 hours
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::HOUR_OF_DAY;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::HOUR_OF_DAY;
 		item.increment = 3;
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 10:10:52")).convert(); // UTC; 06:10:52 local time
@@ -2167,10 +2136,10 @@ void test1() {
 	}
 
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		
 		// Increment 4 hours across EST->EDT switch
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::HOUR_OF_DAY;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::HOUR_OF_DAY;
 		item.increment = 3;
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 04:00:00")).convert(); // UTC; 23:00:00 local time
@@ -2186,10 +2155,10 @@ void test1() {
 	}
 
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		
 		// Increment 4 hours across EST->EDT switch with 01:00:00 offset
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::HOUR_OF_DAY;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::HOUR_OF_DAY;
 		item.increment = 3;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59"));
 
@@ -2206,10 +2175,10 @@ void test1() {
 	}
 
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		
 		// Increment 3 hours with offset of 1:15
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::HOUR_OF_DAY;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::HOUR_OF_DAY;
 		item.increment = 3;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("01:15:00"), LocalTimeHMS("23:59:59"));
 
@@ -2243,11 +2212,11 @@ void test1() {
 	29 30 31   
 	*/
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		bool bResult;
 		
 		// First Friday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 5;
 		item.increment = 1;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
@@ -2262,11 +2231,11 @@ void test1() {
 		assertInt("", bResult, false);
 	}
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		bool bResult;
 		
 		// First Saturday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 6;
 		item.increment = 1;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
@@ -2281,11 +2250,11 @@ void test1() {
 		assertInt("", bResult, false);
 	}
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		bool bResult;
 		
 		// Second Sunday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 0;
 		item.increment = 2;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
@@ -2300,11 +2269,11 @@ void test1() {
 		assertInt("", bResult, false);
 	}
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		bool bResult;
 		
 		// Last Friday of the month at 11:59:59 PM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 5;
 		item.increment = -1;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("23:59:59"));
@@ -2319,11 +2288,11 @@ void test1() {
 		assertInt("", bResult, false);
 	}
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		bool bResult;
 		
 		// First Sunday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 0;
 		item.increment = 1;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
@@ -2338,11 +2307,11 @@ void test1() {
 		assertInt("", bResult, false);
 	}
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		bool bResult;
 		
 		// 1st of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_MONTH;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::DAY_OF_MONTH;
 		item.increment = 1;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 
@@ -2377,7 +2346,7 @@ void test1() {
 		while(iter.next()) {
 			String key = (const char *) iter.name();
 			if (key == "t1") {
-				LocalTimeRange tr(LocalTimeHMS("09:00:00"), LocalTimeHMS("09:29:29"));
+				LocalTimeRange tr;
 
 				tr.fromJson(iter.value());
 				assertStr("", tr.hmsStart.toString(), "00:00:00");
@@ -2406,11 +2375,11 @@ void test1() {
 
 
 	{
-		LocalTimeConvert::ScheduleItemMultiple item;
+		LocalTimeConvert::ScheduleItem item;
 		bool bResult;
 		
 		// On the 5th of the month at 4:00 AM local time
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_MONTH;
+		item.scheduleItemType = LocalTimeConvert::ScheduleItem::ScheduleItemType::DAY_OF_MONTH;
 		item.increment = 5;
 		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 

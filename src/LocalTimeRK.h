@@ -1088,6 +1088,11 @@ public:
             return dateInRange && timeInRange;
         }
 
+        void fromTime(LocalTimeHMSRestricted hms) {
+            *(LocalTimeRestrictedDate *)this = hms;
+            hmsStart = hms;
+        }
+
         /**
          * @brief Fills in the restricted time range from a JSON object
          * 
@@ -1111,31 +1116,32 @@ public:
     /**
      * @brief Schedule option for "every n minutes"
      */
-    class ScheduleItemMultiple {
+    class ScheduleItem {
     public:
-        enum class MultipleType : int {
+        enum class ScheduleItemType : int {
             NONE = 0,               //!< No multiple defined
             MINUTE_OF_HOUR,         //!< Minute of the hour (1)
             HOUR_OF_DAY,            //!< Hour of day (2)
             DAY_OF_WEEK_OF_MONTH,   //!< The nth day of week of the month (3)
-            DAY_OF_MONTH            //!< Day of the month (4)
+            DAY_OF_MONTH,           //!< Day of the month (4)
+            TIME                    //!< Specific time (5)    
         };
 
         /**
          * @brief Default constructor. Set increment and optionally timeRange to use.
          */
-        ScheduleItemMultiple() {
+        ScheduleItem() {
         }
 
         /**
-         * @brief Returns true MultipleType is not NONE
+         * @brief Returns true ScheduleItemType is not NONE
          * 
          * @return true 
          * @return false 
          * 
          * This is used to check if an object was constructed by the default constructor and never set.
          */
-        bool isValid() const { return (multipleType != MultipleType::NONE); };
+        bool isValid() const { return (scheduleItemType != ScheduleItemType::NONE); };
 
         /**
          * @brief Get number of seconds in the time range at a given time
@@ -1162,11 +1168,11 @@ public:
         /**
          * @brief Creates an object from JSON
          * 
-         * @param key Key name that determines the MultipleType 
+         * @param key Key name that determines the ScheduleItemType 
          * @param jsonObj 
          * 
          * Keys:
-         * - m (integer) MultipleType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
+         * - m (integer) ScheduleItemType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
          * - i (integer) increment or ordinal value
          * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK_OF_MONTH)
          * - f (integer) flag bits (optional)
@@ -1183,7 +1189,7 @@ public:
         int increment = 0; //!< Increment value, or sometimes ordinal value
         int dayOfWeek = 0; //!< Used for DAY_OF_WEEK_OF_MONTH only
         int flags = 0; //!< Optional scheduling flags
-        MultipleType multipleType = MultipleType::NONE;
+        ScheduleItemType scheduleItemType = ScheduleItemType::NONE;
     };
 
     /**
@@ -1234,10 +1240,7 @@ public:
          * 
          * You can call this multiple times, and also combine it with minute multiple schedules.
          */
-        Schedule &withTime(LocalTimeHMSRestricted hms) {
-            times.push_back(hms);
-            return *this;
-        }
+        Schedule &withTime(LocalTimeHMSRestricted hms);
 
         /**
          * @brief Add multiple scheduled items at a time in local time during the day. 
@@ -1249,25 +1252,7 @@ public:
          * 
          * schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
          */
-        Schedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam) {
-            times.insert(times.end(), timesParam.begin(), timesParam.end());
-            return *this;
-        }
-
-        /**
-         * @brief Adds multiple scheduled hours at a time in a local time during the day at a specified minute
-         * 
-         * @param hoursParam 
-         * @param atMinute 
-         * @return Schedule& 
-         * 
-         * Example: Schedules at 00:05, 06:05, 09:05, 10:05, 12:05, 15:05, 18:05
-         * 
-         * schedule.withHours({0, 6, 9, 10, 12, 15, 18}, 5);
-         * 
-         * This is just a shortcut that is easier to type than using the version that takes LocalTimeHMS objects.
-         */
-        Schedule &withHours(std::initializer_list<int> hoursParam, int atMinute);
+        Schedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam);
 
         /**
          * @brief Adds multiple times periodically in a time range with an hour increment
@@ -1305,15 +1290,14 @@ public:
          * @return false 
          */
         bool isEmpty() const { 
-            return multipleItems.empty() && times.empty();
+            return scheduleItems.empty();
         }
 
         /**
          * @brief Clear the existing settings
          */
         void clear() {
-            multipleItems.clear();   
-            times.clear();
+            scheduleItems.clear();   
         }
 
         /**
@@ -1331,7 +1315,8 @@ public:
          * @param jsonObject 
          * 
          * Keys:
-         * - m (Array) Array of ScheduleItemMultiple objects
+         * TODO: Update this, it's incorrect now!
+         * - m (Array) Array of ScheduleItem objects
          *  - m (integer) type of multiple
          *  - i (integer) increment
          *  - f (integer) flag bits (optional)
@@ -1348,10 +1333,7 @@ public:
          */
         void fromJson(JSONValue jsonObj);
 
-
-
-        std::vector<ScheduleItemMultiple> multipleItems; //!< Minute multiple items
-        std::vector<LocalTimeHMSRestricted> times; //!< Local time items (includes hour multiple items)
+        std::vector<ScheduleItem> scheduleItems; //!< Minute multiple items
     };
 
     /**
