@@ -1314,10 +1314,13 @@ public:
          * 
          * @param jsonObject 
          * 
-         * Keys:
-         * TODO: Update this, it's incorrect now!
-         * - m (Array) Array of ScheduleItem objects
-         *  - m (integer) type of multiple
+         * Array of ScheduleItem objects:
+         *  - mh (integer): Minute of hour (takes place of setting m and i separately)
+         *  - hd (integer): Hour of day (takes place of setting m and i separately)
+         *  - dw (integer): Day of week (takes place of setting m and i separately)
+         *  - dm (integer): Day of month (takes place of setting m and i separately)
+         *  - tm (string) Time string in HH:MM:SS format (can omit MM and SS parts, see LocalTimeHMS) for TIME items
+         *  - m (integer) type of multiple (optional if mm, )
          *  - i (integer) increment
          *  - f (integer) flag bits (optional)
          *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
@@ -1325,11 +1328,6 @@ public:
          *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
          *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
          *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         * - t (Array) Array of LocalTimeHMSRestricted objects
-         *  - t (string) Time string in HH:MM:SS format (can omit MM and SS parts, see LocalTimeHMS)
-         *  - y (integer) mask value for onlyOnDays (optional, from LocalTimeRestrictedDate)
-         *  - a (array) Array of YYYY-MM-DD value strings to allow (optional, from LocalTimeRestrictedDate)
-         *  - x (array) Array of YYYY-MM-DD values to exclude (optional, from LocalTimeRestrictedDate)
          */
         void fromJson(JSONValue jsonObj);
 

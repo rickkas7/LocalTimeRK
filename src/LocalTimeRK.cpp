@@ -753,14 +753,38 @@ void LocalTimeConvert::ScheduleItem::fromJson(JSONValue jsonObj) {
             flags = iter.value().toInt();
         }
         else
-        if (key == "t") {
+        if (key == "mh") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::MINUTE_OF_HOUR;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "hd") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::HOUR_OF_DAY;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "dw") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "dm") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::DAY_OF_MONTH;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "tm") {
             // Shortcut for setting time items
             scheduleItemType = ScheduleItemType::TIME;
             timeRange.hmsStart = LocalTimeHMS(iter.value().toString().data());
             timeRange.onlyOnDays = LocalTimeDayOfWeek::MASK_ALL;
         }
     }
-
+    
     timeRange.fromJson(jsonObj);
 }
 

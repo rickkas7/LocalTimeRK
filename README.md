@@ -78,10 +78,10 @@ An advanced scheduling mode was added in version 0.1.0. This allows complex sche
 
 This can either be specified in code, or it can be expressed in JSON. This allows the schedule to be updating using a Particle.function, for example. 
 
-This is a compact representation of that schedule in 108 bytes of JSON data:
+This is a compact representation of that schedule in 77 bytes of JSON data:
 
 ```
-{"m":[{"m":1,"i":15,"y":62,"s":"09:00:00","e":"16:59:59","x":["2022-03-21"]},{"m":2,"i":4,"s":"00:00:00"}]}
+[{"mh":15,"y":62,"s":"09:00:00","e":"16:59:59","x":["2022-03-21"]},{"hd":4}]
 ```
 
 While scheduling is designed to work with local time, each schedule calculator can optionally have a time zone override, which makes it possible to do some calculations at UTC if you prefer to do that.
@@ -158,12 +158,11 @@ A `LocalTimeRestrictedDate` is used for both multiples and times (below). It can
 | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
 
-### Multiples
+### Schedule items
 
-Multiples include things like every n minutes, every n hour, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a `TimeRangeRestricted` that determines when the multiple is used.
+Schedule include things like every n minutes, every n hour, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a `TimeRangeRestricted` that determines when the multiple is used.
 
 `TimeRangeRestricted` is itself composed of a `TimeRange`, and a `LocalTimeRestrictedDate`. This specifies both the time of day, as well as an optional restriction on the dates it applies. See above for for an explanation of these types.
-
 
 #### Minute multiples
 
@@ -175,6 +174,15 @@ This multiple is used for "every n minutes." For example, if you want to publish
 - The minute of the start of the time range specifies the offset relative to the hour to start the increment from (modulo the increment).
 - The second of the start of the time range specifies the second offset.
 
+| Key | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| "mh" | integer | Minute of hour multiple | |
+| "f" | integer | Flag bits (optional) | 0 |
+| "s" | string | The start time (HH:MM:SS format, can omit MM or SS) | "00:00:00" |
+| "e" | string | The end time (HH:MM:SS format, can omit MM or SS) | "23:59:59" |
+| "y" | integer | Mask value for days of the week (optional) |
+| "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
+| "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
 
 #### Hour of day multiples
@@ -187,6 +195,16 @@ This multiple is used for "every n hours." For example, if you want to wake and 
 - The hour of the start of the time range specifies the offset relative to the day to start the increment from (modulo the increment)
 - The minute and second of the start of the time range specifies the minute and second offset
 
+| Key | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| "hd" | integer | Hour of day multiple | |
+| "f" | integer | Flag bits (optional) | 0 |
+| "s" | string | The start time (HH:MM:SS format, can omit MM or SS) | "00:00:00" |
+| "e" | string | The end time (HH:MM:SS format, can omit MM or SS) | "23:59:59" |
+| "y" | integer | Mask value for days of the week (optional) |
+| "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
+| "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
+
 
 #### Day of week of the month multiples
 
@@ -198,6 +216,17 @@ This multiple is used for things like: "Every first Monday of the month," "Every
 - The start of the time range specifies the hour, minute, and second (local time)
 - Use a time of day with day of week restriction instead if you want to do "Every Monday"
 
+| Key | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| "dw" | integer | Day of week instance (1 = first, 2 = second, ..., or -1 = last, -2 = second to last, ... | |
+| "d" | integer | Day of the week 0 = Sunday, 1 = Monday, ..., 6 = Saturday |
+| "f" | integer | Flag bits (optional) | 0 |
+| "s" | string | The start time (HH:MM:SS format, can omit MM or SS) | "00:00:00" |
+| "e" | string | The end time (HH:MM:SS format, can omit MM or SS) | "23:59:59" |
+| "y" | integer | Mask value for days of the week (optional) |
+| "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
+| "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
+
 
 #### Day of month multiples
 
@@ -208,7 +237,17 @@ This multiple is used for things like "The first of the month," "The 15th of the
 - The start of the time range specifies the hour, minute, and second (local time)
 
 
-### Times
+| Key | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| "dw" | integer | Day of month instance (1 = 1st, 2 = 2nd, ... or -1 = last day of month, -2 = second to last, ...| |
+| "f" | integer | Flag bits (optional) | 0 |
+| "s" | string | The start time (HH:MM:SS format, can omit MM or SS) | "00:00:00" |
+| "e" | string | The end time (HH:MM:SS format, can omit MM or SS) | "23:59:59" |
+| "y" | integer | Mask value for days of the week (optional) |
+| "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
+| "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
+
+#### Time 
 
 It's also possible to schedule at a specific time in local time. In code, this is an array of `LocalTimeHMSRestricted` objects. You are limited only by RAM for the number of objects, as the array is stored in a std::vector.
 
@@ -223,7 +262,8 @@ Some ways you can use times:
 
 | Key | Type | Description | Default |
 | :--- | :--- | :--- | :--- |
-| "t" | string | Time in "HH:MM:SS" format, 24 hour clock, local time |
+| "tm" | string | Time in "HH:MM:SS" format, 24 hour clock, local time |
+| "f" | integer | Flag bits (optional) | 0 |
 | "y" | number | Mask value for days of the week (optional) |
 | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
 | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
