@@ -1134,34 +1134,14 @@ public:
         }
 
         /**
-         * @brief Construct an item with a time range and number of minutes
-         * 
-         * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
-         * @param timeRange When to apply this minute multiple (optional)
-         * 
-         * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
-         * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
-         * an inconsistent period at the top of the hour.
-         * 
-         * If you do not specify a time range, the entire day is the range, and it will always start at the top of the hour.
-         * 
-         * If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule
-         * starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
-         * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
-         */
-        ScheduleItemMultiple(int increment, TimeRangeRestricted timeRange = TimeRangeRestricted()) : timeRange(timeRange), increment(increment) {                
-        }
-
-
-        /**
-         * @brief Returns true if increment is non-zero
+         * @brief Returns true MultipleType is not NONE
          * 
          * @return true 
          * @return false 
          * 
          * This is used to check if an object was constructed by the default constructor and never set.
          */
-        bool isValid() const { return (increment > 0); };
+        bool isValid() const { return (multipleType != MultipleType::NONE); };
 
         /**
          * @brief Get number of seconds in the time range at a given time
@@ -1195,6 +1175,7 @@ public:
          * - m (integer) MultipleType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
          * - i (integer) increment or ordinal value
          * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK)
+         * - f (integer) flag bits (optional)
          * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
@@ -1207,6 +1188,7 @@ public:
         TimeRangeRestricted timeRange; //!< Range of local time, inclusive
         int increment = 0; //!< Increment value, or sometimes ordinal value
         int dayOfWeek = 0; //!< Used for DAY_OF_WEEK only
+        int flags = 0; //!< Optional scheduling flags
         MultipleType multipleType = MultipleType::NONE;
     };
 
@@ -1358,6 +1340,7 @@ public:
          * - m (Array) Array of ScheduleItemMultiple objects
          *  - m (integer) type of multiple
          *  - i (integer) increment
+         *  - f (integer) flag bits (optional)
          *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
          *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
@@ -1794,6 +1777,21 @@ public:
      */
     const LocalTimePosixTimezone &getConfig() const { return config; };
 
+    /**
+     * @brief Sets the maximum number of days to look ahead in the schedule for a match (default: 3)
+     * 
+     * @param value 
+     * @return LocalTime& 
+     */
+    LocalTime &withScheduleLookaheadDays(int value) { scheduleLookaheadDays = value; return *this; };
+
+    /**
+     * @brief Gets the maximum number of days to look ahead in the schedule for a match
+     * 
+     * @return int 
+     */
+    int getScheduleLookaheadDays() const { return scheduleLookaheadDays; };
+
     
     /**
      * @brief Converts a Unix time (seconds past Jan 1 1970) UTC value to a struct tm
@@ -1925,6 +1923,11 @@ protected:
      * converter.
      */
     LocalTimePosixTimezone config;
+
+    /**
+     * @brief Number of days to look forward to see if there are scheduled events. Default: 3
+     */
+    int scheduleLookaheadDays = 3;
 
     /**
      * @brief Singleton instance of this class

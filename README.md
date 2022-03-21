@@ -69,6 +69,76 @@ It also handles other common scheduling scenarios:
 - On the next weekday (Monday - Friday)
 - On the next weekend day (Saturday - Sunday)
 
+## Advanced scheduling
+
+An advanced scheduling mode was added in version 0.1.0. This allows complex schedules such as:
+
+- Every 15 minutes between 9:00 AM and 5 PM local time Monday - Friday, except on 2022-03-21, as it's a holiday.
+- Every 4 hours starting at 00:00:00 (midnight) other times
+
+This can either be specified in code, or it can be expressed in JSON. This allows the schedule to be updating using a Particle.function, for example. 
+
+This is a compact representation of that schedule in 108 bytes of JSON data:
+
+```
+{"m":[{"m":1,"i":15,"y":62,"s":"09:00:00","e":"16:59:59","x":["2022-03-21"]},{"m":2,"i":4,"s":"00:00:00"}]}
+```
+
+While scheduling is designed to work with local time, each schedule calculator can optionally have a time zone override, which makes it possible to do some calculations at UTC if you prefer to do that.
+
+### Shared types
+
+#### LocalTimeHMS
+
+This object holds a hour, minute, and second value (HMS). There are numerous methods to compare time values, and convert the values to other formats.
+
+When converting from string format always use 24-hour clock format; this object does not support AM/PM. Also when converting from strings you can omit the seconds, or even both the minutes and seconds.
+
+Note that hour 24 is never a valid value. Because HMS calculations are always inclusive, the end of the day is 23:59:59. Leap seconds are not supported by the underlying C standard time library.
+
+#### LocalTimeYMD
+
+This object specifies a year, month, and day. There are numerous methods to compare time values, and convert the values to other formats.
+
+When converting from a string this must always be "YYYY-MM-DD" format, with dashes, and in that order. Other date formats including common but poorly defined United States date formats cannot be used!
+
+#### LocalTimeConvert::TimeRange
+
+A `TimeRange` is a start time and end time in local time, expressed as `LocalTimeHMS` objects (hours, minutes, seconds). Note that time ranges are inclusive, so the entire day is 00:00:00 to 23:59:59.
+
+#### LocalTimeRestrictedDate
+
+A `LocalTimeRestrictedDate` is used for both multiples and times (below). It can have:
+
+- A day of week selection, which is a bitmask of days to allow. This makes it easy to specific, for example, weekdays (Monday - Friday).
+- A list of dates to allow (vector of `LocalTimeYMD`)
+- A list of dates to exclude (vector of `LocalTimeYMD`)
+
+
+### Multiples
+
+Multiples include things like every n minutes, every n hour, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a `TimeRangeRestricted` that determines when the multiple is used.
+
+`TimeRangeRestricted` is itself composed of a `TimeRange`, and a `LocalTimeRestrictedDate`. This specifies both the time of day, as well as an optional restriction on the dates it applies. See above for for an explanation of these types.
+
+
+#### Minute multiples
+
+#### Hour of day multiples
+
+#### Day of week multiples
+
+#### Day of month multiples
+
+
+### Times
+
+It's also possible to schedule at a specific time in local time. In code, this is an array of `LocalTimeHMSRestricted` objects. You are limited only by RAM for the number of objects, as the array is stored in a std::vector.
+
+The `LocalTimeHMSRestricted` is itself composed of a `LocalTimeHMS` object, for hours minutes and seconds, and a `LocalTimeRestrictedDate` which can optionally restrict which dates the times re used.
+
+
+
 ## Clock Example
 
 There is an example of using the library to use an Adafruit FeatherWing OLED Display 128x32 as a clock.
@@ -130,6 +200,7 @@ void loop() {
 ```
 
 ![](images/clock.png)
+
 
 ## Using the library
 
@@ -968,9 +1039,9 @@ In the weird case that start > end, it can return a negative value, as time_t is
 
 ## Version history
 
-### 0.0.8 (2022-03-10)
+### 0.1.0 (2022-03-21)
 
-- Added 
+- Added advanced scheduling modes (JSON scheduling)
 
 ### 0.0.7 (2022-03-08)
 

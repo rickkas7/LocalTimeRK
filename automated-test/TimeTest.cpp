@@ -418,11 +418,39 @@ void testLocalTimePosixTimezone() {
 	assert(tz.dstStart.hms.second == 0);
 	assert(tz.dstStart.valid == 1);
 
+	// Newfoundland Time Zone (Canada) Newfoundland and southeastern Labrador
+	tz.parse("NST3:30NDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
+	assert(strcmp(tz.standardName.c_str(), "NST") == 0);
+	assert(tz.standardHMS.hour == 3);
+	assert(tz.standardHMS.minute == 30);
+	assert(tz.standardHMS.second == 0);
+	assert(tz.standardStart.month == 11);
+	assert(tz.standardStart.week == 1);
+	assert(tz.standardStart.dayOfWeek == 0);
+	assert(tz.standardStart.hms.hour == 2);
+	assert(tz.standardStart.hms.minute == 0);
+	assert(tz.standardStart.hms.second == 0);
+	assert(tz.standardStart.valid == 1);
+	assert(strcmp(tz.dstName.c_str(), "NDT") == 0);
+	assert(tz.dstStart.valid == 1);
+	assert(tz.dstHMS.hour == 2);
+	assert(tz.dstHMS.minute == 30);
+	assert(tz.dstHMS.second == 0);
+	assert(tz.dstStart.month == 3);
+	assert(tz.dstStart.week == 2);
+	assert(tz.dstStart.dayOfWeek == 0);
+	assert(tz.dstStart.hms.hour == 2);
+	assert(tz.dstStart.hms.minute == 0);
+	assert(tz.dstStart.hms.second == 0);
+	assert(tz.dstStart.valid == 1);
 }
+
 
 void test1() {
 	LocalTimePosixTimezone tzConfig("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
 	// Also works with: EST+5EDT,M3.2.0/2,M11.1.0/2
+
+	LocalTimePosixTimezone tzConfigNewfoundland("NST3:30NDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
 
 	//
 	// LocalTimeValue
@@ -1574,8 +1602,6 @@ void test1() {
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
 		//   Except 2021-12-06 (Monday), maybe it was a holiday
 		// Every 4 hours otherwise (00:00, 04:00, ...)
-		printf("starting test\n");
-
 		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
 
 
@@ -1623,6 +1649,102 @@ void test1() {
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=21 tm_min=0 tm_sec=0 tm_wday=1");	
 	}
 
+	{
+		LocalTimeConvert::Schedule schedule;
+		// Using Newfoundland standard time -0330
+		// Every 15 minutes between 9:00 AM and 5 PM local time (12:30 to 20:30 UTC) Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every 4 hours otherwise (00:00, 04:00, ...)
+		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
+
+		conv.withConfig(tzConfigNewfoundland).withTime(LocalTime::stringToTime("2021-12-03 10:15:00")).convert(); // 06:45:00 NST
+
+		conv.atLocalTime(LocalTimeHMS("09:00:00"));
+		assertTime2("", conv.time, "2021-12-03 12:30:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("17:00:00"));
+		assertTime2("", conv.time, "2021-12-03 20:30:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("08:15:00"));
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 12:30:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 12:45:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 13:00:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("16:50:00"));
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 20:30:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 23:30:00"); // 20:00 NST
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 03:30:00"); // 00:00 NST Saturday
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 07:30:00"); // 04:00 NST
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 11:30:00"); // 08:00 NST
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 15:30:00"); // 12:00 NST 
+
+	}
+
+
+	{
+		LocalTimeConvert::Schedule schedule;
+		// Using UTC
+		// Every 15 minutes between 09:00 and 17:00 UTC Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every 4 hours otherwise (00:00, 04:00, ...)
+		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
+
+		conv.withConfig("UTC").withTime(LocalTime::stringToTime("2021-12-03 08:15:00")).convert();
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:00:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:15:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:30:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:45:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 10:00:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("16:50:00"));
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 17:00:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 20:00:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 00:00:00"); // 00:00 Saturday
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 04:00:00");
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 08:00:00");
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 12:00:00");
+
+	}
 	{
 		// At specified times of the day (local time)
 		LocalTimeConvert::Schedule schedule;
@@ -1793,6 +1915,27 @@ void test1() {
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=16 tm_min=0 tm_sec=0 tm_wday=0");	
 	}
 
+	{
+		LocalTimeConvert::Schedule schedule;
+		// First Monday of the month at 9:00 AM local time
+		schedule.fromJson(readTestDataJson("testfiles/test17.json"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-06 10:10:52")).convert(); // 05:10:52 local time
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-07 14:00:00"); // Before DST switch 
+	}
+
+	{
+		LocalTimeConvert::Schedule schedule;
+		// Last day of the month at 5:00 PM local time
+		schedule.fromJson(readTestDataJson("testfiles/test18.json"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-29 10:10:52")).convert(); // 05:10:52 local time
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-31 21:00:00");
+	}
 
 	{
 		LocalTimeConvert::Schedule schedule;

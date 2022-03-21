@@ -587,7 +587,9 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
     LocalTimeConvert tempConv(conv);
 
     LocalTimeYMD endYMD = tempConv.getLocalTimeYMD();
-    endYMD.addDay(3);
+
+    // Maximum number of days to look ahead in the schedule for the next scheduled time (default: 3 days)
+    endYMD.addDay(LocalTime::instance().getScheduleLookaheadDays());
     
     for(;; tempConv.nextDay(LocalTimeHMS("00:00:00"))) {
         LocalTimeYMD curYMD = tempConv.getLocalTimeYMD();
@@ -686,19 +688,26 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
             break;
             
         case MultipleType::DAY_OF_MONTH:
-            // "increment" specifies which day of month (1, 2, 3, ...)
-            // Time is at the HMS of the hmsStart (local time)
-            if (tempConv.localTimeValue.ymd().getDay() == increment) {
-                int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
-                if (cmp < 0) {
-                    // Before the beginning of time range, return beginning of time range
-                    tempConv.atLocalTime(timeRange.hmsStart);
-                    if (tempConv.time > conv.time) {
-                        conv.time = tempConv.time;
-                        conv.convert();
-                        return true;
+            {
+                int tempIncrement = increment;
+                if (tempIncrement <= 0) {
+                    tempIncrement = LocalTime::lastDayOfMonth(tempConv.localTimeValue.year(), tempConv.localTimeValue.month()) + tempIncrement;
+                }
+                // "increment" specifies which day of month (1, 2, 3, ...) or 
+                // Time is at the HMS of the hmsStart (local time)
+                if (tempConv.localTimeValue.ymd().getDay() == tempIncrement) {
+                    int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
+                    if (cmp < 0) {
+                        // Before the beginning of time range, return beginning of time range
+                        tempConv.atLocalTime(timeRange.hmsStart);
+                        if (tempConv.time > conv.time) {
+                            conv.time = tempConv.time;
+                            conv.convert();
+                            return true;
+                        }
                     }
                 }
+
             }
             break;
             
@@ -707,7 +716,7 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
         
     }
 
-    // No next time found (no schedule, or all days excluded within the next 3 days)
+    // No next time found (no schedule, or all days excluded within the next getScheduleLookaheadDays() days)
     return false;
 }
 
@@ -726,6 +735,10 @@ void LocalTimeConvert::ScheduleItemMultiple::fromJson(JSONValue jsonObj) {
         else
         if (key == "d") {
             dayOfWeek = iter.value().toInt();
+        }
+        else
+        if (key == "f") {
+            flags = iter.value().toInt();
         }
     }
     timeRange.fromJson(jsonObj);
@@ -756,11 +769,11 @@ LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHours(std::initializ
 }
 
 LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange) {
-                
-    for(LocalTimeHMS hms = timeRange.hmsStart; hms <= timeRange.hmsEnd; hms.hour += hourMultiple) {
-        times.push_back(LocalTimeHMSRestricted(hms, timeRange));
-    }
-
+    ScheduleItemMultiple item;
+    item.multipleType = ScheduleItemMultiple::MultipleType::HOUR_OF_DAY;
+    item.increment = hourMultiple;
+    item.timeRange = timeRange;
+    multipleItems.push_back(item);
     return *this;
 }
 
@@ -1073,88 +1086,6 @@ bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
     else {
         return false;
     }
-
-    /*
-    time_t origTime = time;
-
-    for(int tries = 0; tries < 2; tries++) {
-        // Check the minute multiples
-        ScheduleItemMultiple foundItem;
-
-        // 86400 + 3600 for fall back on time change = 90000, plus some extra
-        time_t smallestTimeSpan = 100000; 
-
-        time_t closestTime = 0;
-
-        for(auto it = schedule.multipleItems.begin(); it != schedule.multipleItems.end(); ++it) {
-            ScheduleItemMultiple item = *it;
-            if (item.timeRange.inRange(localTimeValue)) {
-                // This minute multiple applies
-                time_t timeSpan = item.getTimeSpan(*this);
-                if (timeSpan < smallestTimeSpan) {
-                    foundItem = item;
-                    smallestTimeSpan = timeSpan;
-                }
-            }
-        }
-
-        if (foundItem.isValid()) {
-            LocalTimeConvert tmpConvert(*this);
-            tmpConvert.nextMinuteMultiple(foundItem.increment, foundItem.timeRange.hmsStart.minute % foundItem.increment);
-            if (closestTime == 0 || tmpConvert.time < closestTime) {
-                closestTime = tmpConvert.time;
-            }
-        } 
-        else {
-            // Not in a time range. Is there a time range after the current time?
-            for(auto it = schedule.multipleItems.begin(); it != schedule.multipleItems.end(); ++it) {
-                ScheduleItemMultiple item = *it;
-
-                LocalTimeConvert tmpConvert(*this);
-                tmpConvert.atLocalTime(item.timeRange.hmsStart);
-                if (time < tmpConvert.time) {
-                    time_t timeSpan = (tmpConvert.time - time);
-                    if (timeSpan < smallestTimeSpan) {
-                        foundItem = item;
-                        smallestTimeSpan = timeSpan;
-                    }
-                }
-            }
-            if (foundItem.isValid()) {
-                LocalTimeConvert tmpConvert(*this);
-                tmpConvert.atLocalTime(foundItem.timeRange.hmsStart);
-                if (closestTime == 0 || tmpConvert.time < closestTime) {
-                    closestTime = tmpConvert.time;
-                }
-            } 
-        }
-
-        // Check the times
-        for(auto it = schedule.times.begin(); it != schedule.times.end(); ++it) {
-            LocalTimeHMS tmpHMS = *it;
-
-            LocalTimeConvert tmpConvert(*this);
-            tmpConvert.nextTime(tmpHMS);
-            if (closestTime == 0 || tmpConvert.time < closestTime) {
-                closestTime = tmpConvert.time;
-            }        
-        }
-
-        if (closestTime != 0) {
-            time = closestTime;
-            convert();
-            return true;
-        }
-
-        // Try times in the next day starting at midnight
-        nextDay(LocalTimeHMS("00:00:00"));
-    }
-
-    time = origTime;
-    convert();
-
-    return false;
-    */
 }
 
 
