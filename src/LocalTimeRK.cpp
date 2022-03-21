@@ -648,7 +648,7 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
 
                         LocalTime::timeToTm(tempConv.time, &timeInfo);
                         timeInfo.tm_min -= ((tempConv.localTimeValue.minute() - startingModulo) % increment);
-                        timeInfo.tm_sec = 0;
+                        timeInfo.tm_sec = timeRange.hmsStart.second;
 
                         tempConv.time = LocalTime::tmToTime(&timeInfo);
                         bResult = true;
@@ -670,7 +670,7 @@ bool LocalTimeConvert::ScheduleItemMultiple::getNextScheduledTime(LocalTimeConve
             }
             break;            
             
-        case MultipleType::DAY_OF_WEEK:
+        case MultipleType::DAY_OF_WEEK_OF_MONTH:
             // "dayOfWeek" specifies the day of the week (0 = Sunday, 1 = Monday, ...)
             // "increment" specifies which one (1 = first, 2 = second, ... or -1 = last, -2 = second to last, ...)
             // Time is at the HMS of the hmsStart (local time)
@@ -811,10 +811,22 @@ void LocalTimeConvert::Schedule::fromJson(JSONValue jsonObj) {
 
 
 //
-// LocalTimeConvert
+// LocalTimeRange
 // 
 
-void LocalTimeConvert::TimeRange::fromJson(JSONValue jsonObj) {    
+time_t LocalTimeRange::getTimeSpan(const LocalTimeConvert &conv) const {
+    
+    LocalTimeConvert convStart(conv);
+    convStart.atLocalTime(hmsStart);
+
+    LocalTimeConvert convEnd(conv);
+    convEnd.atLocalTime(hmsEnd);
+
+    return convEnd.time - convStart.time;
+}
+
+
+void LocalTimeRange::fromJson(JSONValue jsonObj) {    
     clear();
 
     JSONObjectIterator iter(jsonObj);
@@ -836,6 +848,9 @@ void LocalTimeConvert::TimeRange::fromJson(JSONValue jsonObj) {
 }
 
 
+//
+// LocalTimeConvert
+//
 void LocalTimeConvert::convert() {
     if (!config.isValid()) {
         config = LocalTime::instance().getConfig();
@@ -1339,7 +1354,6 @@ int LocalTime::dayOfWeekOfMonth(int year, int month, int dayOfWeek, int ordinal)
                 return 0;
             }
         }
-
     }
 
     

@@ -102,17 +102,60 @@ This object specifies a year, month, and day. There are numerous methods to comp
 
 When converting from a string this must always be "YYYY-MM-DD" format, with dashes, and in that order. Other date formats including common but poorly defined United States date formats cannot be used!
 
-#### LocalTimeConvert::TimeRange
+#### LocalTimeRange
 
-A `TimeRange` is a start time and end time in local time, expressed as `LocalTimeHMS` objects (hours, minutes, seconds). Note that time ranges are inclusive, so the entire day is 00:00:00 to 23:59:59.
+A `LocalTimeRange` is a start time and end time in local time, expressed as `LocalTimeHMS` objects (hours, minutes, seconds). 
+
+Time ranges are inclusive, so the entire day is 00:00:00 to 23:59:59.
+
+When converting from JSON:
+
+| Key | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| "s" | string | Starting time in "HH:MM:SS" format, 24 hour clock, local time | "00:00:00" |
+| "e" | string | Ending time in "HH:MM:SS" format, 24 hour clock, local time | "23:59:59" |
+
+
+#### LocalTimeDayOfWeek
+
+A `LocalTimeDayOfWeek` specifies zero or more days of the week (Sunday, Monday, ...)
+
+Common mask values:
+
+| Value Hex | Value Decimal | Constant | Description |
+| :--- | ---: | :--- |
+| 0x01 | 1 | MASK_SUNDAY | Sunday |
+| 0x02 | 2 | MASK_MONDAY | Monday |
+| 0x04 | 4 | MASK_TUESDAY | Tuesday |
+| 0x08 | 8 | MASK_WEDNESDAY | Wednesday |
+| 0x10 | 16 | MASK_THURSDAY | Thursday |
+| 0x20 | 32 | MASK_FRIDAY | Friday |
+| 0x40 | 64 | MASK_SATURDAY | Saturday | 
+| 0x7f | 127 | MASK_ALL | Every day |
+| 0x3e | 62 | MASK_WEEKDAY | Weekdays (Monday - Friday) | 
+| 0x41 | 65 | MASK_WEEKEND | Weekends (Saturday - Sunday) |
+
+Note that you can combine any mask bits. For example, Monday, Wednesday, Friday is 2 + 8 + 32 = 42,
+
+In JSON, you can only use the numeric mask values, as a decimal number. For example, weekdays Monday - Friday is 62.
+
+| Key | Type | Description |
+| :--- | :--- | :--- |
+| "y" | number | Mask value for days of the week, see table above |
 
 #### LocalTimeRestrictedDate
 
 A `LocalTimeRestrictedDate` is used for both multiples and times (below). It can have:
 
-- A day of week selection, which is a bitmask of days to allow. This makes it easy to specific, for example, weekdays (Monday - Friday).
+- A day of week selection (`LocalTimeDayOfWeek`), which is a bitmask of days to allow. This makes it easy to specific, for example, weekdays (Monday - Friday).
 - A list of dates to allow (vector of `LocalTimeYMD`)
 - A list of dates to exclude (vector of `LocalTimeYMD`)
+
+| Key | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| "y" | number | Mask value for days of the week, see table above (optional) |
+| "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
+| "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
 
 ### Multiples
@@ -124,11 +167,45 @@ Multiples include things like every n minutes, every n hour, as well as day of w
 
 #### Minute multiples
 
+This multiple is used for "every n minutes." For example, if you want to publish an event every 15 minutes.
+
+- Minute multiples are relative to the hour, so you typically want to use a value that 60 is evenly divisible by in order to keep the period constant (2, 3, 4, 5, 6, 10, 12, 15, 20, 30).
+- A `TimeRangeRestricted` can restrict this to certain hours of the day, and certain days of the week.
+- A `TimeRangeRestricted` can also handle exception dates, both only on date, or to exclude dates.
+- The minute of the start of the time range specifies the offset relative to the hour to start the increment from (modulo the increment).
+- The second of the start of the time range specifies the second offset.
+
+
+
 #### Hour of day multiples
 
-#### Day of week multiples
+This multiple is used for "every n hours." For example, if you want to wake and publish every 4 hours.
+
+- Hour multiples are relative to the day, so you typically want to use a value that 24 is evenly divisible by (2, 3, 4, 6, 8, 12).
+- A `TimeRangeRestricted` can restrict this to certain hours of the day, and certain days of the week.
+- A `TimeRangeRestricted` can also handle exception dates, both only on date, or to exclude dates.
+- The hour of the start of the time range specifies the offset relative to the day to start the increment from (modulo the increment)
+- The minute and second of the start of the time range specifies the minute and second offset
+
+
+#### Day of week of the month multiples
+
+This multiple is used for things like: "Every first Monday of the month," "Every second Tuesday of the month," "Last Friday of the month."
+
+- The dayOfWeek specifies the day of the week (Sunday = 0, Monday = 1, Tuesday = 2, ..., Saturday = 6).
+- The increment specifies which instance (1 = first, 2 = second, ... Or -1 = last, -2 = second to last, ...)
+- A `TimeRangeRestricted` can handle exception dates, both only on date, or to exclude dates.
+- The start of the time range specifies the hour, minute, and second (local time)
+- Use a time of day with day of week restriction instead if you want to do "Every Monday"
+
 
 #### Day of month multiples
+
+This multiple is used for things like "The first of the month," "The 15th of the month," "the last day of the month."
+
+- The increment specifies which instance (1 = 1st of the month, 2 = 2nd of the month, ... Or -1 = last day, -2 = second to last day, ...)
+- A `TimeRangeRestricted` can handle exception dates, both only on date, or to exclude dates.
+- The start of the time range specifies the hour, minute, and second (local time)
 
 
 ### Times
@@ -136,6 +213,20 @@ Multiples include things like every n minutes, every n hour, as well as day of w
 It's also possible to schedule at a specific time in local time. In code, this is an array of `LocalTimeHMSRestricted` objects. You are limited only by RAM for the number of objects, as the array is stored in a std::vector.
 
 The `LocalTimeHMSRestricted` is itself composed of a `LocalTimeHMS` object, for hours minutes and seconds, and a `LocalTimeRestrictedDate` which can optionally restrict which dates the times re used.
+
+Some ways you can use times:
+
+- "At 17:00:00" every day (local time)
+- "At 17:00:00, Monday - Friday"
+- "At 09:00:00, Monday - Friday, except for 2022-03-21"
+- "At 23:59:59 on 2022-03-31"
+
+| Key | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| "t" | string | Time in "HH:MM:SS" format, 24 hour clock, local time |
+| "y" | number | Mask value for days of the week (optional) |
+| "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
+| "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
 
 

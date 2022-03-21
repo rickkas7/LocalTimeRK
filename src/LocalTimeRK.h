@@ -941,6 +941,93 @@ public:
 };
 
 
+class LocalTimeConvert; // Forward declaration
+
+/**
+ * @brief Class to hold a time range in local time in HH:MM:SS format
+ */
+class LocalTimeRange {
+public: 
+    /**
+     * @brief Construct a new Time Range object with the range of the entire day (inclusive) 
+     * 
+     * This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.
+     */
+    LocalTimeRange() : hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")) {
+    }
+
+    /**
+     * @brief Construct a new Time Range object with the specifies start and end times.
+     * 
+     * @param hmsStart Start time in local time 00:00:00 <= hmsStart <= 23:59:59
+     * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59
+
+        * Note that 24:00:00 is not a valid time. You should generally use inclusive times such that
+        * 23:59:59 is the end of the day.
+        * 
+        */
+    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
+    }
+
+    void clear() {
+        hmsStart = LocalTimeHMS("00:00:00");
+        hmsEnd = LocalTimeHMS("23:59:59");
+    }
+
+    /**
+     * @brief Get the number of seconds between start and end based on a LocalTimeConvert object
+     * 
+     * The reason for the conv object is that it contains the time to calculate at, as well as 
+     * the daylight saving time settings. This methods takes into account the actual number of
+     * seconds including when a time change is crossed.
+     * 
+     * @param conv The time and timezone settings to calculate the time span at
+     * @return time_t Time difference in seconds
+     * 
+     * In the weird case that start > end, it can return a negative value, as time_t is a signed
+     * long (or long long) value.
+     */
+    time_t getTimeSpan(const LocalTimeConvert &conv) const;
+
+    /**
+     * @brief Compares a time (LocalTimeHHS, local time) to this time range
+     * 
+     * @param hms 
+     * @return int -1 if hms is before hmsStart, 0 if in range, +1 if hms is after hmsEnd
+     */
+    int compareTo(LocalTimeHMS hms) const {
+        if (hms < hmsStart) {
+            return -1;
+        }
+        else
+        if (hms > hmsEnd) {
+            return +1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    virtual bool inRange(LocalTimeValue localTimeValue) const {
+        LocalTimeHMS hms = localTimeValue.hms();
+        return (hmsStart <= hms) && (hms <= hmsEnd);
+    }
+
+    /**
+     * @brief Fills in the time range from a JSON object
+     * 
+     * @param jsonObj 
+     * 
+     * Keys:
+     * - s (string) The start time (HH:MM:SS format, can omit MM or SS)
+     * - e (string) The end time (HH:MM:SS format, can omit MM or SS)
+     */
+    void fromJson(JSONValue jsonObj);
+
+    LocalTimeHMS hmsStart; //!< Starting time, inclusive
+    LocalTimeHMS hmsEnd; //!< Ending time, inclusive
+};
+
 
 /**
  * @brief Perform time conversions. This is the main class you will need.
@@ -960,123 +1047,30 @@ public:
         NO_DST,          //!< This config does not use daylight saving
     };
 
-    /**
-     * @brief Class to hold a time range in local time in HH:MM:SS format
-     */
-    class TimeRange {
-    public: 
-        /**
-         * @brief Construct a new Time Range object with the range of the entire day (inclusive) 
-         * 
-         * This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.
-         */
-        TimeRange() : hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")) {
-        }
-
-        /**
-         * @brief Construct a new Time Range object with the specifies start and end times.
-         * 
-         * @param hmsStart Start time in local time 00:00:00 <= hmsStart <= 23:59:59
-         * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59
-
-         * Note that 24:00:00 is not a valid time. You should generally use inclusive times such that
-         * 23:59:59 is the end of the day.
-         * 
-         */
-        TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
-        }
-
-        void clear() {
-            hmsStart = LocalTimeHMS("00:00:00");
-            hmsEnd = LocalTimeHMS("23:59:59");
-        }
-
-        /**
-         * @brief Get the number of seconds between start and end based on a LocalTimeConvert object
-         * 
-         * The reason for the conv object is that it contains the time to calculate at, as well as 
-         * the daylight saving time settings. This methods takes into account the actual number of
-         * seconds including when a time change is crossed.
-         * 
-         * @param conv The time and timezone settings to calculate the time span at
-         * @return time_t Time difference in seconds
-         * 
-         * In the weird case that start > end, it can return a negative value, as time_t is a signed
-         * long (or long long) value.
-         */
-        time_t getTimeSpan(const LocalTimeConvert &conv) const {
-            
-            LocalTimeConvert convStart(conv);
-            convStart.atLocalTime(hmsStart);
-
-            LocalTimeConvert convEnd(conv);
-            convEnd.atLocalTime(hmsEnd);
-
-            return convEnd.time - convStart.time;
-        }
-
-        /**
-         * @brief Compares a time (LocalTimeHHS, local time) to this time range
-         * 
-         * @param hms 
-         * @return int -1 if hms is before hmsStart, 0 if in range, +1 if hms is after hmsEnd
-         */
-        int compareTo(LocalTimeHMS hms) const {
-            if (hms < hmsStart) {
-                return -1;
-            }
-            else
-            if (hms > hmsEnd) {
-                return +1;
-            }
-            else {
-                return 0;
-            }
-        }
-
-        virtual bool inRange(LocalTimeValue localTimeValue) const {
-            LocalTimeHMS hms = localTimeValue.hms();
-            return (hmsStart <= hms) && (hms <= hmsEnd);
-        }
-
-        /**
-         * @brief Fills in the time range from a JSON object
-         * 
-         * @param jsonObj 
-         * 
-         * Keys:
-         * - s (string) The start time (HH:MM:SS format, can omit MM or SS)
-         * - e (string) The end time (HH:MM:SS format, can omit MM or SS)
-         */
-        void fromJson(JSONValue jsonObj);
-
-        LocalTimeHMS hmsStart; //!< Starting time, inclusive
-        LocalTimeHMS hmsEnd; //!< Ending time, inclusive
-    };
 
     /**
-     * @brief TimeRange (HMS) with a day of week and/or date restrictions
+     * @brief LocalTimeRange (HMS) with a day of week and/or date restrictions
      */
-    class TimeRangeRestricted : public TimeRange, public LocalTimeRestrictedDate {
+    class TimeRangeRestricted : public LocalTimeRange, public LocalTimeRestrictedDate {
     public:
         TimeRangeRestricted() : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
         }
 
         /**
-         * @brief Constructor that takes a TimeRange, every day (TimeRange not restricted by date or day of week)
+         * @brief Constructor that takes a LocalTimeRange, every day (LocalTimeRange not restricted by date or day of week)
          * 
          * @param timeRange 
          */
-        TimeRangeRestricted(TimeRange timeRange) : TimeRange(timeRange), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
+        TimeRangeRestricted(LocalTimeRange timeRange) : LocalTimeRange(timeRange), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
         }
 
-        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : TimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
+        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : LocalTimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
         }
 
-        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate restrictedDate) : TimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(restrictedDate) {
+        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate restrictedDate) : LocalTimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(restrictedDate) {
         }
 
-        TimeRangeRestricted(TimeRange timeRange, LocalTimeRestrictedDate restrictedDates) : TimeRange(timeRange), LocalTimeRestrictedDate(restrictedDates) {
+        TimeRangeRestricted(LocalTimeRange timeRange, LocalTimeRestrictedDate restrictedDates) : LocalTimeRange(timeRange), LocalTimeRestrictedDate(restrictedDates) {
         }
 
         bool isValidDate(LocalTimeYMD ymd) const {
@@ -1090,7 +1084,7 @@ public:
 
         virtual bool inRange(LocalTimeValue localTimeValue) const {
             bool dateInRange = LocalTimeRestrictedDate::isValid(localTimeValue);
-            bool timeInRange = TimeRange::inRange(localTimeValue);
+            bool timeInRange = LocalTimeRange::inRange(localTimeValue);
             return dateInRange && timeInRange;
         }
 
@@ -1100,14 +1094,14 @@ public:
          * @param jsonObj 
          * 
          * Keys:
-         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange]
-         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange]
+         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange]
+         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange]
          * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate]
          * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate]
          * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate]
          */
         void fromJson(JSONValue jsonObj) {
-            TimeRange::fromJson(jsonObj);
+            LocalTimeRange::fromJson(jsonObj);
             LocalTimeRestrictedDate::fromJson(jsonObj);
         }
 
@@ -1120,11 +1114,11 @@ public:
     class ScheduleItemMultiple {
     public:
         enum class MultipleType : int {
-            NONE = 0,           //!< No multiple defined
-            MINUTE_OF_HOUR,     //!< Minute of the hour (1)
-            HOUR_OF_DAY,        //!< Hour of day (2)
-            DAY_OF_WEEK,        //!< Day of week Sunday - Saturday (3)
-            DAY_OF_MONTH        //!< Day of the month (4)
+            NONE = 0,               //!< No multiple defined
+            MINUTE_OF_HOUR,         //!< Minute of the hour (1)
+            HOUR_OF_DAY,            //!< Hour of day (2)
+            DAY_OF_WEEK_OF_MONTH,   //!< The nth day of week of the month (3)
+            DAY_OF_MONTH            //!< Day of the month (4)
         };
 
         /**
@@ -1174,10 +1168,10 @@ public:
          * Keys:
          * - m (integer) MultipleType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
          * - i (integer) increment or ordinal value
-         * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK)
+         * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK_OF_MONTH)
          * - f (integer) flag bits (optional)
-         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
-         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
+         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
          * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
          * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
          * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
@@ -1187,7 +1181,7 @@ public:
     
         TimeRangeRestricted timeRange; //!< Range of local time, inclusive
         int increment = 0; //!< Increment value, or sometimes ordinal value
-        int dayOfWeek = 0; //!< Used for DAY_OF_WEEK only
+        int dayOfWeek = 0; //!< Used for DAY_OF_WEEK_OF_MONTH only
         int flags = 0; //!< Optional scheduling flags
         MultipleType multipleType = MultipleType::NONE;
     };
@@ -1223,7 +1217,7 @@ public:
          * an inconsistent period at the top of the hour.
          * 
          * If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule
-         * starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
+         * starts at. For example: `15, LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
          * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
          * 
          * The largest value for hmsEnd of the time range is 23:59:59.
@@ -1341,8 +1335,8 @@ public:
          *  - m (integer) type of multiple
          *  - i (integer) increment
          *  - f (integer) flag bits (optional)
-         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
-         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from TimeRange via TimeRangeRestricted]
+         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
+         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
          *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
          *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
          *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]

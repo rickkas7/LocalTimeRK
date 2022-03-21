@@ -916,46 +916,46 @@ void test1() {
 	// inLocalTimeRange
 	/*
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time EST
-	assert(conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
-	assert(!conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("06:00"), LocalTimeHMS("06:59:59"))));
+	assert(conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
+	assert(!conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("06:00"), LocalTimeHMS("06:59:59"))));
 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:00:00")).convert(); // 05:00:00 local time EST
-	assert(conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
+	assert(conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 11:00:00")).convert(); // 6:00:00 local time EST
-	assert(!conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
+	assert(!conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
 
 	// Crossing day boundary
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 03:10:52")).convert(); // 22:10:52 local time EST
-	assert(conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("22:00"), LocalTimeHMS("22:59:59"))));
+	assert(conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("22:00"), LocalTimeHMS("22:59:59"))));
 	*/
 
 	// Time range tests
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
 	{
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("00:15:35"));
+		LocalTimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("00:15:35"));
 		assertInt("", timeRange.getTimeSpan(conv), 5);
 	}
 	{
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("01:15:30"));
+		LocalTimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("01:15:30"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
 	}
 	// Right before spring forward
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 19:10:52")).convert(); // 1:10:52 AM EST
 	{
 		// This crosses spring forward, so 2 hours on the clock is actually 1 hour
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("1:10:52"), LocalTimeHMS("3:10:52"));
+		LocalTimeRange timeRange(LocalTimeHMS("1:10:52"), LocalTimeHMS("3:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
 	}
 	{
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("3:10:52"), LocalTimeHMS("4:10:52"));
+		LocalTimeRange timeRange(LocalTimeHMS("3:10:52"), LocalTimeHMS("4:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
 	}
 	// Right before fall back
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-07 18:10:52")).convert(); // 12:10:52 AM EDT
 	{
 		// This crosses fall back, so 3 hours on the clock is actually 4 hours
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("00:10:52"), LocalTimeHMS("3:10:52"));
+		LocalTimeRange timeRange(LocalTimeHMS("00:10:52"), LocalTimeHMS("3:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 4 * 3600);
 	}
 
@@ -1207,7 +1207,7 @@ void test1() {
 
 
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:30")).convert(); 
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=15 tm_sec=0 tm_wday=6");	
 
@@ -1219,20 +1219,20 @@ void test1() {
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:19:59")).convert();
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:19:00")).convert();
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 23:58:52")).convert();
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 23:58:00")).convert();
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=0");	
 	}
 	{
 		// Every 15 minutes all day, at 05:00, 20:00, 35:00, 50:00
 		LocalTimeConvert::Schedule schedule;
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")));
+		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")));
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:00")).convert(); 
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
 
@@ -1249,9 +1249,9 @@ void test1() {
 	{
 		LocalTimeConvert::Schedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:00")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=6");	
 
@@ -1283,11 +1283,35 @@ void test1() {
 
 	}
 
+
+	{
+		LocalTimeConvert::Schedule schedule;
+		// Every 15 minutes between 09:02:30 and 5 PM local time (14:02:30 to 22:00 UTC)
+		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:02:30"), LocalTimeHMS("16:59:59")));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:00")).convert(); // 05:10:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=2 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=17 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=32 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=47 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=15 tm_min=2 tm_sec=30 tm_wday=6");	
+
+
+	}
 	{
 		LocalTimeConvert::Schedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
 		// Every hour otherwise
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
 		schedule.withMinuteMultiple(60);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
@@ -1861,7 +1885,7 @@ void test1() {
 	{
 		LocalTimeConvert::Schedule schedule;
 		// Every 2 hours between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
-		schedule.withHourMultiple(2, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("17:00:00")));
+		schedule.withHourMultiple(2, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("17:00:00")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1941,8 +1965,8 @@ void test1() {
 		LocalTimeConvert::Schedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
 		// Every 2 hours from 1:00 AM otherwise
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
-		schedule.withHourMultiple(2, LocalTimeConvert::TimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59")));
+		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withHourMultiple(2, LocalTimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 
@@ -2102,7 +2126,7 @@ void test1() {
 		// Increment 15 minutes, starting at 00:05 past the hour
 		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::MINUTE_OF_HOUR;
 		item.increment = 15;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 10:10:52")).convert(); 
 
@@ -2167,7 +2191,7 @@ void test1() {
 		// Increment 4 hours across EST->EDT switch with 01:00:00 offset
 		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::HOUR_OF_DAY;
 		item.increment = 3;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 04:00:00")).convert(); // UTC; 23:00:00 local time
 
@@ -2187,7 +2211,7 @@ void test1() {
 		// Increment 3 hours with offset of 1:15
 		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::HOUR_OF_DAY;
 		item.increment = 3;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("01:15:00"), LocalTimeHMS("23:59:59"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("01:15:00"), LocalTimeHMS("23:59:59"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 10:10:52")).convert(); // UTC; 06:10:52 local time
 
@@ -2223,10 +2247,10 @@ void test1() {
 		bool bResult;
 		
 		// First Friday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK;
+		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 5;
 		item.increment = 1;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("04:00:00"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 04:00:00")).convert(); // UTC
 
@@ -2242,10 +2266,10 @@ void test1() {
 		bool bResult;
 		
 		// First Saturday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK;
+		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 6;
 		item.increment = 1;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("04:00:00"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 04:00:00")).convert(); // UTC
 
@@ -2261,10 +2285,10 @@ void test1() {
 		bool bResult;
 		
 		// Second Sunday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK;
+		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 0;
 		item.increment = 2;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("04:00:00"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-07 04:00:00")).convert(); // UTC
 
@@ -2280,10 +2304,10 @@ void test1() {
 		bool bResult;
 		
 		// Last Friday of the month at 11:59:59 PM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK;
+		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 5;
 		item.increment = -1;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("23:59:59"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("23:59:59"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-28 04:00:00")).convert(); // UTC
 
@@ -2299,10 +2323,10 @@ void test1() {
 		bool bResult;
 		
 		// First Sunday of the month at 4:00 AM EDT 
-		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK;
+		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_WEEK_OF_MONTH;
 		item.dayOfWeek = 0;
 		item.increment = 1;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("04:00:00"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-29 04:00:00")).convert(); // UTC
 
@@ -2320,7 +2344,7 @@ void test1() {
 		// 1st of the month at 4:00 AM EDT 
 		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_MONTH;
 		item.increment = 1;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("04:00:00"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-29 04:00:00")).convert(); // UTC
 
@@ -2333,7 +2357,7 @@ void test1() {
 	}
 
 
-	// LocalTimeConvert::TimeRange JSON operations
+	// LocalTimeRange JSON operations
 
 	{
 		
@@ -2353,7 +2377,7 @@ void test1() {
 		while(iter.next()) {
 			String key = (const char *) iter.name();
 			if (key == "t1") {
-				LocalTimeConvert::TimeRange tr(LocalTimeHMS("09:00:00"), LocalTimeHMS("09:29:29"));
+				LocalTimeRange tr(LocalTimeHMS("09:00:00"), LocalTimeHMS("09:29:29"));
 
 				tr.fromJson(iter.value());
 				assertStr("", tr.hmsStart.toString(), "00:00:00");
@@ -2361,7 +2385,7 @@ void test1() {
 			}			
 			else
 			if (key == "t2") {
-				LocalTimeConvert::TimeRange tr;
+				LocalTimeRange tr;
 
 				tr.fromJson(iter.value());
 				assertStr("", tr.hmsStart.toString(), "09:00:00");
@@ -2369,7 +2393,7 @@ void test1() {
 			}			
 			else
 			if (key == "t3") {
-				LocalTimeConvert::TimeRange tr;
+				LocalTimeRange tr;
 
 				tr.fromJson(iter.value());
 				assertStr("", tr.hmsStart.toString(), "10:00:00");
@@ -2388,7 +2412,7 @@ void test1() {
 		// On the 5th of the month at 4:00 AM local time
 		item.multipleType = LocalTimeConvert::ScheduleItemMultiple::MultipleType::DAY_OF_MONTH;
 		item.increment = 5;
-		item.timeRange = LocalTimeConvert::TimeRange(LocalTimeHMS("04:00:00"));
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:10:52")).convert(); // UTC; 03:10:52 local time
 
