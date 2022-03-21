@@ -73,8 +73,8 @@ It also handles other common scheduling scenarios:
 
 An advanced scheduling mode was added in version 0.1.0. This allows complex schedules such as:
 
-- Every 15 minutes between 9:00 AM and 5 PM local time Monday - Friday, except on 2022-03-21, as it's a holiday.
-- Every 4 hours starting at 00:00:00 (midnight) other times
+- Every 15 minute of the hour (between 9:00 AM and 5:00 PM local time Monday - Friday, except on 2022-03-21
+- Every 4 hours of the day starting at 00:00:00 (midnight) other times
 
 This can either be specified in code, or it can be expressed in JSON. This allows the schedule to be updating using a Particle.function, for example. 
 
@@ -160,7 +160,7 @@ A `LocalTimeRestrictedDate` is used for both multiples and times (below). It can
 
 ### Schedule items
 
-Schedule include things like every n minutes, every n hour, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a `TimeRangeRestricted` that determines when the multiple is used.
+Schedule include things like every n minutes, every n hours, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a `TimeRangeRestricted` that determines when the multiple is used.
 
 `TimeRangeRestricted` is itself composed of a `TimeRange`, and a `LocalTimeRestrictedDate`. This specifies both the time of day, as well as an optional restriction on the dates it applies. See above for for an explanation of these types.
 
@@ -206,9 +206,9 @@ This multiple is used for "every n hours." For example, if you want to wake and 
 | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
 
-#### Day of week of the month multiples
+#### Day of week of the month 
 
-This multiple is used for things like: "Every first Monday of the month," "Every second Tuesday of the month," "Last Friday of the month."
+This is used for things like: "Every first Monday of the month," "Every second Tuesday of the month," or "Last Friday of the month."
 
 - The dayOfWeek specifies the day of the week (Sunday = 0, Monday = 1, Tuesday = 2, ..., Saturday = 6).
 - The increment specifies which instance (1 = first, 2 = second, ... Or -1 = last, -2 = second to last, ...)
@@ -228,9 +228,9 @@ This multiple is used for things like: "Every first Monday of the month," "Every
 | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
 
-#### Day of month multiples
+#### Day of month 
 
-This multiple is used for things like "The first of the month," "The 15th of the month," "the last day of the month."
+This is used for things like "The 1st of the month," "The 15th of the month," or "the last day of the month."
 
 - The increment specifies which instance (1 = 1st of the month, 2 = 2nd of the month, ... Or -1 = last day, -2 = second to last day, ...)
 - A `TimeRangeRestricted` can handle exception dates, both only on date, or to exclude dates.
@@ -247,7 +247,7 @@ This multiple is used for things like "The first of the month," "The 15th of the
 | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) |
 | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
-#### Time 
+#### Time schedule
 
 It's also possible to schedule at a specific time in local time. In code, this is an array of `LocalTimeHMSRestricted` objects. You are limited only by RAM for the number of objects, as the array is stored in a std::vector.
 
@@ -358,6 +358,7 @@ Some configuration strings:
 | London | "BST0GMT,M3.5.0/1:00:00,M10.5.0/2:00:00" |
 | Sydney, Australia | "AEST-10AEDT,M10.1.0/02:00:00,M4.1.0/03:00:00" | 
 | Adelaide, Australia | "ACST-9:30ACDT,M10.1.0/02:00:00,M4.1.0/03:00:00" |
+| UTC | "UTC" |
 
 ### Getting the current local time
 

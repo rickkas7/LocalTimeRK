@@ -1,9 +1,9 @@
 var searchData=
 [
-  ['hasdst_0',['hasDST',['../class_local_time_posix_timezone.html#a77745f766febcff08981558b7b9a3c5a',1,'LocalTimePosixTimezone']]],
-  ['hms_1',['hms',['../class_local_time_change.html#ae1bf33e853d512a25b41505035cb2007',1,'LocalTimeChange::hms()'],['../class_local_time_value.html#a24e40fe1d04cb6fa7cd8be8be2a48d59',1,'LocalTimeValue::hms()']]],
-  ['hmsend_2',['hmsEnd',['../class_local_time_convert_1_1_time_range.html#af24022d92b8d7292214f4e9f8eabe81b',1,'LocalTimeConvert::TimeRange']]],
-  ['hmsstart_3',['hmsStart',['../class_local_time_convert_1_1_time_range.html#afb120229e98e2f78ba5fc7c0790115b8',1,'LocalTimeConvert::TimeRange']]],
-  ['hour_4',['hour',['../class_local_time_h_m_s.html#a7103217de18d37e2fb6fa86838353796',1,'LocalTimeHMS::hour()'],['../class_local_time_value.html#a903d70a2a32fd8d893f2092c55652830',1,'LocalTimeValue::hour() const']]],
-  ['hourformat12_5',['hourFormat12',['../class_local_time_value.html#a305534e61a9e122fe264cc784fba4354',1,'LocalTimeValue']]]
+  ['getconfig_0',['getConfig',['../class_local_time.html#aac1a18a1a08a202a64edb04d74fd099b',1,'LocalTime']]],
+  ['getnextscheduledtime_1',['getNextScheduledTime',['../class_local_time_convert_1_1_schedule_item.html#a872c0343ac19b8bfc4c0519ba3b6765f',1,'LocalTimeConvert::ScheduleItem']]],
+  ['getschedulelookaheaddays_2',['getScheduleLookaheadDays',['../class_local_time.html#a118b928e91fbf323c7fff1e4ac768e89',1,'LocalTime']]],
+  ['gettimespan_3',['getTimeSpan',['../class_local_time_range.html#a046d461962c4a06f07b795c9dd95281e',1,'LocalTimeRange::getTimeSpan()'],['../class_local_time_convert_1_1_schedule_item.html#a58803bda8ce52de882818cf3c4b9e2fa',1,'LocalTimeConvert::ScheduleItem::getTimeSpan()']]],
+  ['gettmstring_4',['getTmString',['../class_local_time.html#a0f1cbbdcc06a9f257ea0fb7de7129f1a',1,'LocalTime']]],
+  ['getyear_5',['getYear',['../class_local_time_y_m_d.html#a064b510c5726dfaee1af60fcd057e8d4',1,'LocalTimeYMD']]]
 ];

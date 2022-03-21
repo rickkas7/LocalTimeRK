@@ -784,7 +784,7 @@ void LocalTimeConvert::ScheduleItem::fromJson(JSONValue jsonObj) {
             timeRange.onlyOnDays = LocalTimeDayOfWeek::MASK_ALL;
         }
     }
-    
+
     timeRange.fromJson(jsonObj);
 }
 
@@ -838,8 +838,8 @@ void LocalTimeConvert::Schedule::fromJson(const char *jsonStr) {
     fromJson(outerObj);
 }
 
-void LocalTimeConvert::Schedule::fromJson(JSONValue jsonObj) {
-    JSONArrayIterator iter(jsonObj);
+void LocalTimeConvert::Schedule::fromJson(JSONValue jsonArray) {
+    JSONArrayIterator iter(jsonArray);
     while(iter.next()) {
         ScheduleItem item;
         item.fromJson(iter.value());

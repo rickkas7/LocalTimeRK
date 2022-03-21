@@ -78,12 +78,19 @@ public:
     /**
      * @brief Copies the year, month, and day from a struct tm
      * 
-     * @param tm 
+     * @param pTimeInfo The pointer to a struct tm to copy the year, month, and day from.
      * 
      * The tm should be in local time. 
      */
     void fromTimeInfo(const struct tm *pTimeInfo);
 
+    /**
+     * @brief The LocalTimeValue to copy the year, month and day from
+     * 
+     * @param value Source of the year, month, and day values
+     * 
+     * Since LocalTimeValue contains a struct tm, this uses fromTimeInfo internally.
+     */
     void fromLocalTimeValue(const LocalTimeValue &value);
 
     /**
@@ -1049,10 +1056,16 @@ public:
 
 
     /**
-     * @brief LocalTimeRange (HMS) with a day of week and/or date restrictions
+     * @brief LocalTimeRange (HMS to HMS) with a day of week and/or date restrictions
+     * 
+     * This is used for scheduling.
      */
     class TimeRangeRestricted : public LocalTimeRange, public LocalTimeRestrictedDate {
     public:
+        /**
+         * @brief Construct a new Time Range Restricted object
+         * 
+         */
         TimeRangeRestricted() : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
         }
 
@@ -1117,7 +1130,10 @@ public:
      * @brief Schedule option for "every n minutes"
      */
     class ScheduleItem {
-    public:
+    public: 
+        /**
+         * @brief Type of schedule item this is
+         */
         enum class ScheduleItemType : int {
             NONE = 0,               //!< No multiple defined
             MINUTE_OF_HOUR,         //!< Minute of the hour (1)
@@ -1158,18 +1174,24 @@ public:
         }
 
         /**
-         * @brief Get the scheduled time
+         * @brief Update the conv object to point at the next schedule item
          * 
-         * @param conv 
-         * @return time_t 
+         * @param conv LocalTimeConvert object, may be modified
+         * @return true if there is an item available or false if not. if false, conv will be unchanged.
+         * 
+         * This method finds the next scheduled time of this item, if it's in the near future.
+         * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
+         * to check; the default is 3 days. The way schedules work each day needs to be checked to make
+         * sure all of the constraints are met, so long look-aheads are computationally intensive. This
+         * is not normally an issue, because the idea is that you'll wake from sleep or check the
+         * schedule at least every few days, at which point the new schedule may be available.
          */
         bool getNextScheduledTime(LocalTimeConvert &conv) const;
 
         /**
          * @brief Creates an object from JSON
          * 
-         * @param key Key name that determines the ScheduleItemType 
-         * @param jsonObj 
+         * @param jsonObj The schedule. This should be the object containing the values, not the array.
          * 
          * Keys:
          * - m (integer) ScheduleItemType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
@@ -1189,7 +1211,7 @@ public:
         int increment = 0; //!< Increment value, or sometimes ordinal value
         int dayOfWeek = 0; //!< Used for DAY_OF_WEEK_OF_MONTH only
         int flags = 0; //!< Optional scheduling flags
-        ScheduleItemType scheduleItemType = ScheduleItemType::NONE;
+        ScheduleItemType scheduleItemType = ScheduleItemType::NONE; //!< The type of schedule item
     };
 
     /**
@@ -1201,7 +1223,14 @@ public:
      * It can also have hour multiples, optionally in a time range, at a defined minute ("every 4 hours at :15 
      * past the hour").
      * 
-     * It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time").
+     * Schedules can be at a specifc day week, with an ordinal (first Monday, last Friday) at a specific time, 
+     * optionally with exceptions.
+     * 
+     * Schedules can be a specific day of the month (the 1st, the 5th of the month, the last day of the month, the 
+     * second to last day of month).
+     * 
+     * It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time")
+     * every day, specific days of the week, on specific dates, or with date exceptions.
      */
     class Schedule {
     public:
@@ -1275,15 +1304,6 @@ public:
         Schedule &withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted());
 
         /**
-         * @brief Schedule every nth day
-         * 
-         * @param dayMultiple 
-         * @param timeRange 
-         * @return Schedule& 
-         */
-        // Schedule &withDayMultiple(int dayMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted());
-
-        /**
          * @brief Returns true if the schedule does not have any items in it
          * 
          * @return true 
@@ -1301,18 +1321,18 @@ public:
         }
 
         /**
-         * @brief Set the schedule of this object from a JSON string
+         * @brief Set the schedule from a JSON string containing an array of objects.
          * 
          * @param jsonStr 
          * 
-         * See the overload that takes a JSONValue for the keys
+         * See the overload that takes a JSONValue if the JSON string has already been parsed.
          */
         void fromJson(const char *jsonStr);
 
         /**
          * @brief Set the schedule of this object from a JSONValue, typically the outer object
          * 
-         * @param jsonObject 
+         * @param jsonArray A JSONValue containing an array of objects
          * 
          * Array of ScheduleItem objects:
          *  - mh (integer): Minute of hour (takes place of setting m and i separately)
@@ -1329,9 +1349,9 @@ public:
          *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
          *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
          */
-        void fromJson(JSONValue jsonObj);
+        void fromJson(JSONValue jsonArray);
 
-        std::vector<ScheduleItem> scheduleItems; //!< Minute multiple items
+        std::vector<ScheduleItem> scheduleItems; //!< Schedule items
     };
 
     /**
@@ -1618,8 +1638,18 @@ public:
      */
     void atLocalTime(LocalTimeHMS hms);
 
+    /**
+     * @brief Get the value of this object as a LocalTimeHMS (hour minute second)
+     * 
+     * @return LocalTimeHMS 
+     */
     LocalTimeHMS getLocalTimeHMS() const { return LocalTimeHMS(localTimeValue); };
 
+    /**
+     * @brief Get the value of this object as a LocalTimeYMD (year month day0)
+     * 
+     * @return LocalTimeYMD 
+     */
     LocalTimeYMD getLocalTimeYMD() const { return LocalTimeYMD(localTimeValue); };
 
     /**

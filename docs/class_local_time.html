@@ -87,6 +87,12 @@ Public Member Functions</h2></td></tr>
 const <a class="el" href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>getConfig</b> () const</td></tr>
 <tr class="memdesc:aac1a18a1a08a202a64edb04d74fd099b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the default global timezone configuration. <br /></td></tr>
 <tr class="separator:aac1a18a1a08a202a64edb04d74fd099b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41db74e04980a9a944f2fa10487d334e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_local_time.html">LocalTime</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time.html#a41db74e04980a9a944f2fa10487d334e">withScheduleLookaheadDays</a> (int value)</td></tr>
+<tr class="memdesc:a41db74e04980a9a944f2fa10487d334e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the maximum number of days to look ahead in the schedule for a match (default: 3)  <a href="class_local_time.html#a41db74e04980a9a944f2fa10487d334e">More...</a><br /></td></tr>
+<tr class="separator:a41db74e04980a9a944f2fa10487d334e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a118b928e91fbf323c7fff1e4ac768e89"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time.html#a118b928e91fbf323c7fff1e4ac768e89">getScheduleLookaheadDays</a> () const</td></tr>
+<tr class="memdesc:a118b928e91fbf323c7fff1e4ac768e89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the maximum number of days to look ahead in the schedule for a match.  <a href="class_local_time.html#a118b928e91fbf323c7fff1e4ac768e89">More...</a><br /></td></tr>
+<tr class="separator:a118b928e91fbf323c7fff1e4ac768e89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -112,6 +118,9 @@ static <a class="el" href="class_local_time.html">LocalTime</a> &amp;&#160;</td>
 <tr class="memitem:a798966247359ee77759edb613d35179a"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time.html#a798966247359ee77759edb613d35179a">lastDayOfMonth</a> (int year, int month)</td></tr>
 <tr class="memdesc:a798966247359ee77759edb613d35179a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the last day of the month in a given month and year.  <a href="class_local_time.html#a798966247359ee77759edb613d35179a">More...</a><br /></td></tr>
 <tr class="separator:a798966247359ee77759edb613d35179a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cecdb1dc9701bb4afdffd46ae377f07"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time.html#a8cecdb1dc9701bb4afdffd46ae377f07">dayOfWeekOfMonth</a> (int year, int month, int dayOfWeek, int ordinal)</td></tr>
+<tr class="memdesc:a8cecdb1dc9701bb4afdffd46ae377f07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the nth instance of a day of week in a month and year.  <a href="class_local_time.html#a8cecdb1dc9701bb4afdffd46ae377f07">More...</a><br /></td></tr>
+<tr class="separator:a8cecdb1dc9701bb4afdffd46ae377f07"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -137,6 +146,10 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a5cb370b8dc3aae8b9c03a6183fea50a1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time.html#a5cb370b8dc3aae8b9c03a6183fea50a1">config</a></td></tr>
 <tr class="memdesc:a5cb370b8dc3aae8b9c03a6183fea50a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Global default timezone.  <a href="class_local_time.html#a5cb370b8dc3aae8b9c03a6183fea50a1">More...</a><br /></td></tr>
 <tr class="separator:a5cb370b8dc3aae8b9c03a6183fea50a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfc2ae28cea4124eff5bc0b100301533"><td class="memItemLeft" align="right" valign="top"><a id="adfc2ae28cea4124eff5bc0b100301533" name="adfc2ae28cea4124eff5bc0b100301533"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>scheduleLookaheadDays</b> = 3</td></tr>
+<tr class="memdesc:adfc2ae28cea4124eff5bc0b100301533"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of days to look forward to see if there are scheduled events. Default: 3. <br /></td></tr>
+<tr class="separator:adfc2ae28cea4124eff5bc0b100301533"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-static-attribs" name="pro-static-attribs"></a>
 Static Protected Attributes</h2></td></tr>
@@ -148,6 +161,94 @@ static <a class="el" href="class_local_time.html">LocalTime</a> *&#160;</td><td 
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p >Global time settings. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a8cecdb1dc9701bb4afdffd46ae377f07" name="a8cecdb1dc9701bb4afdffd46ae377f07"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8cecdb1dc9701bb4afdffd46ae377f07">&#9670;&nbsp;</a></span>dayOfWeekOfMonth()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int LocalTime::dayOfWeekOfMonth </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>year</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>month</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>dayOfWeek</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>ordinal</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the nth instance of a day of week in a month and year. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">year</td><td>The 4-digit year (2020, for example) </td></tr>
+    <tr><td class="paramname">month</td><td>Month 1 - 12 inclusive, 1 = January, 12 = December </td></tr>
+    <tr><td class="paramname">dayOfWeek</td><td>0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday </td></tr>
+    <tr><td class="paramname">ordinal</td><td>1 = first instance of that day of week in the month, 2 = second, ... </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>int The day of the month, or 0 if that ordinal does not exist in the month </dd></dl>
+
+</div>
+</div>
+<a id="a118b928e91fbf323c7fff1e4ac768e89" name="a118b928e91fbf323c7fff1e4ac768e89"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a118b928e91fbf323c7fff1e4ac768e89">&#9670;&nbsp;</a></span>getScheduleLookaheadDays()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int LocalTime::getScheduleLookaheadDays </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Gets the maximum number of days to look ahead in the schedule for a match. </p>
+<dl class="section return"><dt>Returns</dt><dd>int </dd></dl>
+
+</div>
+</div>
 <a id="a0f1cbbdcc06a9f257ea0fb7de7129f1a" name="a0f1cbbdcc06a9f257ea0fb7de7129f1a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0f1cbbdcc06a9f257ea0fb7de7129f1a">&#9670;&nbsp;</a></span>getTmString()</h2>
 
@@ -414,6 +515,41 @@ static <a class="el" href="class_local_time.html">LocalTime</a> *&#160;</td><td 
 </dl>
 <p>Note: tm_wday, tm_yday, and tm_isdst are ignored for calculating the result, however tm_wday and tm_yday are filled in with the correct values based on the date, which is why pTimeInfo is not const.</p>
 <p >This basically a wrapper around mktime or timegm. </p>
+
+</div>
+</div>
+<a id="a41db74e04980a9a944f2fa10487d334e" name="a41db74e04980a9a944f2fa10487d334e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a41db74e04980a9a944f2fa10487d334e">&#9670;&nbsp;</a></span>withScheduleLookaheadDays()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_local_time.html">LocalTime</a> &amp; LocalTime::withScheduleLookaheadDays </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets the maximum number of days to look ahead in the schedule for a match (default: 3) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">value</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_local_time.html" title="Global time settings.">LocalTime</a>&amp; </dd></dl>
 
 </div>
 </div>
