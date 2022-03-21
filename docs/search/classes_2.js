@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['timerangerestricted_0',['TimeRangeRestricted',['../class_local_time_convert_1_1_time_range_restricted.html',1,'LocalTimeConvert']]]
+  ['ymd_0',['YMD',['../struct_local_time_y_m_d_1_1_y_m_d.html',1,'LocalTimeYMD']]]
 ];

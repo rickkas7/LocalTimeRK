@@ -127,8 +127,8 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>year</b> () const</td>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setHMS</b> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> <a class="el" href="class_local_time_value.html#a24e40fe1d04cb6fa7cd8be8be2a48d59">hms</a>)</td></tr>
 <tr class="memdesc:add3825b9fe9fe2440d0b5a9726bd266b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the local time from a <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> object. <br /></td></tr>
 <tr class="separator:add3825b9fe9fe2440d0b5a9726bd266b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9bcaf1b3252fcea2da0ddd1bc84bd010"><td class="memItemLeft" align="right" valign="top"><a id="a9bcaf1b3252fcea2da0ddd1bc84bd010" name="a9bcaf1b3252fcea2da0ddd1bc84bd010"></a>
-<a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ymd</b> () const</td></tr>
+<tr class="memitem:a9bcaf1b3252fcea2da0ddd1bc84bd010"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_value.html#a9bcaf1b3252fcea2da0ddd1bc84bd010">ymd</a> () const</td></tr>
+<tr class="memdesc:a9bcaf1b3252fcea2da0ddd1bc84bd010"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the date portion of this object as a <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a>.  <a href="class_local_time_value.html#a9bcaf1b3252fcea2da0ddd1bc84bd010">More...</a><br /></td></tr>
 <tr class="separator:a9bcaf1b3252fcea2da0ddd1bc84bd010"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43f95a3aff61707298e1b75d8e57d18b"><td class="memItemLeft" align="right" valign="top">time_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_value.html#a43f95a3aff61707298e1b75d8e57d18b">toUTC</a> (<a class="el" href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a> config) const</td></tr>
 <tr class="memdesc:a43f95a3aff61707298e1b75d8e57d18b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts the specified local time into a UTC time.  <a href="class_local_time_value.html#a43f95a3aff61707298e1b75d8e57d18b">More...</a><br /></td></tr>
@@ -272,6 +272,26 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>setHMS</b> (<a class=
 
 <p>Returns the day of week 1 - 7 (Sunday = 1, Monday = 2, ..., Saturday = 7) </p>
 <p >Note: the underlying struct tm tm_wday is 0 - 6 (Sunday = 0, Monday = 1, ..., Saturday = 6) but Wiring uses 1 - 7 instead of 0 - 6. </p>
+
+</div>
+</div>
+<a id="a9bcaf1b3252fcea2da0ddd1bc84bd010" name="a9bcaf1b3252fcea2da0ddd1bc84bd010"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9bcaf1b3252fcea2da0ddd1bc84bd010">&#9670;&nbsp;</a></span>ymd()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a> LocalTimeValue::ymd </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the date portion of this object as a <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a>. </p>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> </dd></dl>
 
 </div>
 </div>

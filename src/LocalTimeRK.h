@@ -19,25 +19,46 @@ class LocalTimeValue;
  */
 class LocalTimeYMD {
 public:
+    /**
+     * @brief Packed structure to hold the YMD value
+     */
     struct YMD {
-        unsigned year:23;    // Add 1900 (like struct tm)
-        unsigned month:4;    // 1 - 12 (not like struct tm which is 0 - 11)
-        unsigned day:5;      // 1 - 31 ish
+        unsigned year:23;    //!< Year, add 1900 (like struct tm)
+        unsigned month:4;    //!< Month, 1 - 12 (not like struct tm which is 0 - 11)
+        unsigned day:5;      //!< Day, 1 - 31 ish
     };
 
+    /**
+     * @brief Default contructor with an invalid date (0000-00-00) set
+     */
     LocalTimeYMD() {
         ymd.year = ymd.month = ymd.day = 0;
     }
 
+    /**
+     * @brief Construct a YMD value from a string
+     * 
+     * @param s String, must be in YYYY-MM-DD format. No other formars are allowed!
+     */
     LocalTimeYMD(const char *s) {
         (void) parse(s);
     }
 
+    /**
+     * @brief Construct from a LocalTimeValue object
+     * 
+     * @param value The date to copy from
+     */
     LocalTimeYMD(const LocalTimeValue &value) {
         fromLocalTimeValue(value);
     }
 
-
+    /**
+     * @brief Returns true if the date is uninitialized, as from the default constructor
+     * 
+     * @return true 
+     * @return false 
+     */
     bool isEmpty() const {
         return ymd.year == 0 && ymd.month == 0 && ymd.day == 0;
     }
@@ -45,12 +66,17 @@ public:
     /**
      * @brief Get the year as a 4-digit year, for example: 2022
      * 
-     * @return int 
+     * @return int The year, 4-digit
      */
     int getYear() const {
         return ymd.year + 1900;
     }
 
+    /**
+     * @brief Set the year value
+     * 
+     * @param year Year to set, can be several different values but typically is 4-digit year (2022, for example)
+     */
     void setYear(int year) {
         if (year < 100) {
             ymd.year = year + 100;
@@ -63,15 +89,42 @@ public:
             ymd.year = year - 1900;
         }
     }
+
+    /**
+     * @brief Get the month, 1 - 12 inclusive
+     * 
+     * @return int month
+     */
     int getMonth() const {
         return ymd.month;
     }
+
+    /**
+     * @brief Set the month, 1 - 12 inclusive
+     * 
+     * @param month Month value
+     */
     void setMonth(int month) {
         ymd.month = month;
     }
+
+    /**
+     * @brief Get the day of month, starting a 1
+     * 
+     * @return int 
+     */
     int getDay() const {
         return ymd.day;
     }
+
+    /**
+     * @brief Set the day of the month, staring at 1
+     * 
+     * @param day 
+     * 
+     * This method does not validate the date value, but you should avoid setting invalid date values
+     * since the results can be unpredictable.
+     */
     void setDay(int day) {
         ymd.day = day;
     }
@@ -102,30 +155,83 @@ public:
      */
     void addDay(int numberOfDays = 1);
 
+    /**
+     * @brief Get the day of the week, 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
+     * 
+     * @return int the day of the week
+     */
     int getDayOfWeek() const;
 
+    /**
+     * @brief Compare to another LocalTimeYMD object
+     * 
+     * @param other 
+     * @return int -1 if this is < other, 0 if this == other, or 1 if this > other.
+     */
     int compareTo(const LocalTimeYMD other) const;
 
+    /**
+     * @brief Tests if this LocalTimeYMD is equal to other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator==(const LocalTimeYMD other) const {
         return compareTo(other) == 0; 
     }
 
+    /**
+     * @brief Tests if this LocalTimeYMD is not equal to other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator!=(const LocalTimeYMD other) const {
         return compareTo(other) != 0; 
     }
-
+    
+    /**
+     * @brief Tests if this LocalTimeYMD is less than other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator<(const LocalTimeYMD other) const {
         return compareTo(other) < 0; 
     }
 
+    /**
+     * @brief Tests if this LocalTimeYMD is less than or equal to other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator<=(const LocalTimeYMD other) const {
         return compareTo(other) <= 0; 
     }
 
+    /**
+     * @brief Tests if this LocalTimeYMD is greater than other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator>(const LocalTimeYMD other) const {
         return compareTo(other) > 0; 
     }
-
+    
+    /**
+     * @brief Tests if this LocalTimeYMD is greater than or equal to other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
     bool operator>=(const LocalTimeYMD other) const {
         return compareTo(other) >= 0; 
     }
@@ -141,34 +247,66 @@ public:
      */
     bool parse(const char *s);
 
+    /**
+     * @brief Converts the value to YYYY-MM-DD format as a String with leading zeros.
+     * 
+     * @return String 
+     */
     String toString() const {
         return String::format("%04d-%02d-%02d", ymd.year + 1900, ymd.month, ymd.day);
     }
 
-    YMD ymd;
+    YMD ymd;    //!< Packed value for year, month, and day of month (4 bytes)
 };
 
 /**
- * @brief Class for managing day of week calculations
+ * @brief Class for managing a mask value of zero or more days of the week
  * 
  * Day 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+ * 
+ * This class is copyable and assignable and can be tested for equality and inequality
  */
 class LocalTimeDayOfWeek {
 public:
+    /**
+     * @brief Default constructor with no days of week set
+     */
     LocalTimeDayOfWeek() {        
     }
 
+    /**
+     * @brief Sets days of weeks with a bit mask of days
+     * 
+     * @param mask Pass values like MASK_SUNDAY, MASK_WEEKDAYS, MASK_WEEKENDS, MASK_ALL, or a custom value
+     */
     LocalTimeDayOfWeek(uint8_t mask) : dayOfWeekMask(mask) {
     }
 
+    /**
+     * @brief Convenience fluent setter to set all weekdays (Monday - Friday)
+     * 
+     * @return LocalTimeDayOfWeek& 
+     */
     LocalTimeDayOfWeek &withWeekdays() {
         dayOfWeekMask = MASK_WEEKDAY;
         return *this;
     }
+
+    /**
+     * @brief Convenience fluent setter to set weekend days (Saturday and Sunday)
+     * 
+     * @return LocalTimeDayOfWeek& 
+     */
     LocalTimeDayOfWeek &withWeekends() {
         dayOfWeekMask = MASK_WEEKEND;
         return *this;
     }
+
+    /**
+     * @brief Convenience fluent setter to set all days
+     * 
+     * @return LocalTimeDayOfWeek& 
+     */
     LocalTimeDayOfWeek &withAllDays() {
         dayOfWeekMask = MASK_ALL;
         return *this;
@@ -184,38 +322,90 @@ public:
     bool isSet(int dayOfWeek) const {
         return (dayOfWeekMask & (1 << dayOfWeek)) != 0;
     }
+
+    /**
+     * @brief return true if ymd is a day set in this object
+     * 
+     * @param ymd 
+     * @return true 
+     * @return false 
+     */
     bool isSet(LocalTimeYMD ymd) const {
         int dayOfWeek = ymd.getDayOfWeek();
         bool result = isSet(dayOfWeek);
         return result;
     }
+
+    /**
+     * @brief Returns true if no days of the week are set in this object
+     * 
+     * @return true 
+     * @return false 
+     */
     bool isEmpty() const {
         return dayOfWeekMask == 0;
     }
+
+    /**
+     * @brief Get the current mask value
+     * 
+     * @return uint8_t 
+     */
     uint8_t getMask() const {
         return dayOfWeekMask;
     }
+
+    /**
+     * @brief Set the mask value
+     * 
+     * @param mask 
+     */
     void setMask(uint8_t mask) {
         dayOfWeekMask = mask;
     }
 
+    /**
+     * @brief Converts this object to a human-readable string
+     * 
+     * @return String 
+     */
     String toString() const {
         return String::format("LocalTimeDayOfWeek dayOfWeekMask=%02x", dayOfWeekMask);
     }
 
-    static const uint8_t MASK_SUNDAY = 0x01;
-    static const uint8_t MASK_MONDAY = 0x02;
-    static const uint8_t MASK_TUESDAY = 0x04;
-    static const uint8_t MASK_WEDNESDAY = 0x08;
-    static const uint8_t MASK_THURSDAY = 0x10;
-    static const uint8_t MASK_FRIDAY = 0x20;
-    static const uint8_t MASK_SATURDAY = 0x40;
+    /**
+     * @brief Tests if this object has the same mask as other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
+    bool operator==(const LocalTimeDayOfWeek &other) const { dayOfWeekMask == other.dayOfWeekMask; };
 
-    static const uint8_t MASK_ALL = MASK_SUNDAY | MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY | MASK_SATURDAY | MASK_SUNDAY; // 0x7f = 127
-    static const uint8_t MASK_WEEKDAY = MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY; // 0x3e = 62
-    static const uint8_t MASK_WEEKEND = MASK_SATURDAY | MASK_SUNDAY; // 0x41 = 65
+    /**
+     * @brief Tests if this object does not have the same mask as other
+     * 
+     * @param other 
+     * @return true 
+     * @return false 
+     */
+    bool operator!=(const LocalTimeDayOfWeek &other) const { dayOfWeekMask != other.dayOfWeekMask; };
 
-    uint8_t dayOfWeekMask = 0;
+
+
+    static const uint8_t MASK_SUNDAY = 0x01;    //!< Mask value for Sunday
+    static const uint8_t MASK_MONDAY = 0x02;    //!< Mask value for Monday
+    static const uint8_t MASK_TUESDAY = 0x04;   //!< Mask value for Tuesday
+    static const uint8_t MASK_WEDNESDAY = 0x08; //!< Mask value for Wednesday
+    static const uint8_t MASK_THURSDAY = 0x10;  //!< Mask value for Thursday
+    static const uint8_t MASK_FRIDAY = 0x20;    //!< Mask value for Friday
+    static const uint8_t MASK_SATURDAY = 0x40;  //!< Mask value for Saturday
+
+    static const uint8_t MASK_ALL = MASK_SUNDAY | MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY | MASK_SATURDAY | MASK_SUNDAY;    //!< Mask value for every day of the week 0x7f = 127
+    static const uint8_t MASK_WEEKDAY = MASK_MONDAY | MASK_TUESDAY | MASK_WEDNESDAY | MASK_THURSDAY | MASK_FRIDAY;    //!< Mask value for weekdays Monday - Friday 0x3e = 62
+    static const uint8_t MASK_WEEKEND = MASK_SATURDAY | MASK_SUNDAY;    //!< Mask value for Saturday and Sunday 0x41 = 65
+
+    uint8_t dayOfWeekMask = 0;   //!< Mask value for this object
 };
 
 /**
@@ -249,6 +439,11 @@ public:
      */
     LocalTimeHMS(const char *str);
 
+    /**
+     * @brief Construct this HMS from a LocalTimeValue (which contains YMD and HMS)
+     * 
+     * @param value 
+     */
     LocalTimeHMS(const LocalTimeValue &value);
 
     /**
@@ -286,6 +481,11 @@ public:
      */
     void fromTimeInfo(const struct tm *pTimeInfo);
 
+    /**
+     * @brief Sets the HMS from a LocalTimeValue
+     * 
+     * @param value 
+     */
     void fromLocalTimeValue(const LocalTimeValue &value);
 
     /**
@@ -462,6 +662,11 @@ public:
         ignore = true;
     }
 
+    /**
+     * @brief Returns a human readable version of this object
+     * 
+     * @return String 
+     */
     virtual String toString() const {
         return String::format("LocalTimeIgnoreHMS ignore=%d", ignore);
     }
@@ -490,14 +695,38 @@ public:
     LocalTimeRestrictedDate(uint8_t mask) : onlyOnDays(mask) {        
     }
 
+    /**
+     * @brief Construct an object with an initializer list of strings
+     * 
+     * @param mask mask value, see LocalTimeDayOfWeek for values
+     * @param onlyOnDates Initializer list of strings of the form YYYY-MM-DD
+     * @param exceptDates Initializer list of strings of the form YYYY-MM-DD
+     */
     LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<const char *> onlyOnDates, std::initializer_list<const char *> exceptDates) : onlyOnDays(mask) {   
         withOnlyOnDates(onlyOnDates);
         withExceptDates(exceptDates);
     }
 
+    /**
+     * @brief Construct an object with an initializer list of LocalTimeYMD objects
+     * 
+     * @param mask mask value, see LocalTimeDayOfWeek for values
+     * @param onlyOnDates Initializer list of LocalTimeYMD values
+     * @param exceptDates Initializer list of LocalTimeYMD values
+     */
     LocalTimeRestrictedDate(uint8_t mask, std::initializer_list<LocalTimeYMD> onlyOnDates, std::initializer_list<LocalTimeYMD> exceptDates) : onlyOnDays(mask) {   
         withOnlyOnDates(onlyOnDates);
         withExceptDates(exceptDates);
+    }
+
+    /**
+     * @brief Set the mask value to MASK_ALL. Does not change only on date or except on date lists.
+     * 
+     * @return LocalTimeRestrictedDate& 
+     */
+    LocalTimeRestrictedDate &withOnAllDays() {
+        withOnlyOnDays(LocalTimeDayOfWeek::MASK_ALL);
+        return *this;
     }
 
     /**
@@ -641,12 +870,26 @@ public:
  */
 class LocalTimeHMSRestricted : public LocalTimeHMS, public LocalTimeRestrictedDate {
 public:
+    /**
+     * @brief Default constructor restricts to no valid dates!
+     */
     LocalTimeHMSRestricted() {
     }
 
+    /**
+     * @brief Default Sets a hour minute second value on any date
+     * 
+     * @param hms The hour minute second to set
+     */
     LocalTimeHMSRestricted(LocalTimeHMS hms) : LocalTimeHMS(hms), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
     }
 
+    /**
+     * @brief Default Sets a hour minute second value with date restrictions
+     * 
+     * @param hms The hour minute second to set
+     * @param restrictedDate Date restrictions
+     */
     LocalTimeHMSRestricted(LocalTimeHMS hms, LocalTimeRestrictedDate restrictedDate) : LocalTimeHMS(hms), LocalTimeRestrictedDate(restrictedDate) {
     }
 
@@ -898,7 +1141,11 @@ public:
      */
     void setHMS(LocalTimeHMS hms);
 
-    
+    /**
+     * @brief Get the date portion of this object as a LocalTimeYMD
+     * 
+     * @return LocalTimeYMD 
+     */
     LocalTimeYMD ymd() const;
 
     /**
@@ -967,23 +1214,35 @@ public:
      * @brief Construct a new Time Range object with the specifies start and end times.
      * 
      * @param hmsStart Start time in local time 00:00:00 <= hmsStart <= 23:59:59
-     * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59
-
-        * Note that 24:00:00 is not a valid time. You should generally use inclusive times such that
-        * 23:59:59 is the end of the day.
-        * 
-        */
+     * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59 (optional)
+     * 
+     * Note that 24:00:00 is not a valid time. You should generally use inclusive times such that
+     * 23:59:59 is the end of the day.
+     * 
+     */
     LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : hmsStart(hmsStart), hmsEnd(hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
     }
 
+    /**
+     * @brief Construct a new object that specifies start time, end time, and date restrictions
+     * 
+     * @param hmsStart Start time in local time 00:00:00 <= hmsStart <= 23:59:59
+     * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59
+     * @param dateRestriction Only use this time range on certain dates
+     */
     LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate dateRestriction) : hmsStart(hmsStart), hmsEnd(hmsEnd), LocalTimeRestrictedDate(dateRestriction) {
     }
 
-
+    /**
+     * @brief Clear time range to all day, every day
+     */
     void clear() {
         hmsStart = LocalTimeHMS("00:00:00");
         hmsEnd = LocalTimeHMS("23:59:59");
+
+        // Default to all days
         LocalTimeRestrictedDate::clear();
+        LocalTimeRestrictedDate::withOnAllDays();
     }
 
     /**
@@ -1024,14 +1283,24 @@ public:
         }
     }
 
+    /**
+     * @brief Returns true if the date restrictions allow this day 
+     * 
+     * @param ymd 
+     * @return true 
+     * @return false 
+     */
     bool isValidDate(LocalTimeYMD ymd) const {
         return LocalTimeRestrictedDate::isValid(ymd);
     }
 
-    bool inRangeDate(LocalTimeValue localTimeValue) const {    
-        return LocalTimeRestrictedDate::isValid(localTimeValue);
-    }
-
+    /**
+     * @brief Returns true if the date restrictions allow this date and the time is in this range (inclusive)
+     * 
+     * @param localTimeValue 
+     * @return true 
+     * @return false 
+     */
     bool inRange(LocalTimeValue localTimeValue) const {
         if (isValidDate(localTimeValue)) {
             LocalTimeHMS hms = localTimeValue.hms();
@@ -1042,6 +1311,11 @@ public:
         }
     }
 
+    /**
+     * @brief Set the date restrictions from a LocalTimeHMSRestricted object
+     * 
+     * @param hms LocalTimeHMSRestricted, really only uses the date restrictions, not the HMS part
+     */
     void fromTime(LocalTimeHMSRestricted hms) {
         *(LocalTimeRestrictedDate *)this = hms;
         hmsStart = hms;

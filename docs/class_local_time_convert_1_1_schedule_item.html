@@ -91,6 +91,7 @@ Public Types</h2></td></tr>
 , <a class="el" href="class_local_time_convert_1_1_schedule_item.html#aa09c88b2633a48c441c8696ff6be34d0a346ff32eaa3c09983fb2ec057816d352">TIME</a>
 <br />
  }</td></tr>
+<tr class="memdesc:aa09c88b2633a48c441c8696ff6be34d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type of schedule item this is.  <a href="class_local_time_convert_1_1_schedule_item.html#aa09c88b2633a48c441c8696ff6be34d0">More...</a><br /></td></tr>
 <tr class="separator:aa09c88b2633a48c441c8696ff6be34d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
@@ -106,7 +107,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a58803bda8ce52de882818cf3c4b9e2fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get number of seconds in the time range at a given time.  <a href="class_local_time_convert_1_1_schedule_item.html#a58803bda8ce52de882818cf3c4b9e2fa">More...</a><br /></td></tr>
 <tr class="separator:a58803bda8ce52de882818cf3c4b9e2fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a872c0343ac19b8bfc4c0519ba3b6765f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert_1_1_schedule_item.html#a872c0343ac19b8bfc4c0519ba3b6765f">getNextScheduledTime</a> (<a class="el" href="class_local_time_convert.html">LocalTimeConvert</a> &amp;conv) const</td></tr>
-<tr class="memdesc:a872c0343ac19b8bfc4c0519ba3b6765f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the scheduled time.  <a href="class_local_time_convert_1_1_schedule_item.html#a872c0343ac19b8bfc4c0519ba3b6765f">More...</a><br /></td></tr>
+<tr class="memdesc:a872c0343ac19b8bfc4c0519ba3b6765f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the conv object to point at the next schedule item.  <a href="class_local_time_convert_1_1_schedule_item.html#a872c0343ac19b8bfc4c0519ba3b6765f">More...</a><br /></td></tr>
 <tr class="separator:a872c0343ac19b8bfc4c0519ba3b6765f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac07850b7e8879a756d8191d7f02f8d3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert_1_1_schedule_item.html#aac07850b7e8879a756d8191d7f02f8d3">fromJson</a> (JSONValue jsonObj)</td></tr>
 <tr class="memdesc:aac07850b7e8879a756d8191d7f02f8d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an object from JSON.  <a href="class_local_time_convert_1_1_schedule_item.html#aac07850b7e8879a756d8191d7f02f8d3">More...</a><br /></td></tr>
@@ -114,10 +115,10 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Data Fields</h2></td></tr>
-<tr class="memitem:a1abf2a4a53a0ccaa6d7b5c9ededa1c88"><td class="memItemLeft" align="right" valign="top"><a id="a1abf2a4a53a0ccaa6d7b5c9ededa1c88" name="a1abf2a4a53a0ccaa6d7b5c9ededa1c88"></a>
-<a class="el" href="class_local_time_convert_1_1_time_range_restricted.html">TimeRangeRestricted</a>&#160;</td><td class="memItemRight" valign="bottom"><b>timeRange</b></td></tr>
-<tr class="memdesc:a1abf2a4a53a0ccaa6d7b5c9ededa1c88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Range of local time, inclusive. <br /></td></tr>
-<tr class="separator:a1abf2a4a53a0ccaa6d7b5c9ededa1c88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a199acc8c4ef74ee01fc8c9d5ff0c0993"><td class="memItemLeft" align="right" valign="top"><a id="a199acc8c4ef74ee01fc8c9d5ff0c0993" name="a199acc8c4ef74ee01fc8c9d5ff0c0993"></a>
+<a class="el" href="class_local_time_range.html">LocalTimeRange</a>&#160;</td><td class="memItemRight" valign="bottom"><b>timeRange</b></td></tr>
+<tr class="memdesc:a199acc8c4ef74ee01fc8c9d5ff0c0993"><td class="mdescLeft">&#160;</td><td class="mdescRight">Range of local time, inclusive. <br /></td></tr>
+<tr class="separator:a199acc8c4ef74ee01fc8c9d5ff0c0993"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35d46d4655d5a201ede3d034d86d0c87"><td class="memItemLeft" align="right" valign="top"><a id="a35d46d4655d5a201ede3d034d86d0c87" name="a35d46d4655d5a201ede3d034d86d0c87"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>increment</b> = 0</td></tr>
 <tr class="memdesc:a35d46d4655d5a201ede3d034d86d0c87"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increment value, or sometimes ordinal value. <br /></td></tr>
@@ -132,6 +133,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>flags</b> = 0</td></tr
 <tr class="separator:a74586f93f540929147ccabb940d58922"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a312a12f0784400a5a98fa77e7ee51c74"><td class="memItemLeft" align="right" valign="top"><a id="a312a12f0784400a5a98fa77e7ee51c74" name="a312a12f0784400a5a98fa77e7ee51c74"></a>
 <a class="el" href="class_local_time_convert_1_1_schedule_item.html#aa09c88b2633a48c441c8696ff6be34d0">ScheduleItemType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>scheduleItemType</b> = <a class="el" href="class_local_time_convert_1_1_schedule_item.html#aa09c88b2633a48c441c8696ff6be34d0ab50339a10e1de285ac99d4c3990b8693">ScheduleItemType::NONE</a></td></tr>
+<tr class="memdesc:a312a12f0784400a5a98fa77e7ee51c74"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of schedule item. <br /></td></tr>
 <tr class="separator:a312a12f0784400a5a98fa77e7ee51c74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -156,6 +158,8 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>flags</b> = 0</td></tr
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Type of schedule item this is. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aa09c88b2633a48c441c8696ff6be34d0ab50339a10e1de285ac99d4c3990b8693" name="aa09c88b2633a48c441c8696ff6be34d0ab50339a10e1de285ac99d4c3990b8693"></a>NONE&#160;</td><td class="fielddoc"><p >No multiple defined. </p>
 </td></tr>
@@ -203,11 +207,11 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>flags</b> = 0</td></tr
 <li>i (integer) increment or ordinal value</li>
 <li>d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK_OF_MONTH)</li>
 <li>f (integer) flag bits (optional)</li>
-<li>s (string) The start time (HH:MM:SS format, can omit MM or SS) [from <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a> via <a class="el" href="class_local_time_convert_1_1_time_range_restricted.html" title="LocalTimeRange (HMS) with a day of week and/or date restrictions.">TimeRangeRestricted</a>]</li>
-<li>e (string) The end time (HH:MM:SS format, can omit MM or SS) [from <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a> via <a class="el" href="class_local_time_convert_1_1_time_range_restricted.html" title="LocalTimeRange (HMS) with a day of week and/or date restrictions.">TimeRangeRestricted</a>]</li>
-<li>y (integer) mask value for onlyOnDays [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_convert_1_1_time_range_restricted.html" title="LocalTimeRange (HMS) with a day of week and/or date restrictions.">TimeRangeRestricted</a>]</li>
-<li>a (array) Array of YYYY-MM-DD value strings to allow [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_convert_1_1_time_range_restricted.html" title="LocalTimeRange (HMS) with a day of week and/or date restrictions.">TimeRangeRestricted</a>]</li>
-<li>x (array) Array of YYYY-MM-DD values to exclude [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_convert_1_1_time_range_restricted.html" title="LocalTimeRange (HMS) with a day of week and/or date restrictions.">TimeRangeRestricted</a>] </li>
+<li>s (string) The start time (HH:MM:SS format, can omit MM or SS) [from <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>e (string) The end time (HH:MM:SS format, can omit MM or SS) [from <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>y (integer) mask value for onlyOnDays [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>a (array) Array of YYYY-MM-DD value strings to allow [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>x (array) Array of YYYY-MM-DD values to exclude [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>] </li>
 </ul>
 
 </div>
@@ -228,14 +232,15 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>flags</b> = 0</td></tr
       </table>
 </div><div class="memdoc">
 
-<p>Get the scheduled time. </p>
+<p>Update the conv object to point at the next schedule item. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">conv</td><td></td></tr>
+    <tr><td class="paramname">conv</td><td><a class="el" href="class_local_time_convert.html" title="Perform time conversions. This is the main class you will need.">LocalTimeConvert</a> object, may be modified </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>time_t </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>true if there is an item available or false if not. if false, conv will be unchanged.</dd></dl>
+<p>This method finds the next scheduled time of this item, if it's in the near future. The <a class="el" href="class_local_time.html#a37be620abc0478abb5379c02e00470b1" title="Get the global singleton instance of this class.">LocalTime::instance()</a>.getScheduleLookaheadDays() setting determines how far in the future to check; the default is 3 days. The way schedules work each day needs to be checked to make sure all of the constraints are met, so long look-aheads are computationally intensive. This is not normally an issue, because the idea is that you'll wake from sleep or check the schedule at least every few days, at which point the new schedule may be available. </p>
 
 </div>
 </div>
