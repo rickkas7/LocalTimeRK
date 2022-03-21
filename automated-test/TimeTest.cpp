@@ -1372,7 +1372,7 @@ void test1() {
 		LocalTimeConvert::Schedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
 		// Every hour otherwise
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRangeRestricted(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY)));
+		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY)));
 		schedule.withMinuteMultiple(60);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
@@ -1498,7 +1498,7 @@ void test1() {
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
 		//   Except 2021-12-06 (Monday), maybe it was a holiday
 		// Every hour otherwise
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRangeRestricted(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), 
+		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), 
 			LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY, {}, {"2021-12-06"})));
 		schedule.withMinuteMultiple(60);
 

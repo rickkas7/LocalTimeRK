@@ -470,7 +470,7 @@ public:
 /**
  * @brief Day of week, date, or date exception restrictions
  *
- * This class can specify that something (typically a LocalTimeHMSRestricted or a TimeRangeRestricted) only
+ * This class can specify that something (typically a LocalTimeHMSRestricted or a LocalTimeRange) only
  * applies on certain dates. This can be a mask of days of the week, optionally with specific
  * dates that should be disallowed. Or you can schedule only on specific dates. 
  */
@@ -953,14 +953,14 @@ class LocalTimeConvert; // Forward declaration
 /**
  * @brief Class to hold a time range in local time in HH:MM:SS format
  */
-class LocalTimeRange {
+class LocalTimeRange : public LocalTimeRestrictedDate {
 public: 
     /**
      * @brief Construct a new Time Range object with the range of the entire day (inclusive) 
      * 
      * This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.
      */
-    LocalTimeRange() : hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")) {
+    LocalTimeRange() : hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
     }
 
     /**
@@ -973,12 +973,17 @@ public:
         * 23:59:59 is the end of the day.
         * 
         */
-    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : hmsStart(hmsStart), hmsEnd(hmsEnd) {
+    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : hmsStart(hmsStart), hmsEnd(hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
     }
+
+    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate dateRestriction) : hmsStart(hmsStart), hmsEnd(hmsEnd), LocalTimeRestrictedDate(dateRestriction) {
+    }
+
 
     void clear() {
         hmsStart = LocalTimeHMS("00:00:00");
         hmsEnd = LocalTimeHMS("23:59:59");
+        LocalTimeRestrictedDate::clear();
     }
 
     /**
@@ -993,6 +998,10 @@ public:
      * 
      * In the weird case that start > end, it can return a negative value, as time_t is a signed
      * long (or long long) value.
+     * 
+     * This does not take into account date restrictions!
+     * 
+     * TODO: I think I can remove this
      */
     time_t getTimeSpan(const LocalTimeConvert &conv) const;
 
@@ -1015,9 +1024,27 @@ public:
         }
     }
 
-    virtual bool inRange(LocalTimeValue localTimeValue) const {
-        LocalTimeHMS hms = localTimeValue.hms();
-        return (hmsStart <= hms) && (hms <= hmsEnd);
+    bool isValidDate(LocalTimeYMD ymd) const {
+        return LocalTimeRestrictedDate::isValid(ymd);
+    }
+
+    bool inRangeDate(LocalTimeValue localTimeValue) const {    
+        return LocalTimeRestrictedDate::isValid(localTimeValue);
+    }
+
+    bool inRange(LocalTimeValue localTimeValue) const {
+        if (isValidDate(localTimeValue)) {
+            LocalTimeHMS hms = localTimeValue.hms();
+            return (hmsStart <= hms) && (hms <= hmsEnd);
+        }
+        else {
+            return false;
+        }
+    }
+
+    void fromTime(LocalTimeHMSRestricted hms) {
+        *(LocalTimeRestrictedDate *)this = hms;
+        hmsStart = hms;
     }
 
     /**
@@ -1054,77 +1081,6 @@ public:
         NO_DST,          //!< This config does not use daylight saving
     };
 
-
-    /**
-     * @brief LocalTimeRange (HMS to HMS) with a day of week and/or date restrictions
-     * 
-     * This is used for scheduling.
-     */
-    class TimeRangeRestricted : public LocalTimeRange, public LocalTimeRestrictedDate {
-    public:
-        /**
-         * @brief Construct a new Time Range Restricted object
-         * 
-         */
-        TimeRangeRestricted() : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
-        }
-
-        /**
-         * @brief Constructor that takes a LocalTimeRange, every day (LocalTimeRange not restricted by date or day of week)
-         * 
-         * @param timeRange 
-         */
-        TimeRangeRestricted(LocalTimeRange timeRange) : LocalTimeRange(timeRange), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
-        }
-
-        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) : LocalTimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
-        }
-
-        TimeRangeRestricted(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate restrictedDate) : LocalTimeRange(hmsStart, hmsEnd), LocalTimeRestrictedDate(restrictedDate) {
-        }
-
-        TimeRangeRestricted(LocalTimeRange timeRange, LocalTimeRestrictedDate restrictedDates) : LocalTimeRange(timeRange), LocalTimeRestrictedDate(restrictedDates) {
-        }
-
-        bool isValidDate(LocalTimeYMD ymd) const {
-            return LocalTimeRestrictedDate::isValid(ymd);
-        }
-
-        bool inRangeDate(LocalTimeValue localTimeValue) const {
-            
-            return LocalTimeRestrictedDate::isValid(localTimeValue);
-        }
-
-        virtual bool inRange(LocalTimeValue localTimeValue) const {
-            bool dateInRange = LocalTimeRestrictedDate::isValid(localTimeValue);
-            bool timeInRange = LocalTimeRange::inRange(localTimeValue);
-            return dateInRange && timeInRange;
-        }
-
-        void fromTime(LocalTimeHMSRestricted hms) {
-            *(LocalTimeRestrictedDate *)this = hms;
-            hmsStart = hms;
-        }
-
-        /**
-         * @brief Fills in the restricted time range from a JSON object
-         * 
-         * @param jsonObj 
-         * 
-         * Keys:
-         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange]
-         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange]
-         * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate]
-         * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate]
-         * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate]
-         */
-        void fromJson(JSONValue jsonObj) {
-            LocalTimeRange::fromJson(jsonObj);
-            LocalTimeRestrictedDate::fromJson(jsonObj);
-        }
-
-
-    };
 
     /**
      * @brief Schedule option for "every n minutes"
@@ -1198,16 +1154,16 @@ public:
          * - i (integer) increment or ordinal value
          * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK_OF_MONTH)
          * - f (integer) flag bits (optional)
-         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
-         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
-         * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+         * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via LocalTimeRange]
+         * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via LocalTimeRange]
+         * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via LocalTimeRange]
          */
         void fromJson(JSONValue jsonObj);
 
     
-        TimeRangeRestricted timeRange; //!< Range of local time, inclusive
+        LocalTimeRange timeRange; //!< Range of local time, inclusive
         int increment = 0; //!< Increment value, or sometimes ordinal value
         int dayOfWeek = 0; //!< Used for DAY_OF_WEEK_OF_MONTH only
         int flags = 0; //!< Optional scheduling flags
@@ -1259,7 +1215,7 @@ public:
          * 
          * @return Schedule& 
          */        
-        Schedule &withMinuteMultiple(int increment, TimeRangeRestricted timeRange = TimeRangeRestricted());
+        Schedule &withMinuteMultiple(int increment, LocalTimeRange timeRange = LocalTimeRange());
 
         /**
          * @brief Add a scheduled item at a time in local time during the day. 
@@ -1301,7 +1257,7 @@ public:
          * times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, 
          * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
          */
-        Schedule &withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange = TimeRangeRestricted());
+        Schedule &withHourMultiple(int hourMultiple, LocalTimeRange timeRange = LocalTimeRange());
 
         /**
          * @brief Returns true if the schedule does not have any items in it
@@ -1343,11 +1299,11 @@ public:
          *  - m (integer) type of multiple (optional if mm, )
          *  - i (integer) increment
          *  - f (integer) flag bits (optional)
-         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
-         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via TimeRangeRestricted]
-         *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via TimeRangeRestricted]
-         *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via TimeRangeRestricted]
+         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+         *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via LocalTimeRange]
+         *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via LocalTimeRange]
+         *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via LocalTimeRange]
          */
         void fromJson(JSONValue jsonArray);
 

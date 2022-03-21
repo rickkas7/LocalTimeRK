@@ -793,7 +793,7 @@ void LocalTimeConvert::ScheduleItem::fromJson(JSONValue jsonObj) {
 //
 
 
-LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withMinuteMultiple(int increment, TimeRangeRestricted timeRange) {
+LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withMinuteMultiple(int increment, LocalTimeRange timeRange) {
     ScheduleItem item;
     item.scheduleItemType = ScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
     item.increment = increment;
@@ -803,7 +803,7 @@ LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withMinuteMultiple(int i
 }
 
 
-LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHourMultiple(int hourMultiple, TimeRangeRestricted timeRange) {
+LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHourMultiple(int hourMultiple, LocalTimeRange timeRange) {
     ScheduleItem item;
     item.scheduleItemType = ScheduleItem::ScheduleItemType::HOUR_OF_DAY;
     item.increment = hourMultiple;
@@ -881,6 +881,7 @@ void LocalTimeRange::fromJson(JSONValue jsonObj) {
             }
         }
     }
+    LocalTimeRestrictedDate::fromJson(jsonObj);
 }
 
 
