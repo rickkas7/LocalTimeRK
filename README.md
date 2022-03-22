@@ -158,9 +158,9 @@ A `LocalTimeRestrictedDate` is used for both multiples and times (below). It can
 | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |
 
 
-### Schedule items
+### LocalTimeSchedule items
 
-Schedule include things like every n minutes, every n hours, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a `TimeRangeRestricted` that determines when the multiple is used.
+LocalTimeSchedule include things like every n minutes, every n hours, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a `TimeRangeRestricted` that determines when the multiple is used.
 
 `TimeRangeRestricted` is itself composed of a `TimeRange`, and a `LocalTimeRestrictedDate`. This specifies both the time of day, as well as an optional restriction on the dates it applies. See above for for an explanation of these types.
 
@@ -463,14 +463,14 @@ conv.withTime(timeVal).convert();
 
 ## Version history
 
-### 0.1.0 (2022-03-21)
+### 0.0.8 (2022-03-22)
 
 - Added advanced scheduling modes (JSON scheduling)
 
 ### 0.0.7 (2022-03-08)
 
 - Added inLocalTimeRange and nextTimeList functions
-- Added LocalTimeConvert::Schedule
+- Added LocalTimeSchedule
 
 ### 0.0.6 (2022-03-08)
 

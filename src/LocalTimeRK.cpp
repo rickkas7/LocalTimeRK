@@ -580,9 +580,9 @@ int LocalTimeValue::ordinal() const {
 }
 
 //
-// ScheduleItem
+// LocalTimeScheduleItem
 //
-bool LocalTimeConvert::ScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
+bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
 
     LocalTimeConvert tempConv(conv);
 
@@ -733,7 +733,7 @@ bool LocalTimeConvert::ScheduleItem::getNextScheduledTime(LocalTimeConvert &conv
 }
 
 
-void LocalTimeConvert::ScheduleItem::fromJson(JSONValue jsonObj) {
+void LocalTimeScheduleItem::fromJson(JSONValue jsonObj) {
     JSONObjectIterator iter(jsonObj);
     while(iter.next()) {
         String key = (const char *) iter.name();
@@ -751,6 +751,10 @@ void LocalTimeConvert::ScheduleItem::fromJson(JSONValue jsonObj) {
         else
         if (key == "f") {
             flags = iter.value().toInt();
+        }
+        else
+        if (key == "n") {
+            name = iter.value().toString().data();
         }
         else
         if (key == "mh") {
@@ -789,13 +793,13 @@ void LocalTimeConvert::ScheduleItem::fromJson(JSONValue jsonObj) {
 }
 
 //
-// LocalTimeConvert::Schedule
+// LocalTimeSchedule
 //
 
 
-LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withMinuteMultiple(int increment, LocalTimeRange timeRange) {
-    ScheduleItem item;
-    item.scheduleItemType = ScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
+LocalTimeSchedule &LocalTimeSchedule::withMinuteMultiple(int increment, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
     item.increment = increment;
     item.timeRange = timeRange;
     scheduleItems.push_back(item);
@@ -803,18 +807,18 @@ LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withMinuteMultiple(int i
 }
 
 
-LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withHourMultiple(int hourMultiple, LocalTimeRange timeRange) {
-    ScheduleItem item;
-    item.scheduleItemType = ScheduleItem::ScheduleItemType::HOUR_OF_DAY;
+LocalTimeSchedule &LocalTimeSchedule::withHourMultiple(int hourMultiple, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::HOUR_OF_DAY;
     item.increment = hourMultiple;
     item.timeRange = timeRange;
     scheduleItems.push_back(item);
     return *this;
 }
 
-LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withTime(LocalTimeHMSRestricted hms) {
-    ScheduleItem item;
-    item.scheduleItemType = ScheduleItem::ScheduleItemType::TIME;
+LocalTimeSchedule &LocalTimeSchedule::withTime(LocalTimeHMSRestricted hms) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::TIME;
     item.timeRange.fromTime(hms);
     scheduleItems.push_back(item);
     
@@ -822,7 +826,7 @@ LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withTime(LocalTimeHMSRes
 }
 
 
-LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam) {
+LocalTimeSchedule &LocalTimeSchedule::withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam) {
 
     for(auto it = timesParam.begin(); it != timesParam.end(); ++it) {
         withTime(*it);
@@ -832,19 +836,52 @@ LocalTimeConvert::Schedule &LocalTimeConvert::Schedule::withTimes(std::initializ
 }
 
 
-void LocalTimeConvert::Schedule::fromJson(const char *jsonStr) {
+void LocalTimeSchedule::fromJson(const char *jsonStr) {
     JSONValue outerObj = JSONValue::parseCopy(jsonStr);
 
     fromJson(outerObj);
 }
 
-void LocalTimeConvert::Schedule::fromJson(JSONValue jsonArray) {
+void LocalTimeSchedule::fromJson(JSONValue jsonArray) {
     JSONArrayIterator iter(jsonArray);
     while(iter.next()) {
-        ScheduleItem item;
+        LocalTimeScheduleItem item;
         item.fromJson(iter.value());
         scheduleItems.push_back(item);
     }
+}
+
+
+bool LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &conv) const {
+
+    return getNextScheduledTime(conv, [](LocalTimeScheduleItem &item) {
+        return true;
+    });
+}
+
+bool LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &conv, std::function<bool(LocalTimeScheduleItem &item)> filter) const {
+    time_t closestTime = 0;
+
+    for(auto it = scheduleItems.begin(); it != scheduleItems.end(); ++it) {
+        LocalTimeScheduleItem item = *it;
+        if (filter(item)) {
+            LocalTimeConvert tmpConvert(conv);
+            bool bResult = item.getNextScheduledTime(tmpConvert);
+            if (bResult && closestTime == 0 || tmpConvert.time < closestTime) {
+                closestTime = tmpConvert.time;
+            }
+        }
+    }
+    
+    if (closestTime != 0) {
+        conv.time = closestTime;
+        conv.convert();
+        return true;
+    }
+    else {
+        return false;
+    }
+
 }
 
 
@@ -1109,26 +1146,9 @@ void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
     }
 }
 
-bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
-    time_t closestTime = 0;
+bool LocalTimeConvert::nextSchedule(const LocalTimeSchedule &schedule) {
 
-    for(auto it = schedule.scheduleItems.begin(); it != schedule.scheduleItems.end(); ++it) {
-        LocalTimeConvert tmpConvert(*this);
-        ScheduleItem item = *it;
-        bool bResult = item.getNextScheduledTime(tmpConvert);
-        if (bResult && closestTime == 0 || tmpConvert.time < closestTime) {
-            closestTime = tmpConvert.time;
-        }
-    }
-    
-    if (closestTime != 0) {
-        time = closestTime;
-        convert();
-        return true;
-    }
-    else {
-        return false;
-    }
+    return schedule.getNextScheduledTime(*this);
 }
 
 

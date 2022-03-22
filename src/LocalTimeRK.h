@@ -380,7 +380,7 @@ public:
      * @return true 
      * @return false 
      */
-    bool operator==(const LocalTimeDayOfWeek &other) const { dayOfWeekMask == other.dayOfWeekMask; };
+    bool operator==(const LocalTimeDayOfWeek &other) const { return dayOfWeekMask == other.dayOfWeekMask; };
 
     /**
      * @brief Tests if this object does not have the same mask as other
@@ -389,7 +389,7 @@ public:
      * @return true 
      * @return false 
      */
-    bool operator!=(const LocalTimeDayOfWeek &other) const { dayOfWeekMask != other.dayOfWeekMask; };
+    bool operator!=(const LocalTimeDayOfWeek &other) const { return dayOfWeekMask != other.dayOfWeekMask; };
 
 
 
@@ -1337,6 +1337,275 @@ public:
 };
 
 
+
+/**
+ * @brief LocalTimeSchedule option for "every n minutes"
+ */
+class LocalTimeScheduleItem {
+public: 
+    /**
+     * @brief Type of schedule item this is
+     */
+    enum class ScheduleItemType : int {
+        NONE = 0,               //!< No multiple defined
+        MINUTE_OF_HOUR,         //!< Minute of the hour (1)
+        HOUR_OF_DAY,            //!< Hour of day (2)
+        DAY_OF_WEEK_OF_MONTH,   //!< The nth day of week of the month (3)
+        DAY_OF_MONTH,           //!< Day of the month (4)
+        TIME                    //!< Specific time (5)    
+    };
+
+    /**
+     * @brief Default constructor. Set increment and optionally timeRange to use.
+     */
+    LocalTimeScheduleItem() {
+    }
+
+    /**
+     * @brief Returns true ScheduleItemType is not NONE
+     * 
+     * @return true 
+     * @return false 
+     * 
+     * This is used to check if an object was constructed by the default constructor and never set.
+     */
+    bool isValid() const { return (scheduleItemType != ScheduleItemType::NONE); };
+
+    /**
+     * @brief Get number of seconds in the time range at a given time
+     * 
+     * @param conv The timezone and date information for time span calculation
+     * @return time_t 
+     * 
+     * The conv object is necessary because getTimeSpan takes into account daylight saving transitions.
+     * When springing forward to daylight saving, from 01:15:00 to 03:15:00 is only one hour because of the 
+     * DST transition.
+     */
+    time_t getTimeSpan(const LocalTimeConvert &conv) const {
+        return timeRange.getTimeSpan(conv);
+    }
+
+    /**
+     * @brief Update the conv object to point at the next schedule item
+     * 
+     * @param conv LocalTimeConvert object, may be modified
+     * @return true if there is an item available or false if not. if false, conv will be unchanged.
+     * 
+     * This method finds the next scheduled time of this item, if it's in the near future.
+     * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
+     * to check; the default is 3 days. The way schedules work each day needs to be checked to make
+     * sure all of the constraints are met, so long look-aheads are computationally intensive. This
+     * is not normally an issue, because the idea is that you'll wake from sleep or check the
+     * schedule at least every few days, at which point the new schedule may be available.
+     */
+    bool getNextScheduledTime(LocalTimeConvert &conv) const;
+
+    /**
+     * @brief Creates an object from JSON
+     * 
+     * @param jsonObj The schedule. This should be the object containing the values, not the array.
+     * 
+     * Keys:
+     * - m (integer) ScheduleItemType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
+     * - i (integer) increment or ordinal value
+     * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK_OF_MONTH)
+     * - f (integer) flag bits (optional)
+     * - n (string) a user-defined name for this item (optional)
+     * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+     * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+     * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via LocalTimeRange]
+     * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via LocalTimeRange]
+     * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via LocalTimeRange]
+     */
+    void fromJson(JSONValue jsonObj);
+
+
+    LocalTimeRange timeRange; //!< Range of local time, inclusive
+    int increment = 0; //!< Increment value, or sometimes ordinal value
+    int dayOfWeek = 0; //!< Used for DAY_OF_WEEK_OF_MONTH only
+    int flags = 0; //!< Optional scheduling flags
+    String name; //!< Optional name
+    ScheduleItemType scheduleItemType = ScheduleItemType::NONE; //!< The type of schedule item
+};
+
+/**
+ * @brief A complete time schedule
+ * 
+ * A time schedule consists of minute multiples ("every 15 minutes"), optionally within a time range (all day, 
+ * or from 09:00:00 to 17:00:00 local time, for example.
+ * 
+ * It can also have hour multiples, optionally in a time range, at a defined minute ("every 4 hours at :15 
+ * past the hour").
+ * 
+ * Schedules can be at a specifc day week, with an ordinal (first Monday, last Friday) at a specific time, 
+ * optionally with exceptions.
+ * 
+ * Schedules can be a specific day of the month (the 1st, the 5th of the month, the last day of the month, the 
+ * second to last day of month).
+ * 
+ * It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time")
+ * every day, specific days of the week, on specific dates, or with date exceptions.
+ */
+class LocalTimeSchedule {
+public:
+    /**
+     * @brief Construct a new, empty schedule
+     */
+    LocalTimeSchedule() {
+    }
+
+
+    /**
+     * @brief Adds a minute multiple schedule in a time range
+     * 
+     * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+     * @param timeRange When to apply this minute multiple and/or minute offset.
+     * 
+     * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
+     * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
+     * an inconsistent period at the top of the hour.
+     * 
+     * If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule
+     * starts at. For example: `15, LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
+     * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
+     * 
+     * The largest value for hmsEnd of the time range is 23:59:59.
+     * 
+     * @return LocalTimeSchedule& 
+     */        
+    LocalTimeSchedule &withMinuteMultiple(int increment, LocalTimeRange timeRange = LocalTimeRange());
+
+    /**
+     * @brief Add a scheduled item at a time in local time during the day. 
+     * 
+     * @param hms The time in local time 00:00:00 to 23:59:59.
+     * @return LocalTimeSchedule& 
+     * 
+     * You can call this multiple times, and also combine it with minute multiple schedules.
+     */
+    LocalTimeSchedule &withTime(LocalTimeHMSRestricted hms);
+
+    /**
+     * @brief Add multiple scheduled items at a time in local time during the day. 
+     * 
+     * @param timesParam an auto-initialized list of LocalTimeHMS objects
+     * @return LocalTimeSchedule& 
+     * 
+     * You can call this multiple times, and also combine it with minute multiple schedules.
+     * 
+     * schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
+     */
+    LocalTimeSchedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam);
+
+    /**
+     * @brief Adds multiple times periodically in a time range with an hour increment
+     * 
+     * @param hourMultiple Hours between items must be >= 1. For example: 2 = every other hour.
+     * @param timeRange Time range to add items to. This is optional; if not specified then the entire day. 
+     * Also is used to specify a minute offset.
+     * 
+     * @return LocalTimeSchedule& 
+     * 
+     * Hours are per day, local time. For whole-day schedules, you will typically use a value that
+     * 24 is evenly divisible by (2, 3, 4, 6, 8, 12), because otherwise the time periods will brief
+     * unequal at the top of the hour.
+     * 
+     * Also note that times are local, and take into account daylight saving. Thus during a time switch,
+     * the interval may end up being a different number of hours than specified. For example, if the
+     * times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, 
+     * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
+     */
+    LocalTimeSchedule &withHourMultiple(int hourMultiple, LocalTimeRange timeRange = LocalTimeRange());
+
+    /**
+     * @brief Returns true if the schedule does not have any items in it
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool isEmpty() const { 
+        return scheduleItems.empty();
+    }
+
+    /**
+     * @brief Clear the existing settings
+     */
+    void clear() {
+        scheduleItems.clear();   
+    }
+
+    /**
+     * @brief Set the schedule from a JSON string containing an array of objects.
+     * 
+     * @param jsonStr 
+     * 
+     * See the overload that takes a JSONValue if the JSON string has already been parsed.
+     */
+    void fromJson(const char *jsonStr);
+
+    /**
+     * @brief Set the schedule of this object from a JSONValue, typically the outer object
+     * 
+     * @param jsonArray A JSONValue containing an array of objects
+     * 
+     * Array of LocalTimeScheduleItem objects:
+     *  - mh (integer): Minute of hour (takes place of setting m and i separately)
+     *  - hd (integer): Hour of day (takes place of setting m and i separately)
+     *  - dw (integer): Day of week (takes place of setting m and i separately)
+     *  - dm (integer): Day of month (takes place of setting m and i separately)
+     *  - tm (string) Time string in HH:MM:SS format (can omit MM and SS parts, see LocalTimeHMS) for TIME items
+     *  - m (integer) type of multiple (optional if mm, )
+     *  - i (integer) increment
+     *  - f (integer) flag bits (optional)
+     *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+     *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
+     *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via LocalTimeRange]
+     *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via LocalTimeRange]
+     *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via LocalTimeRange]
+     */
+    void fromJson(JSONValue jsonArray);
+
+    /**
+     * @brief Update the conv object to point at the next schedule item
+     * 
+     * @param conv LocalTimeConvert object, may be modified
+     * @return true if there is an item available or false if not. if false, conv will be unchanged.
+     * 
+     * This method finds closest scheduled time for this objecvt, if it's in the near future.
+     * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
+     * to check; the default is 3 days. The way schedules work each day needs to be checked to make
+     * sure all of the constraints are met, so long look-aheads are computationally intensive. This
+     * is not normally an issue, because the idea is that you'll wake from sleep or check the
+     * schedule at least every few days, at which point the new schedule may be available.
+     */
+    bool getNextScheduledTime(LocalTimeConvert &conv) const;
+
+    /**
+     * @brief Update the conv object to point at the next schedule item
+     * 
+     * @param conv LocalTimeConvert object, may be modified
+     * @param filter A function to determine, for each schedule item, if it should be tested
+     * @return true if there is an item available or false if not. if false, conv will be unchanged.
+     * 
+     * This method finds closest scheduled time for this objecvt, if it's in the near future.
+     * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
+     * to check; the default is 3 days. The way schedules work each day needs to be checked to make
+     * sure all of the constraints are met, so long look-aheads are computationally intensive. This
+     * is not normally an issue, because the idea is that you'll wake from sleep or check the
+     * schedule at least every few days, at which point the new schedule may be available.
+     * 
+     * The filter function or lambda has this prototype:
+     * 
+     * bool filterCallback(LocalTimeScheduleItem &item)
+     * 
+     * If should return true to check this item, or false to skip this item for schedule checking.
+     */
+    bool getNextScheduledTime(LocalTimeConvert &conv, std::function<bool(LocalTimeScheduleItem &item)> filter) const;
+
+
+    std::vector<LocalTimeScheduleItem> scheduleItems; //!< LocalTimeSchedule items
+};
+
 /**
  * @brief Perform time conversions. This is the main class you will need.
  */
@@ -1355,234 +1624,6 @@ public:
         NO_DST,          //!< This config does not use daylight saving
     };
 
-
-    /**
-     * @brief Schedule option for "every n minutes"
-     */
-    class ScheduleItem {
-    public: 
-        /**
-         * @brief Type of schedule item this is
-         */
-        enum class ScheduleItemType : int {
-            NONE = 0,               //!< No multiple defined
-            MINUTE_OF_HOUR,         //!< Minute of the hour (1)
-            HOUR_OF_DAY,            //!< Hour of day (2)
-            DAY_OF_WEEK_OF_MONTH,   //!< The nth day of week of the month (3)
-            DAY_OF_MONTH,           //!< Day of the month (4)
-            TIME                    //!< Specific time (5)    
-        };
-
-        /**
-         * @brief Default constructor. Set increment and optionally timeRange to use.
-         */
-        ScheduleItem() {
-        }
-
-        /**
-         * @brief Returns true ScheduleItemType is not NONE
-         * 
-         * @return true 
-         * @return false 
-         * 
-         * This is used to check if an object was constructed by the default constructor and never set.
-         */
-        bool isValid() const { return (scheduleItemType != ScheduleItemType::NONE); };
-
-        /**
-         * @brief Get number of seconds in the time range at a given time
-         * 
-         * @param conv The timezone and date information for time span calculation
-         * @return time_t 
-         * 
-         * The conv object is necessary because getTimeSpan takes into account daylight saving transitions.
-         * When springing forward to daylight saving, from 01:15:00 to 03:15:00 is only one hour because of the 
-         * DST transition.
-         */
-        time_t getTimeSpan(const LocalTimeConvert &conv) const {
-            return timeRange.getTimeSpan(conv);
-        }
-
-        /**
-         * @brief Update the conv object to point at the next schedule item
-         * 
-         * @param conv LocalTimeConvert object, may be modified
-         * @return true if there is an item available or false if not. if false, conv will be unchanged.
-         * 
-         * This method finds the next scheduled time of this item, if it's in the near future.
-         * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
-         * to check; the default is 3 days. The way schedules work each day needs to be checked to make
-         * sure all of the constraints are met, so long look-aheads are computationally intensive. This
-         * is not normally an issue, because the idea is that you'll wake from sleep or check the
-         * schedule at least every few days, at which point the new schedule may be available.
-         */
-        bool getNextScheduledTime(LocalTimeConvert &conv) const;
-
-        /**
-         * @brief Creates an object from JSON
-         * 
-         * @param jsonObj The schedule. This should be the object containing the values, not the array.
-         * 
-         * Keys:
-         * - m (integer) ScheduleItemType (1 = minute of hour, 2 = hour of day, 3 = day of week, 4 = day of month)
-         * - i (integer) increment or ordinal value
-         * - d (integer) dayOfWeek value (optional, only used for DAY_OF_WEEK_OF_MONTH)
-         * - f (integer) flag bits (optional)
-         * - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
-         * - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
-         * - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via LocalTimeRange]
-         * - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via LocalTimeRange]
-         * - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via LocalTimeRange]
-         */
-        void fromJson(JSONValue jsonObj);
-
-    
-        LocalTimeRange timeRange; //!< Range of local time, inclusive
-        int increment = 0; //!< Increment value, or sometimes ordinal value
-        int dayOfWeek = 0; //!< Used for DAY_OF_WEEK_OF_MONTH only
-        int flags = 0; //!< Optional scheduling flags
-        ScheduleItemType scheduleItemType = ScheduleItemType::NONE; //!< The type of schedule item
-    };
-
-    /**
-     * @brief A complete time schedule
-     * 
-     * A time schedule consists of minute multiples ("every 15 minutes"), optionally within a time range (all day, 
-     * or from 09:00:00 to 17:00:00 local time, for example.
-     * 
-     * It can also have hour multiples, optionally in a time range, at a defined minute ("every 4 hours at :15 
-     * past the hour").
-     * 
-     * Schedules can be at a specifc day week, with an ordinal (first Monday, last Friday) at a specific time, 
-     * optionally with exceptions.
-     * 
-     * Schedules can be a specific day of the month (the 1st, the 5th of the month, the last day of the month, the 
-     * second to last day of month).
-     * 
-     * It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time")
-     * every day, specific days of the week, on specific dates, or with date exceptions.
-     */
-    class Schedule {
-    public:
-        /**
-         * @brief Construct a new, empty schedule
-         */
-        Schedule() {
-        }
-
-
-        /**
-         * @brief Adds a minute multiple schedule in a time range
-         * 
-         * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
-         * @param timeRange When to apply this minute multiple and/or minute offset.
-         * 
-         * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
-         * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
-         * an inconsistent period at the top of the hour.
-         * 
-         * If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule
-         * starts at. For example: `15, LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` 
-         * will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
-         * 
-         * The largest value for hmsEnd of the time range is 23:59:59.
-         * 
-         * @return Schedule& 
-         */        
-        Schedule &withMinuteMultiple(int increment, LocalTimeRange timeRange = LocalTimeRange());
-
-        /**
-         * @brief Add a scheduled item at a time in local time during the day. 
-         * 
-         * @param hms The time in local time 00:00:00 to 23:59:59.
-         * @return Schedule& 
-         * 
-         * You can call this multiple times, and also combine it with minute multiple schedules.
-         */
-        Schedule &withTime(LocalTimeHMSRestricted hms);
-
-        /**
-         * @brief Add multiple scheduled items at a time in local time during the day. 
-         * 
-         * @param timesParam an auto-initialized list of LocalTimeHMS objects
-         * @return Schedule& 
-         * 
-         * You can call this multiple times, and also combine it with minute multiple schedules.
-         * 
-         * schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
-         */
-        Schedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam);
-
-        /**
-         * @brief Adds multiple times periodically in a time range with an hour increment
-         * 
-         * @param hourMultiple Hours between items must be >= 1. For example: 2 = every other hour.
-         * @param timeRange Time range to add items to. This is optional; if not specified then the entire day. 
-         * Also is used to specify a minute offset.
-         * 
-         * @return Schedule& 
-         * 
-         * Hours are per day, local time. For whole-day schedules, you will typically use a value that
-         * 24 is evenly divisible by (2, 3, 4, 6, 8, 12), because otherwise the time periods will brief
-         * unequal at the top of the hour.
-         * 
-         * Also note that times are local, and take into account daylight saving. Thus during a time switch,
-         * the interval may end up being a different number of hours than specified. For example, if the
-         * times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, 
-         * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
-         */
-        Schedule &withHourMultiple(int hourMultiple, LocalTimeRange timeRange = LocalTimeRange());
-
-        /**
-         * @brief Returns true if the schedule does not have any items in it
-         * 
-         * @return true 
-         * @return false 
-         */
-        bool isEmpty() const { 
-            return scheduleItems.empty();
-        }
-
-        /**
-         * @brief Clear the existing settings
-         */
-        void clear() {
-            scheduleItems.clear();   
-        }
-
-        /**
-         * @brief Set the schedule from a JSON string containing an array of objects.
-         * 
-         * @param jsonStr 
-         * 
-         * See the overload that takes a JSONValue if the JSON string has already been parsed.
-         */
-        void fromJson(const char *jsonStr);
-
-        /**
-         * @brief Set the schedule of this object from a JSONValue, typically the outer object
-         * 
-         * @param jsonArray A JSONValue containing an array of objects
-         * 
-         * Array of ScheduleItem objects:
-         *  - mh (integer): Minute of hour (takes place of setting m and i separately)
-         *  - hd (integer): Hour of day (takes place of setting m and i separately)
-         *  - dw (integer): Day of week (takes place of setting m and i separately)
-         *  - dm (integer): Day of month (takes place of setting m and i separately)
-         *  - tm (string) Time string in HH:MM:SS format (can omit MM and SS parts, see LocalTimeHMS) for TIME items
-         *  - m (integer) type of multiple (optional if mm, )
-         *  - i (integer) increment
-         *  - f (integer) flag bits (optional)
-         *  - s (string) The start time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
-         *  - e (string) The end time (HH:MM:SS format, can omit MM or SS) [from LocalTimeRange via LocalTimeRange]
-         *  - y (integer) mask value for onlyOnDays [from LocalTimeRestrictedDate via LocalTimeRange]
-         *  - a (array) Array of YYYY-MM-DD value strings to allow [from LocalTimeRestrictedDate via LocalTimeRange]
-         *  - x (array) Array of YYYY-MM-DD values to exclude [from LocalTimeRestrictedDate via LocalTimeRange]
-         */
-        void fromJson(JSONValue jsonArray);
-
-        std::vector<ScheduleItem> scheduleItems; //!< Schedule items
-    };
 
     /**
      * @brief Sets the timezone configuration to use for time conversion
@@ -1845,7 +1886,7 @@ public:
      * 
      * @param schedule 
      */
-    bool nextSchedule(const Schedule &schedule);
+    bool nextSchedule(const LocalTimeSchedule &schedule);
 
     /**
      * @brief Changes the time of day to the specified hms in local time on the same local day
