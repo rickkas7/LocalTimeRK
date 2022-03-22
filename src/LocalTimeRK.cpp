@@ -649,9 +649,11 @@ bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
                         LocalTime::timeToTm(tempConv.time, &timeInfo);
                         timeInfo.tm_min -= ((tempConv.localTimeValue.minute() - startingModulo) % increment);
                         timeInfo.tm_sec = timeRange.hmsStart.second;
-
                         tempConv.time = LocalTime::tmToTime(&timeInfo);
-                        bResult = true;
+                        tempConv.convert();
+                        if (tempConv.getLocalTimeHMS() < timeRange.hmsEnd) {
+                            bResult = true;
+                        }
                         break;
 
                     default:
