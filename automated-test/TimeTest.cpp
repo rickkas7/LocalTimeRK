@@ -1919,6 +1919,8 @@ void test1() {
 	}
 
 
+
+	// Test using named schedule items to switch between a normal (2 hour updates) and low-power (6 hour updates)
 	{
 		LocalTimeSchedule schedule;
 		// Every 15 minutes between 09:00 and 17:00 local time (13:00 to 21:00 UTC) Monday - Friday
@@ -1926,97 +1928,97 @@ void test1() {
 		// Every 2 hours in fast mode (00:00, 02:00, 04:00, ...)
 		schedule.fromJson(readTestDataJson("testfiles/test19.json"));
 
-		std::function<bool(LocalTimeScheduleItem &item)> slowFilter = [](LocalTimeScheduleItem &item) {
-			return (item.name == "" || item.name == "slow");
+		std::function<bool(LocalTimeScheduleItem &item)> lowFilter = [](LocalTimeScheduleItem &item) {
+			return (item.name == "" || item.name == "low");
 		};
-		std::function<bool(LocalTimeScheduleItem &item)> fastFilter = [](LocalTimeScheduleItem &item) {
-			return (item.name == "" || item.name == "fast");
+		std::function<bool(LocalTimeScheduleItem &item)> normalFilter = [](LocalTimeScheduleItem &item) {
+			return (item.name == "" || item.name == "normal");
 		};
 
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-22 09:15:00")).convert(); // 05:15 EDT
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 10:00:00"); 
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 13:00:00"); 
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 13:15:00"); 
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 13:30:00"); 
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 13:45:00"); 
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 14:00:00"); 
 
 		conv.withTime(LocalTime::stringToTime("2022-03-22 20:30:00")).convert(); 
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 20:45:00"); 
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-22 22:00:00"); // 18:00 EDT
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-23 04:00:00"); // 00:00 EDT
 
-		schedule.getNextScheduledTime(conv, slowFilter);
+		schedule.getNextScheduledTime(conv, lowFilter);
 		assertTime2("", conv.time, "2022-03-23 10:00:00"); // 06:00 EDT
 
 
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-22 09:15:00")).convert(); // 05:15 EDT
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 10:00:00"); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 12:00:00"); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 13:00:00"); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 13:15:00"); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 13:30:00"); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 13:45:00"); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 14:00:00"); 
 
 		conv.withTime(LocalTime::stringToTime("2022-03-22 20:30:00")).convert(); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 20:45:00"); 
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-22 22:00:00"); // 18:00 EDT
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-23 00:00:00"); // 20:00 EDT
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-23 02:00:00"); // 22:00 EDT
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-23 04:00:00"); // 00:00 EDT
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-23 06:00:00"); // 02:00 EDT
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-23 08:00:00"); // 04:00 EDT
 
-		schedule.getNextScheduledTime(conv, fastFilter);
+		schedule.getNextScheduledTime(conv, normalFilter);
 		assertTime2("", conv.time, "2022-03-23 10:00:00"); // 06:00 EDT
 
 	}
