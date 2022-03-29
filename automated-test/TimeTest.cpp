@@ -1203,7 +1203,7 @@ void test1() {
 	// Scheduling
 	{
 		LocalTimeSchedule schedule;
-		schedule.withMinuteMultiple(5);
+		schedule.withMinuteOfHour(5);
 
 
 
@@ -1230,7 +1230,7 @@ void test1() {
 	{
 		// Every 15 minutes all day, at 05:00, 20:00, 35:00, 50:00
 		LocalTimeSchedule schedule;
-		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")));
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:00")).convert(); 
 		conv.nextSchedule(schedule);
@@ -1249,7 +1249,7 @@ void test1() {
 	{
 		LocalTimeSchedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
-		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:00")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1285,7 +1285,7 @@ void test1() {
 	{
 		LocalTimeSchedule schedule;
 		// Every 15 minutes between 09:02:30 and 5 PM local time (14:02:30 to 22:00 UTC)
-		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:02:30"), LocalTimeHMS("16:59:59")));
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:02:30"), LocalTimeHMS("16:59:59")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:00")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1309,8 +1309,8 @@ void test1() {
 		LocalTimeSchedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
 		// Every hour otherwise
-		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
-		schedule.withMinuteMultiple(60);
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withMinuteOfHour(60);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1370,8 +1370,8 @@ void test1() {
 		LocalTimeSchedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
 		// Every hour otherwise
-		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY)));
-		schedule.withMinuteMultiple(60);
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY)));
+		schedule.withMinuteOfHour(60);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1496,9 +1496,9 @@ void test1() {
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
 		//   Except 2021-12-06 (Monday), maybe it was a holiday
 		// Every hour otherwise
-		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), 
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), 
 			LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY, {}, {"2021-12-06"})));
-		schedule.withMinuteMultiple(60);
+		schedule.withMinuteOfHour(60);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1842,7 +1842,7 @@ void test1() {
 	{
 		LocalTimeSchedule schedule;
 		// Every 2 hours between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
-		schedule.withHourMultiple(2, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("17:00:00")));
+		schedule.withHourOfDay(2, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("17:00:00")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -2027,8 +2027,8 @@ void test1() {
 		LocalTimeSchedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
 		// Every 2 hours from 1:00 AM otherwise
-		schedule.withMinuteMultiple(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
-		schedule.withHourMultiple(2, LocalTimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59")));
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withHourOfDay(2, LocalTimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 
@@ -2076,7 +2076,7 @@ void test1() {
 	{
 		// Every 15 minutes over spring forward
 		LocalTimeSchedule schedule;
-		schedule.withMinuteMultiple(15);
+		schedule.withMinuteOfHour(15);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 19:10:52")).convert(); // 1:10:52 AM EST
 
@@ -2118,7 +2118,7 @@ void test1() {
 	{
 		// Every 15 minutes over fall back
 		LocalTimeSchedule schedule;
-		schedule.withMinuteMultiple(15);
+		schedule.withMinuteOfHour(15);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-07 04:10:52")).convert(); // 00:10:52 EDT
 

@@ -1207,7 +1207,7 @@ public:
      * 
      * This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.
      */
-    LocalTimeRange() : hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
+    LocalTimeRange() : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL), hmsStart(LocalTimeHMS("00:00:00")), hmsEnd(LocalTimeHMS("23:59:59")) {
     }
 
     /**
@@ -1220,7 +1220,7 @@ public:
      * 23:59:59 is the end of the day.
      * 
      */
-    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : hmsStart(hmsStart), hmsEnd(hmsEnd), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL) {
+    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd = LocalTimeHMS("23:59:59")) : LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL), hmsStart(hmsStart), hmsEnd(hmsEnd) {
     }
 
     /**
@@ -1230,7 +1230,7 @@ public:
      * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59
      * @param dateRestriction Only use this time range on certain dates
      */
-    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate dateRestriction) : hmsStart(hmsStart), hmsEnd(hmsEnd), LocalTimeRestrictedDate(dateRestriction) {
+    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate dateRestriction) : LocalTimeRestrictedDate(dateRestriction), hmsStart(hmsStart), hmsEnd(hmsEnd) {
     }
 
     /**
@@ -1473,29 +1473,8 @@ public:
      * 
      * @return LocalTimeSchedule& 
      */        
-    LocalTimeSchedule &withMinuteMultiple(int increment, LocalTimeRange timeRange = LocalTimeRange());
+    LocalTimeSchedule &withMinuteOfHour(int increment, LocalTimeRange timeRange = LocalTimeRange());
 
-    /**
-     * @brief Add a scheduled item at a time in local time during the day. 
-     * 
-     * @param hms The time in local time 00:00:00 to 23:59:59.
-     * @return LocalTimeSchedule& 
-     * 
-     * You can call this multiple times, and also combine it with minute multiple schedules.
-     */
-    LocalTimeSchedule &withTime(LocalTimeHMSRestricted hms);
-
-    /**
-     * @brief Add multiple scheduled items at a time in local time during the day. 
-     * 
-     * @param timesParam an auto-initialized list of LocalTimeHMS objects
-     * @return LocalTimeSchedule& 
-     * 
-     * You can call this multiple times, and also combine it with minute multiple schedules.
-     * 
-     * schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
-     */
-    LocalTimeSchedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam);
 
     /**
      * @brief Adds multiple times periodically in a time range with an hour increment
@@ -1515,7 +1494,48 @@ public:
      * times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, 
      * the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
      */
-    LocalTimeSchedule &withHourMultiple(int hourMultiple, LocalTimeRange timeRange = LocalTimeRange());
+    LocalTimeSchedule &withHourOfDay(int hourMultiple, LocalTimeRange timeRange = LocalTimeRange());
+
+    /**
+     * @brief Schedule an item on a specific instance of a day of week of the month
+     * 
+     * @param dayOfWeek Day of week 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+     * @param instance 1 = first week, 2 = second week, ..., -1 = last week, -2 = 2nd to last week
+     * @param timeRange Optional to restrict dates or to set a time for the item
+     * @return LocalTimeSchedule& 
+     */
+    LocalTimeSchedule &withDayOfWeekOfMonth(int dayOfWeek, int instance, LocalTimeRange timeRange = LocalTimeRange());
+
+    /**
+     * @brief Schedule an item on a specific day of the month
+     * 
+     * @param dayOfMonth 1 = 1st, 2 = 2nd of the month, ..., -1 = last day of the month, -2 = second to last day of the month, ...
+     * @param timeRange Optional to restrict dates or to set a time for the item
+     * @return LocalTimeSchedule& 
+     */
+    LocalTimeSchedule &withDayOfMonth(int dayOfMonth, LocalTimeRange timeRange = LocalTimeRange());
+
+    /**
+     * @brief Add a scheduled item at a time in local time during the day. 
+     * 
+     * @param hms The time in local time 00:00:00 to 23:59:59, optionally with date restrictions
+     * @return LocalTimeSchedule& 
+     * 
+     * You can call this multiple times, and also combine it with minute multiple schedules.
+     */
+    LocalTimeSchedule &withTime(LocalTimeHMSRestricted hms);
+
+    /**
+     * @brief Add multiple scheduled items at a time in local time during the day. 
+     * 
+     * @param timesParam an auto-initialized list of LocalTimeHMS objects
+     * @return LocalTimeSchedule& 
+     * 
+     * You can call this multiple times, and also combine it with minute multiple schedules.
+     * 
+     * schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
+     */
+    LocalTimeSchedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam);
 
     /**
      * @brief Returns true if the schedule does not have any items in it

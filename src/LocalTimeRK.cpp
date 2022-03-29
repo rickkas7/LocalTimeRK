@@ -799,7 +799,7 @@ void LocalTimeScheduleItem::fromJson(JSONValue jsonObj) {
 //
 
 
-LocalTimeSchedule &LocalTimeSchedule::withMinuteMultiple(int increment, LocalTimeRange timeRange) {
+LocalTimeSchedule &LocalTimeSchedule::withMinuteOfHour(int increment, LocalTimeRange timeRange) {
     LocalTimeScheduleItem item;
     item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
     item.increment = increment;
@@ -809,7 +809,7 @@ LocalTimeSchedule &LocalTimeSchedule::withMinuteMultiple(int increment, LocalTim
 }
 
 
-LocalTimeSchedule &LocalTimeSchedule::withHourMultiple(int hourMultiple, LocalTimeRange timeRange) {
+LocalTimeSchedule &LocalTimeSchedule::withHourOfDay(int hourMultiple, LocalTimeRange timeRange) {
     LocalTimeScheduleItem item;
     item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::HOUR_OF_DAY;
     item.increment = hourMultiple;
@@ -817,6 +817,26 @@ LocalTimeSchedule &LocalTimeSchedule::withHourMultiple(int hourMultiple, LocalTi
     scheduleItems.push_back(item);
     return *this;
 }
+
+LocalTimeSchedule &LocalTimeSchedule::withDayOfWeekOfMonth(int dayOfWeek, int instance, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+    item.dayOfWeek = dayOfWeek;
+    item.increment = instance;
+    item.timeRange = timeRange;
+    scheduleItems.push_back(item);
+    return *this;
+}
+
+LocalTimeSchedule &LocalTimeSchedule::withDayOfMonth(int dayOfMonth, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_MONTH;
+    item.increment = dayOfMonth;
+    item.timeRange = timeRange;
+    scheduleItems.push_back(item);
+    return *this;
+}
+
 
 LocalTimeSchedule &LocalTimeSchedule::withTime(LocalTimeHMSRestricted hms) {
     LocalTimeScheduleItem item;
