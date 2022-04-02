@@ -906,6 +906,89 @@ bool LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &conv, std::functi
 
 }
 
+//
+// LocalTimeScheduleManager
+//
+
+time_t LocalTimeScheduleManager::getNextTimeByName(const char *name, const LocalTimeConvert &conv) {
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if (it->name.equals(name)) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+
+            }
+        }
+    }
+    return 0;
+}
+
+time_t LocalTimeScheduleManager::getNextWake(const LocalTimeConvert &conv) const {
+    time_t nextTime = 0;
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if ((it->flags & LocalTimeSchedule::FLAG_ANY_WAKE) != 0) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+                if (nextTime == 0 || tempConv.time < nextTime) {
+                    nextTime = tempConv.time;
+                }
+            }
+        }
+    }
+    return nextTime;
+}
+
+time_t LocalTimeScheduleManager::getNextFullWake(const LocalTimeConvert &conv) const {
+    time_t nextTime = 0;
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if ((it->flags & LocalTimeSchedule::FLAG_FULL_WAKE) != 0) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+                if (nextTime == 0 || tempConv.time < nextTime) {
+                    nextTime = tempConv.time;
+                }
+            }
+        }
+    }
+    return nextTime;
+}
+
+void LocalTimeScheduleManager::forEach(std::function<void(LocalTimeSchedule &schedule)> callback) {
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        callback(*it);
+    }
+}
+
+LocalTimeSchedule &LocalTimeScheduleManager::getScheduleByName(const char *name) {
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if (it->name.equals(name)) {
+            return *it;
+        }
+    }
+
+    LocalTimeSchedule sch;
+    sch.name = name;
+    schedules.push_back(sch);
+
+    return getScheduleByName(name);
+}
+
+
+void LocalTimeScheduleManager::setFromJsonObject(const JSONValue &jsonObj) {
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *)iter.name();
+
+        for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+            if (it->name.equals(key)) {
+                it->fromJson(iter.value());
+            }
+        }
+    }
+}
+
 
 //
 // LocalTimeRange

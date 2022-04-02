@@ -1538,6 +1538,29 @@ public:
     LocalTimeSchedule &withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam);
 
     /**
+     * @brief Sets the name of this schedule (optional)
+     * 
+     * @param name 
+     * @return LocalTimeSchedule& 
+     */
+    LocalTimeSchedule &withName(const char *name) {
+        this->name = name;
+        return *this;
+    }
+
+    /**
+     * @brief Sets the flags for this schedule (optional)
+     * 
+     * @param flags 
+     * @return LocalTimeSchedule& 
+     */
+    LocalTimeSchedule &withFlags(uint32_t flags) {
+        this->flags = flags;
+        return *this;
+    }
+
+
+    /**
      * @brief Returns true if the schedule does not have any items in it
      * 
      * @return true 
@@ -1622,8 +1645,76 @@ public:
      */
     bool getNextScheduledTime(LocalTimeConvert &conv, std::function<bool(LocalTimeScheduleItem &item)> filter) const;
 
+    static const uint32_t FLAG_QUICK_WAKE       = 0x00000001; //!< Schedule is for quick wake
+    static const uint32_t FLAG_FULL_WAKE        = 0x00000002; //!< Schedule is for full wake with publish
+    // Other wake constants go here, up to 0x00000080
+    static const uint32_t FLAG_ANY_WAKE         = 0x000000ff; //!< Mask for any schedule that wakes
 
+    String name; //!< Name of this schedule (optional, typically used with LocalTimeScheduleManager)
+    uint32_t flags = 0; //!< Flags (optional, typically used with LocalTimeScheduleManager)
     std::vector<LocalTimeScheduleItem> scheduleItems; //!< LocalTimeSchedule items
+};
+
+class LocalTimeScheduleManager {
+public:
+    /**
+     * @brief Get the next scheduled time of the schedule with name "name"
+     * 
+     * @param name The name to look for (c string)
+     * @param conv The LocalTimeConvert that contains the timezone information to use
+     * @return time_t Time of 0 if there is no schedule with that name
+     */
+    time_t getNextTimeByName(const char *name, const LocalTimeConvert &conv);
+
+    /**
+     * @brief Get the wake of any type (quick or full)
+     * 
+     * @param conv The LocalTimeConvert that contains the timezone information to use
+     * @return time_t Time of 0 if there is no schedule
+     */
+    time_t getNextWake(const LocalTimeConvert &conv) const;
+
+    /**
+     * @brief Get the full wake, typically with a publish
+     * 
+     * @param conv The LocalTimeConvert that contains the timezone information to use
+     * @return time_t Time of 0 if there is no schedule
+     */
+    time_t getNextFullWake(const LocalTimeConvert &conv) const;
+
+    /**
+     * @brief 
+     * 
+     * @param callback 
+     * 
+     * 
+     * void callback(LocalTimeSchedule &schedule)
+     */
+    void forEach(std::function<void(LocalTimeSchedule &schedule)> callback);
+
+    /**
+     * @brief Get a LocalTimeSchedule reference by name and creates it if it does not exist
+     * 
+     * @param name Name to get or create
+     * @return LocalTimeSchedule& Reference to the schedule
+     */
+    LocalTimeSchedule &getScheduleByName(const char *name);
+
+    /**
+     * @brief Set the schedules from a JSON object
+     * 
+     * @param obj 
+     * 
+     * Only the keys in obj that already exist as named schedules are processed! This allows
+     * a single object to contain both schedules and other settings. Plus, in order for a 
+     * named schedule to be useful you probably need to have code to handle it, and this
+     * eliminates the need to pass the schedule flags in the JSON, since they should be
+     * constant depending on how the schedule is being used in the code, not by the
+     * schedule settings.
+     */
+    void setFromJsonObject(const JSONValue &obj);
+
+    std::vector<LocalTimeSchedule> schedules;
 };
 
 /**

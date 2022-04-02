@@ -2508,6 +2508,120 @@ void test1() {
 
 	// LocalTimeSchedule JSON operations
 
+	// LocalTimeScheduleManager tests
+	{
+		// Empty schedule
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:10:52")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE);
+		
+		t = sm.getNextWake(conv);
+		assertInt("", t, 0);
+
+		t = sm.getNextFullWake(conv);
+		assertInt("", t, 0);
+	}
+
+	{
+		// Full wake every 15 minutes
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:10:52")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE).withMinuteOfHour(15);
+		
+		t = sm.getNextWake(conv);
+		assertTime2("", t, "2022-03-05 07:15:00"); // UTC;
+
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-05 07:15:00"); // UTC;
+	}
+
+	{
+		// Full wake every 15 minutes
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:15:00")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE).withMinuteOfHour(15);
+		
+		t = sm.getNextWake(conv);
+		assertTime2("", t, "2022-03-05 07:30:00"); // UTC;
+
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-05 07:30:00"); // UTC;
+	}
+
+	{
+		// Full wake every 15 minutes, quick wake every 5
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:09:00")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE).withMinuteOfHour(5);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE).withMinuteOfHour(15);
+		
+		t = sm.getNextWake(conv);
+		assertTime2("", t, "2022-03-05 07:10:00"); // UTC;
+
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-05 07:15:00"); // UTC;
+	}
+
+	{
+		// Full wake every 15 minutes 09:00 to 16:59, every 2 hours other times
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-15 07:09:00")).convert(); // UTC; 03:09 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE)
+			.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")))
+			.withHourOfDay(2, LocalTimeRange(LocalTimeHMS("00:00:00"), LocalTimeHMS("23:59:59")));
+		
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 08:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 10:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 12:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 13:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 13:15:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 13:30:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-15 20:40:00")).convert(); // UTC; 
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 20:45:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 22:00:00"); // UTC;
+
+	}
+
 
 	// Make sure the closest minute multiple is used
 
