@@ -255,13 +255,11 @@ int8_t&#160;</td><td class="memItemRight" valign="bottom"><b>ignore</b> = 0</td>
 <p>Adjust the values in a struct tm from the values in this object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">pTimeInfo</td><td>The struct tm to modify<ul>
-<li>After calling this, the values in the struct tm may be out of range, for example tm_hour &gt; 23. This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values into the other fields as necessary. </li>
-</ul>
-</td></tr>
+    <tr><td class="paramname">pTimeInfo</td><td>The struct tm to modify</td></tr>
   </table>
   </dd>
 </dl>
+<p>After calling this, the values in the struct tm may be out of range, for example tm_hour &gt; 23. This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values into the other fields as necessary. </p>
 
 </div>
 </div>

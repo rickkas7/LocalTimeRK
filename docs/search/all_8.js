@@ -5,6 +5,6 @@ var searchData=
   ['hmsend_2',['hmsEnd',['../class_local_time_range.html#acf41123f97e67f663da4cf8b6fb85a2d',1,'LocalTimeRange']]],
   ['hmsstart_3',['hmsStart',['../class_local_time_range.html#af0ed76bc7a94f3c4d108697b81628218',1,'LocalTimeRange']]],
   ['hour_4',['hour',['../class_local_time_h_m_s.html#a7103217de18d37e2fb6fa86838353796',1,'LocalTimeHMS::hour()'],['../class_local_time_value.html#a903d70a2a32fd8d893f2092c55652830',1,'LocalTimeValue::hour()']]],
-  ['hour_5fof_5fday_5',['HOUR_OF_DAY',['../class_local_time_convert_1_1_schedule_item.html#aa09c88b2633a48c441c8696ff6be34d0af062d9f2625f4ac064fd16400f31d8b6',1,'LocalTimeConvert::ScheduleItem']]],
+  ['hour_5fof_5fday_5',['HOUR_OF_DAY',['../class_local_time_schedule_item.html#aeb92807b0d0587e4179c6f1ef6500aadaf062d9f2625f4ac064fd16400f31d8b6',1,'LocalTimeScheduleItem']]],
   ['hourformat12_6',['hourFormat12',['../class_local_time_value.html#a305534e61a9e122fe264cc784fba4354',1,'LocalTimeValue']]]
 ];

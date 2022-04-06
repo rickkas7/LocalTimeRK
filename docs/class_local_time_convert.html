@@ -63,7 +63,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Data Fields</a>  </div>
@@ -76,15 +75,6 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="_local_time_r_k_8h_source.html">LocalTimeRK.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
-Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert_1_1_schedule.html">Schedule</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A complete time schedule.  <a href="class_local_time_convert_1_1_schedule.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert_1_1_schedule_item.html">ScheduleItem</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="class_local_time_convert_1_1_schedule.html" title="A complete time schedule.">Schedule</a> option for "every n minutes".  <a href="class_local_time_convert_1_1_schedule_item.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a0fab4e36297d6df37510528618871323"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a0fab4e36297d6df37510528618871323">Position</a> { <br />
@@ -162,9 +152,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isStandardTime</b> ()
 <tr class="memitem:a4e9bb0cbfa1a7a6d534ce46b8538fb49"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a4e9bb0cbfa1a7a6d534ce46b8538fb49">nextLocalTime</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms)</td></tr>
 <tr class="memdesc:a4e9bb0cbfa1a7a6d534ce46b8538fb49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the time to the nearest hms in local time in the future.  <a href="class_local_time_convert.html#a4e9bb0cbfa1a7a6d534ce46b8538fb49">More...</a><br /></td></tr>
 <tr class="separator:a4e9bb0cbfa1a7a6d534ce46b8538fb49"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1432c26300e3646e0094b537e1f2167a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a1432c26300e3646e0094b537e1f2167a">nextSchedule</a> (const <a class="el" href="class_local_time_convert_1_1_schedule.html">Schedule</a> &amp;schedule)</td></tr>
-<tr class="memdesc:a1432c26300e3646e0094b537e1f2167a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the time to the nearest scheduled time in the future base on the schedule.  <a href="class_local_time_convert.html#a1432c26300e3646e0094b537e1f2167a">More...</a><br /></td></tr>
-<tr class="separator:a1432c26300e3646e0094b537e1f2167a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34fc89187a83db7e8bed2d001e26359a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#a34fc89187a83db7e8bed2d001e26359a">nextSchedule</a> (const <a class="el" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;schedule)</td></tr>
+<tr class="memdesc:a34fc89187a83db7e8bed2d001e26359a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the time to the nearest scheduled time in the future base on the schedule.  <a href="class_local_time_convert.html#a34fc89187a83db7e8bed2d001e26359a">More...</a><br /></td></tr>
+<tr class="separator:a34fc89187a83db7e8bed2d001e26359a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae8cafda02231440f7291474a138b39be"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_convert.html#ae8cafda02231440f7291474a138b39be">atLocalTime</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> hms)</td></tr>
 <tr class="memdesc:ae8cafda02231440f7291474a138b39be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Changes the time of day to the specified hms in local time on the same local day.  <a href="class_local_time_convert.html#ae8cafda02231440f7291474a138b39be">More...</a><br /></td></tr>
 <tr class="separator:ae8cafda02231440f7291474a138b39be"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -753,8 +743,8 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
 
 </div>
 </div>
-<a id="a1432c26300e3646e0094b537e1f2167a" name="a1432c26300e3646e0094b537e1f2167a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1432c26300e3646e0094b537e1f2167a">&#9670;&nbsp;</a></span>nextSchedule()</h2>
+<a id="a34fc89187a83db7e8bed2d001e26359a" name="a34fc89187a83db7e8bed2d001e26359a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34fc89187a83db7e8bed2d001e26359a">&#9670;&nbsp;</a></span>nextSchedule()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -762,7 +752,7 @@ struct tm&#160;</td><td class="memItemRight" valign="bottom"><b>standardStartTim
         <tr>
           <td class="memname">bool LocalTimeConvert::nextSchedule </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="class_local_time_convert_1_1_schedule.html">Schedule</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;&#160;</td>
           <td class="paramname"><em>schedule</em></td><td>)</td>
           <td></td>
         </tr>

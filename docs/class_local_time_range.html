@@ -94,6 +94,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a80707e0e54b96fa3f11a80326dfe6b79"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_range.html#a80707e0e54b96fa3f11a80326dfe6b79">LocalTimeRange</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> <a class="el" href="class_local_time_range.html#af0ed76bc7a94f3c4d108697b81628218">hmsStart</a>, <a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> <a class="el" href="class_local_time_range.html#acf41123f97e67f663da4cf8b6fb85a2d">hmsEnd</a>, <a class="el" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a> dateRestriction)</td></tr>
 <tr class="memdesc:a80707e0e54b96fa3f11a80326dfe6b79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new object that specifies start time, end time, and date restrictions.  <a href="class_local_time_range.html#a80707e0e54b96fa3f11a80326dfe6b79">More...</a><br /></td></tr>
 <tr class="separator:a80707e0e54b96fa3f11a80326dfe6b79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8947b1d1a7db0e76e867e11cf9f0ce82"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_range.html#a8947b1d1a7db0e76e867e11cf9f0ce82">LocalTimeRange</a> (<a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> <a class="el" href="class_local_time_range.html#af0ed76bc7a94f3c4d108697b81628218">hmsStart</a>, <a class="el" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a> dateRestriction)</td></tr>
+<tr class="memdesc:a8947b1d1a7db0e76e867e11cf9f0ce82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new object that specifies start time and date restrictions, used for at time and date schedules.  <a href="class_local_time_range.html#a8947b1d1a7db0e76e867e11cf9f0ce82">More...</a><br /></td></tr>
+<tr class="separator:a8947b1d1a7db0e76e867e11cf9f0ce82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7839680a919a19a0ea5f482e76633770"><td class="memItemLeft" align="right" valign="top"><a id="a7839680a919a19a0ea5f482e76633770" name="a7839680a919a19a0ea5f482e76633770"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>clear</b> ()</td></tr>
 <tr class="memdesc:a7839680a919a19a0ea5f482e76633770"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clear time range to all day, every day. <br /></td></tr>
@@ -110,6 +113,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>clear</b> ()</td></tr
 <tr class="memitem:a516772f0d8392b5c9462c1899f54f524"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_range.html#a516772f0d8392b5c9462c1899f54f524">inRange</a> (<a class="el" href="class_local_time_value.html">LocalTimeValue</a> localTimeValue) const</td></tr>
 <tr class="memdesc:a516772f0d8392b5c9462c1899f54f524"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the date restrictions allow this date and the time is in this range (inclusive)  <a href="class_local_time_range.html#a516772f0d8392b5c9462c1899f54f524">More...</a><br /></td></tr>
 <tr class="separator:a516772f0d8392b5c9462c1899f54f524"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8ac68dc1eac067200966adeca19aae7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_range.html#ae8ac68dc1eac067200966adeca19aae7">getExpirationDate</a> () const</td></tr>
+<tr class="memdesc:ae8ac68dc1eac067200966adeca19aae7"><td class="mdescLeft">&#160;</td><td class="mdescRight">For restricted time ranges, get the last date (YMD) that this time range could be valid.  <a href="class_local_time_range.html#ae8ac68dc1eac067200966adeca19aae7">More...</a><br /></td></tr>
+<tr class="separator:ae8ac68dc1eac067200966adeca19aae7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89210c8a30ca5b7eb3e47c307dde1a47"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_range.html#a89210c8a30ca5b7eb3e47c307dde1a47">fromTime</a> (<a class="el" href="class_local_time_h_m_s_restricted.html">LocalTimeHMSRestricted</a> hms)</td></tr>
 <tr class="memdesc:a89210c8a30ca5b7eb3e47c307dde1a47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the date restrictions from a <a class="el" href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)">LocalTimeHMSRestricted</a> object.  <a href="class_local_time_range.html#a89210c8a30ca5b7eb3e47c307dde1a47">More...</a><br /></td></tr>
 <tr class="separator:a89210c8a30ca5b7eb3e47c307dde1a47"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,6 +176,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>clear</b> ()</td></tr
 <tr class="memitem:a90c155e90d0f5c7dbcd50568a86066d3 inherit pub_methods_class_local_time_restricted_date"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_restricted_date.html#a90c155e90d0f5c7dbcd50568a86066d3">inExceptDates</a> (<a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a> ymd) const</td></tr>
 <tr class="memdesc:a90c155e90d0f5c7dbcd50568a86066d3 inherit pub_methods_class_local_time_restricted_date"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true of a date is in the exceptDates list.  <a href="class_local_time_restricted_date.html#a90c155e90d0f5c7dbcd50568a86066d3">More...</a><br /></td></tr>
 <tr class="separator:a90c155e90d0f5c7dbcd50568a86066d3 inherit pub_methods_class_local_time_restricted_date"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39d57ae35fe10c3656fa9169b8592a0d inherit pub_methods_class_local_time_restricted_date"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_restricted_date.html#a39d57ae35fe10c3656fa9169b8592a0d">getExpirationDate</a> () const</td></tr>
+<tr class="memdesc:a39d57ae35fe10c3656fa9169b8592a0d inherit pub_methods_class_local_time_restricted_date"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the last date (YMD) that this restricted date could be valid.  <a href="class_local_time_restricted_date.html#a39d57ae35fe10c3656fa9169b8592a0d">More...</a><br /></td></tr>
+<tr class="separator:a39d57ae35fe10c3656fa9169b8592a0d inherit pub_methods_class_local_time_restricted_date"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b98bbc34b09ed3c948872ef5b885f06 inherit pub_methods_class_local_time_restricted_date"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_restricted_date.html#a1b98bbc34b09ed3c948872ef5b885f06">fromJson</a> (JSONValue jsonObj)</td></tr>
 <tr class="memdesc:a1b98bbc34b09ed3c948872ef5b885f06 inherit pub_methods_class_local_time_restricted_date"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in this object from JSON data.  <a href="class_local_time_restricted_date.html#a1b98bbc34b09ed3c948872ef5b885f06">More...</a><br /></td></tr>
 <tr class="separator:a1b98bbc34b09ed3c948872ef5b885f06 inherit pub_methods_class_local_time_restricted_date"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -202,7 +211,7 @@ std::vector&lt; <a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a
 <div class="textblock"><p >Class to hold a time range in local time in HH:MM:SS format. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a549f18d3f7594fa99f2832751bb8bdc7" name="a549f18d3f7594fa99f2832751bb8bdc7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a549f18d3f7594fa99f2832751bb8bdc7">&#9670;&nbsp;</a></span>LocalTimeRange() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a549f18d3f7594fa99f2832751bb8bdc7">&#9670;&nbsp;</a></span>LocalTimeRange() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -230,7 +239,7 @@ std::vector&lt; <a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a
 </div>
 </div>
 <a id="add498a3441118ce11d7dcf5a11248147" name="add498a3441118ce11d7dcf5a11248147"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add498a3441118ce11d7dcf5a11248147">&#9670;&nbsp;</a></span>LocalTimeRange() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#add498a3441118ce11d7dcf5a11248147">&#9670;&nbsp;</a></span>LocalTimeRange() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -276,7 +285,7 @@ std::vector&lt; <a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a
 </div>
 </div>
 <a id="a80707e0e54b96fa3f11a80326dfe6b79" name="a80707e0e54b96fa3f11a80326dfe6b79"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a80707e0e54b96fa3f11a80326dfe6b79">&#9670;&nbsp;</a></span>LocalTimeRange() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a80707e0e54b96fa3f11a80326dfe6b79">&#9670;&nbsp;</a></span>LocalTimeRange() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -316,6 +325,52 @@ std::vector&lt; <a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a
 </div><div class="memdoc">
 
 <p>Construct a new object that specifies start time, end time, and date restrictions. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">hmsStart</td><td>Start time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59 </td></tr>
+    <tr><td class="paramname">hmsEnd</td><td>End time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59 </td></tr>
+    <tr><td class="paramname">dateRestriction</td><td>Only use this time range on certain dates </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a8947b1d1a7db0e76e867e11cf9f0ce82" name="a8947b1d1a7db0e76e867e11cf9f0ce82"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8947b1d1a7db0e76e867e11cf9f0ce82">&#9670;&nbsp;</a></span>LocalTimeRange() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LocalTimeRange::LocalTimeRange </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a>&#160;</td>
+          <td class="paramname"><em>hmsStart</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a>&#160;</td>
+          <td class="paramname"><em>dateRestriction</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Construct a new object that specifies start time and date restrictions, used for at time and date schedules. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">hmsStart</td><td>Start time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59 </td></tr>
@@ -427,6 +482,35 @@ std::vector&lt; <a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a
 
 </div>
 </div>
+<a id="ae8ac68dc1eac067200966adeca19aae7" name="ae8ac68dc1eac067200966adeca19aae7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae8ac68dc1eac067200966adeca19aae7">&#9670;&nbsp;</a></span>getExpirationDate()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a> LocalTimeRange::getExpirationDate </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>For restricted time ranges, get the last date (YMD) that this time range could be valid. </p>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></dd></dl>
+<p>This will return the empty date for most cases. A valid value is returned if the <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> is used, and an only on date is set. In this case, there's as point in time where this range will never be true. This is used to optimize scheduling. </p>
+
+</div>
+</div>
 <a id="a046d461962c4a06f07b795c9dd95281e" name="a046d461962c4a06f07b795c9dd95281e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a046d461962c4a06f07b795c9dd95281e">&#9670;&nbsp;</a></span>getTimeSpan()</h2>
 
@@ -453,8 +537,7 @@ std::vector&lt; <a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>time_t Time difference in seconds</dd></dl>
 <p>In the weird case that start &gt; end, it can return a negative value, as time_t is a signed long (or long long) value.</p>
-<p >This does not take into account date restrictions!</p>
-<p >TODO: I think I can remove this </p>
+<p >This does not take into account date restrictions! </p>
 
 </div>
 </div>

@@ -270,6 +270,18 @@ bool LocalTimeRestrictedDate::inExceptDates(LocalTimeYMD ymd) const {
     return false;
 }
 
+LocalTimeYMD LocalTimeRestrictedDate::getExpirationDate() const {
+    LocalTimeYMD result;
+
+    for(auto it = onlyOnDates.begin(); it != onlyOnDates.end(); ++it) {
+        if (result.isEmpty() || *it > result) {
+            result = *it;
+        }
+    }
+    return result;
+}
+
+
 void LocalTimeRestrictedDate::fromJson(JSONValue jsonObj) {
     JSONObjectIterator iter(jsonObj);
     while(iter.next()) {
@@ -585,11 +597,19 @@ int LocalTimeValue::ordinal() const {
 bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
 
     LocalTimeConvert tempConv(conv);
+    
+    LocalTimeYMD endYMD;
+    
+    LocalTimeYMD expirationDate = getExpirationDate();
+    if (expirationDate.isEmpty()) {
+        endYMD = tempConv.getLocalTimeYMD();
 
-    LocalTimeYMD endYMD = tempConv.getLocalTimeYMD();
-
-    // Maximum number of days to look ahead in the schedule for the next scheduled time (default: 3 days)
-    endYMD.addDay(LocalTime::instance().getScheduleLookaheadDays());
+        // Maximum number of days to look ahead in the schedule for the next scheduled time (default: 32 days)
+        endYMD.addDay(LocalTime::instance().getScheduleLookaheadDays());
+    }
+    else {
+        endYMD = expirationDate;
+    }
     
     for(;; tempConv.nextDay(LocalTimeHMS("00:00:00"))) {
         LocalTimeYMD curYMD = tempConv.getLocalTimeYMD();
@@ -661,6 +681,12 @@ bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
                     }
 
                     if (bResult) {
+                        if (!timeRange.isValidDate(tempConv.getLocalTimeYMD())) {
+                            bResult = false;
+                        }
+                    }
+
+                    if (bResult) {
                         conv.time = tempConv.time;
                         conv.convert();
                         return true;
@@ -692,14 +718,14 @@ bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
         case ScheduleItemType::DAY_OF_MONTH:
             {
                 int tempIncrement = increment;
-                if (tempIncrement <= 0) {
-                    tempIncrement = LocalTime::lastDayOfMonth(tempConv.localTimeValue.year(), tempConv.localTimeValue.month()) + tempIncrement;
+                if (tempIncrement < 0) {
+                    tempIncrement = LocalTime::lastDayOfMonth(tempConv.localTimeValue.year(), tempConv.localTimeValue.month()) + tempIncrement + 1;
                 }
                 // "increment" specifies which day of month (1, 2, 3, ...) or 
                 // Time is at the HMS of the hmsStart (local time)
                 if (tempConv.localTimeValue.ymd().getDay() == tempIncrement) {
                     int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
-                    if (cmp < 0) {
+                    if (cmp <= 0) {
                         // Before the beginning of time range, return beginning of time range
                         tempConv.atLocalTime(timeRange.hmsStart);
                         if (tempConv.time > conv.time) {
@@ -715,7 +741,9 @@ bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
 
         case ScheduleItemType::TIME: 
             // At a specific time, optionally with day of week or date restrictions            
-            if (tempConv.localTimeValue.hms() < timeRange.hmsStart) {
+            // The first test must be <= otherwise you can't schedule at midnight.
+            // The second test for conv.time must be > to advance to the next schedule.
+            if (tempConv.localTimeValue.hms() <= timeRange.hmsStart) {
                 tempConv.atLocalTime(timeRange.hmsStart);
                 if (tempConv.time > conv.time) {
                     conv.time = tempConv.time;
@@ -906,6 +934,31 @@ bool LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &conv, std::functi
 
 }
 
+
+bool LocalTimeSchedule::isScheduledTime() {
+    if (!Time.isValid()) {
+        return false;
+    }
+
+    LocalTimeConvert conv;
+    conv.withCurrentTime().convert();
+    return isScheduledTime(conv, Time.now());
+}
+
+bool LocalTimeSchedule::isScheduledTime(LocalTimeConvert &conv, time_t timeNow) {
+    bool result = false;
+
+    if (nextTime != 0 && nextTime <= timeNow) {
+        result = true;
+        nextTime = 0;
+    }
+
+    if (getNextScheduledTime(conv)) {
+        nextTime = conv.time;
+    }
+    
+    return result;
+}
 //
 // LocalTimeScheduleManager
 //
@@ -953,6 +1006,23 @@ time_t LocalTimeScheduleManager::getNextFullWake(const LocalTimeConvert &conv) c
     }
     return nextTime;
 }
+
+time_t LocalTimeScheduleManager::getNextDataCapture(const LocalTimeConvert &conv) const {
+    time_t nextTime = 0;
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if (it->name.equals("data")) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+                if (nextTime == 0 || tempConv.time < nextTime) {
+                    nextTime = tempConv.time;
+                }
+            }
+        }
+    }
+    return nextTime;
+}
+
 
 void LocalTimeScheduleManager::forEach(std::function<void(LocalTimeSchedule &schedule)> callback) {
     for(auto it = schedules.begin(); it != schedules.end(); ++it) {
@@ -1025,6 +1095,7 @@ void LocalTimeRange::fromJson(JSONValue jsonObj) {
     }
     LocalTimeRestrictedDate::fromJson(jsonObj);
 }
+
 
 
 //

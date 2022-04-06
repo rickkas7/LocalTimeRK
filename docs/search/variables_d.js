@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['valid_0',['valid',['../class_local_time_change.html#a014c97250e9ee2e827fb8bd458402959',1,'LocalTimeChange::valid()'],['../class_local_time_posix_timezone.html#a87f30efb4c3260b62d54bf9bc29937cd',1,'LocalTimePosixTimezone::valid()']]]
+  ['time_0',['time',['../class_local_time_convert.html#a3ffbd225814dd12c2acad2c85f0dbc8b',1,'LocalTimeConvert']]],
+  ['timerange_1',['timeRange',['../class_local_time_schedule_item.html#a83847d77fcdda7fb9008fbda3ba94eda',1,'LocalTimeScheduleItem']]]
 ];

@@ -123,150 +123,6 @@ $(function() {
 <li>On the next weekday (Monday - Friday)</li>
 <li>On the next weekend day (Saturday - Sunday)</li>
 </ul>
-<h1>Advanced scheduling</h1>
-<p >An advanced scheduling mode was added in version 0.1.0. This allows complex schedules such as:</p>
-<ul>
-<li>Every 15 minute of the hour (between 9:00 AM and 5:00 PM local time Monday - Friday, except on 2022-03-21</li>
-<li>Every 4 hours of the day starting at 00:00:00 (midnight) other times</li>
-</ul>
-<p >This can either be specified in code, or it can be expressed in JSON. This allows the schedule to be updating using a Particle.function, for example.</p>
-<p >This is a compact representation of that schedule in 77 bytes of JSON data:</p>
-<div class="fragment"><div class="line">[{&quot;mh&quot;:15,&quot;y&quot;:62,&quot;s&quot;:&quot;09:00:00&quot;,&quot;e&quot;:&quot;16:59:59&quot;,&quot;x&quot;:[&quot;2022-03-21&quot;]},{&quot;hd&quot;:4}]</div>
-</div><!-- fragment --><p >While scheduling is designed to work with local time, each schedule calculator can optionally have a time zone override, which makes it possible to do some calculations at UTC if you prefer to do that.</p>
-<h2>Shared types</h2>
-<h3><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a></h3>
-<p >This object holds a hour, minute, and second value (HMS). There are numerous methods to compare time values, and convert the values to other formats.</p>
-<p >When converting from string format always use 24-hour clock format; this object does not support AM/PM. Also when converting from strings you can omit the seconds, or even both the minutes and seconds.</p>
-<p >Note that hour 24 is never a valid value. Because HMS calculations are always inclusive, the end of the day is 23:59:59. Leap seconds are not supported by the underlying C standard time library.</p>
-<h3><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></h3>
-<p >This object specifies a year, month, and day. There are numerous methods to compare time values, and convert the values to other formats.</p>
-<p >When converting from a string this must always be "YYYY-MM-DD" format, with dashes, and in that order. Other date formats including common but poorly defined United States date formats cannot be used!</p>
-<h3><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></h3>
-<p >A <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> is a start time and end time in local time, expressed as <code><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a></code> objects (hours, minutes, seconds).</p>
-<p >Time ranges are inclusive, so the entire day is 00:00:00 to 23:59:59.</p>
-<p >When converting from JSON:</p>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">Starting time in "HH:MM:SS" format, 24 hour clock, local time   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">Ending time in "HH:MM:SS" format, 24 hour clock, local time   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
-</table>
-<h3><a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a></h3>
-<p >A <code><a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a></code> specifies zero or more days of the week (Sunday, Monday, ...)</p>
-<p >Common mask values:</p>
-<p >| Value Hex | Value Decimal | Constant | Description | | :&mdash; | &mdash;: | :&mdash; | | 0x01 | 1 | MASK_SUNDAY | Sunday | | 0x02 | 2 | MASK_MONDAY | Monday | | 0x04 | 4 | MASK_TUESDAY | Tuesday | | 0x08 | 8 | MASK_WEDNESDAY | Wednesday | | 0x10 | 16 | MASK_THURSDAY | Thursday | | 0x20 | 32 | MASK_FRIDAY | Friday | | 0x40 | 64 | MASK_SATURDAY | Saturday | | 0x7f | 127 | MASK_ALL | Every day | | 0x3e | 62 | MASK_WEEKDAY | Weekdays (Monday - Friday) | | 0x41 | 65 | MASK_WEEKEND | Weekends (Saturday - Sunday) |</p>
-<p >Note that you can combine any mask bits. For example, Monday, Wednesday, Friday is 2 + 8 + 32 = 42,</p>
-<p >In JSON, you can only use the numeric mask values, as a decimal number. For example, weekdays Monday - Friday is 62.</p>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"y"   </td><td class="markdownTableBodyLeft">number   </td><td class="markdownTableBodyLeft">Mask value for days of the week, see table above   </td></tr>
-</table>
-<h3><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></h3>
-<p >A <code><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></code> is used for both multiples and times (below). It can have:</p>
-<ul>
-<li>A day of week selection (<code><a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a></code>), which is a bitmask of days to allow. This makes it easy to specific, for example, weekdays (Monday - Friday).</li>
-<li>A list of dates to allow (vector of <code><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></code>)</li>
-<li>A list of dates to exclude (vector of <code><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></code>)</li>
-</ul>
-<p >| Key | Type | Description | Default | | :&mdash; | :&mdash; | :&mdash; | :&mdash; | | "y" | number | Mask value for days of the week, see table above (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
-<h2>Schedule items</h2>
-<p >Schedule include things like every n minutes, every n hours, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a <code>TimeRangeRestricted</code> that determines when the multiple is used.</p>
-<p ><code>TimeRangeRestricted</code> is itself composed of a <code>TimeRange</code>, and a <code><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></code>. This specifies both the time of day, as well as an optional restriction on the dates it applies. See above for for an explanation of these types.</p>
-<h3>Minute multiples</h3>
-<p >This multiple is used for "every n minutes." For example, if you want to publish an event every 15 minutes.</p>
-<ul>
-<li>Minute multiples are relative to the hour, so you typically want to use a value that 60 is evenly divisible by in order to keep the period constant (2, 3, 4, 5, 6, 10, 12, 15, 20, 30).</li>
-<li>A <code>TimeRangeRestricted</code> can restrict this to certain hours of the day, and certain days of the week.</li>
-<li>A <code>TimeRangeRestricted</code> can also handle exception dates, both only on date, or to exclude dates.</li>
-<li>The minute of the start of the time range specifies the offset relative to the hour to start the increment from (modulo the increment).</li>
-<li>The second of the start of the time range specifies the second offset.</li>
-</ul>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"mh"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Minute of hour multiple   </td><td class="markdownTableBodyLeft"></td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft">"f"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Flag bits (optional)   </td><td class="markdownTableBodyLeft">0    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The start time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The end time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
-</table>
-<p>| "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
-<h3>Hour of day multiples</h3>
-<p >This multiple is used for "every n hours." For example, if you want to wake and publish every 4 hours.</p>
-<ul>
-<li>Hour multiples are relative to the day, so you typically want to use a value that 24 is evenly divisible by (2, 3, 4, 6, 8, 12).</li>
-<li>A <code>TimeRangeRestricted</code> can restrict this to certain hours of the day, and certain days of the week.</li>
-<li>A <code>TimeRangeRestricted</code> can also handle exception dates, both only on date, or to exclude dates.</li>
-<li>The hour of the start of the time range specifies the offset relative to the day to start the increment from (modulo the increment)</li>
-<li>The minute and second of the start of the time range specifies the minute and second offset</li>
-</ul>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"hd"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Hour of day multiple   </td><td class="markdownTableBodyLeft"></td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft">"f"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Flag bits (optional)   </td><td class="markdownTableBodyLeft">0    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The start time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The end time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
-</table>
-<p>| "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
-<h3>Day of week of the month</h3>
-<p >This is used for things like: "Every first Monday of the month," "Every second Tuesday of the month," or "Last Friday of the month."</p>
-<ul>
-<li>The dayOfWeek specifies the day of the week (Sunday = 0, Monday = 1, Tuesday = 2, ..., Saturday = 6).</li>
-<li>The increment specifies which instance (1 = first, 2 = second, ... Or -1 = last, -2 = second to last, ...)</li>
-<li>A <code>TimeRangeRestricted</code> can handle exception dates, both only on date, or to exclude dates.</li>
-<li>The start of the time range specifies the hour, minute, and second (local time)</li>
-<li>Use a time of day with day of week restriction instead if you want to do "Every Monday"</li>
-</ul>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"dw"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Day of week instance (1 = first, 2 = second, ..., or -1 = last, -2 = second to last, ...   </td><td class="markdownTableBodyLeft"></td></tr>
-</table>
-<p>| "d" | integer | Day of the week 0 = Sunday, 1 = Monday, ..., 6 = Saturday | | "f" | integer | Flag bits (optional) | 0 | | "s" | string | The start time (HH:MM:SS format, can omit MM or SS) | "00:00:00" | | "e" | string | The end time (HH:MM:SS format, can omit MM or SS) | "23:59:59" | | "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
-<h3>Day of month</h3>
-<p >This is used for things like "The 1st of the month," "The 15th of the month," or "the last day of the month."</p>
-<ul>
-<li>The increment specifies which instance (1 = 1st of the month, 2 = 2nd of the month, ... Or -1 = last day, -2 = second to last day, ...)</li>
-<li>A <code>TimeRangeRestricted</code> can handle exception dates, both only on date, or to exclude dates.</li>
-<li>The start of the time range specifies the hour, minute, and second (local time)</li>
-</ul>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"dw"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Day of month instance (1 = 1st, 2 = 2nd, ... or -1 = last day of month, -2 = second to last, ...   </td><td class="markdownTableBodyLeft"></td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft">"f"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Flag bits (optional)   </td><td class="markdownTableBodyLeft">0    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The start time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The end time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
-</table>
-<p>| "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
-<h3>Time schedule</h3>
-<p >It's also possible to schedule at a specific time in local time. In code, this is an array of <code><a class="el" href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)">LocalTimeHMSRestricted</a></code> objects. You are limited only by RAM for the number of objects, as the array is stored in a std::vector.</p>
-<p >The <code><a class="el" href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)">LocalTimeHMSRestricted</a></code> is itself composed of a <code><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a></code> object, for hours minutes and seconds, and a <code><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></code> which can optionally restrict which dates the times re used.</p>
-<p >Some ways you can use times:</p>
-<ul>
-<li>"At 17:00:00" every day (local time)</li>
-<li>"At 17:00:00, Monday - Friday"</li>
-<li>"At 09:00:00, Monday - Friday, except for 2022-03-21"</li>
-<li>"At 23:59:59 on 2022-03-31"</li>
-</ul>
-<p >| Key | Type | Description | Default | | :&mdash; | :&mdash; | :&mdash; | :&mdash; | | "tm" | string | Time in "HH:MM:SS" format, 24 hour clock, local time | | "f" | integer | Flag bits (optional) | 0 | | "y" | number | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
 <h1>Clock Example</h1>
 <p >There is an example of using the library to use an Adafruit FeatherWing OLED Display 128x32 as a clock.</p>
 <p >The display is available at <a href="https://www.adafruit.com/product/2900">Adafruit</a>. You can find more technical information <a href="https://learn.adafruit.com/adafruit-oled-featherwing/overview">at Adafruit</a>. The library is available in the Web IDE as <a href="https://build.particle.io/libs/oled-wing-adafruit/0.0.4/tab/oled-wing-adafruit.cpp">oled-wing-adafruit</a>. You can find additional documentation <a href="https://github.com/rickkas7/oled-wing-adafruit">here</a>.</p>
@@ -320,13 +176,13 @@ $(function() {
 <div class="line">        display.display();</div>
 <div class="line">    }</div>
 <div class="line">}</div>
-<div class="ttc" id="aclass_local_time_convert_html"><div class="ttname"><a href="class_local_time_convert.html">LocalTimeConvert</a></div><div class="ttdoc">Perform time conversions. This is the main class you will need.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1343</div></div>
-<div class="ttc" id="aclass_local_time_convert_html_a1e23a4640eaf0d6ecae049c5e97dd1f2"><div class="ttname"><a href="class_local_time_convert.html#a1e23a4640eaf0d6ecae049c5e97dd1f2">LocalTimeConvert::withCurrentTime</a></div><div class="ttdeci">LocalTimeConvert &amp; withCurrentTime()</div><div class="ttdoc">Use the current time as the time to start with.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1614</div></div>
-<div class="ttc" id="aclass_local_time_convert_html_a5a2f655ab7976cba45e68c6789f4a865"><div class="ttname"><a href="class_local_time_convert.html#a5a2f655ab7976cba45e68c6789f4a865">LocalTimeConvert::format</a></div><div class="ttdeci">String format(const char *formatSpec)</div><div class="ttdoc">Works like Time.format()</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:1152</div></div>
-<div class="ttc" id="aclass_local_time_convert_html_ab0ca70e6cdb54dbb2a81ae283250fdb8"><div class="ttname"><a href="class_local_time_convert.html#ab0ca70e6cdb54dbb2a81ae283250fdb8">LocalTimeConvert::convert</a></div><div class="ttdeci">void convert()</div><div class="ttdoc">Do the time conversion.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:891</div></div>
-<div class="ttc" id="aclass_local_time_html_a37be620abc0478abb5379c02e00470b1"><div class="ttname"><a href="class_local_time.html#a37be620abc0478abb5379c02e00470b1">LocalTime::instance</a></div><div class="ttdeci">static LocalTime &amp; instance()</div><div class="ttdoc">Get the global singleton instance of this class.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:1225</div></div>
-<div class="ttc" id="aclass_local_time_html_a5275a624cca0a3e0417a8b93bb90e44d"><div class="ttname"><a href="class_local_time.html#a5275a624cca0a3e0417a8b93bb90e44d">LocalTime::withConfig</a></div><div class="ttdeci">LocalTime &amp; withConfig(LocalTimePosixTimezone config)</div><div class="ttdoc">Sets the default global timezone configuration.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:2007</div></div>
-<div class="ttc" id="aclass_local_time_posix_timezone_html"><div class="ttname"><a href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a></div><div class="ttdoc">Parses a Posix timezone string into its component parts.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1008</div></div>
+<div class="ttc" id="aclass_local_time_convert_html"><div class="ttname"><a href="class_local_time_convert.html">LocalTimeConvert</a></div><div class="ttdoc">Perform time conversions. This is the main class you will need.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1807</div></div>
+<div class="ttc" id="aclass_local_time_convert_html_a1e23a4640eaf0d6ecae049c5e97dd1f2"><div class="ttname"><a href="class_local_time_convert.html#a1e23a4640eaf0d6ecae049c5e97dd1f2">LocalTimeConvert::withCurrentTime</a></div><div class="ttdeci">LocalTimeConvert &amp; withCurrentTime()</div><div class="ttdoc">Use the current time as the time to start with.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1850</div></div>
+<div class="ttc" id="aclass_local_time_convert_html_a5a2f655ab7976cba45e68c6789f4a865"><div class="ttname"><a href="class_local_time_convert.html#a5a2f655ab7976cba45e68c6789f4a865">LocalTimeConvert::format</a></div><div class="ttdeci">String format(const char *formatSpec)</div><div class="ttdoc">Works like Time.format()</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:1348</div></div>
+<div class="ttc" id="aclass_local_time_convert_html_ab0ca70e6cdb54dbb2a81ae283250fdb8"><div class="ttname"><a href="class_local_time_convert.html#ab0ca70e6cdb54dbb2a81ae283250fdb8">LocalTimeConvert::convert</a></div><div class="ttdeci">void convert()</div><div class="ttdoc">Do the time conversion.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:1104</div></div>
+<div class="ttc" id="aclass_local_time_html_a37be620abc0478abb5379c02e00470b1"><div class="ttname"><a href="class_local_time.html#a37be620abc0478abb5379c02e00470b1">LocalTime::instance</a></div><div class="ttdeci">static LocalTime &amp; instance()</div><div class="ttdoc">Get the global singleton instance of this class.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:1421</div></div>
+<div class="ttc" id="aclass_local_time_html_a5275a624cca0a3e0417a8b93bb90e44d"><div class="ttname"><a href="class_local_time.html#a5275a624cca0a3e0417a8b93bb90e44d">LocalTime::withConfig</a></div><div class="ttdeci">LocalTime &amp; withConfig(LocalTimePosixTimezone config)</div><div class="ttdoc">Sets the default global timezone configuration.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:2243</div></div>
+<div class="ttc" id="aclass_local_time_posix_timezone_html"><div class="ttname"><a href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a></div><div class="ttdoc">Parses a Posix timezone string into its component parts.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1027</div></div>
 </div><!-- fragment --><p ><img src="clock.png" alt="" class="inline"/></p>
 <h1>Using the library</h1>
 <h2>Configure the timezone</h2>
@@ -363,7 +219,8 @@ $(function() {
 <div class="fragment"><div class="line"><a class="code hl_class" href="class_local_time_convert.html">LocalTimeConvert</a> conv;</div>
 <div class="line">conv.<a class="code hl_function" href="class_local_time_convert.html#a1e23a4640eaf0d6ecae049c5e97dd1f2">withCurrentTime</a>().<a class="code hl_function" href="class_local_time_convert.html#ab0ca70e6cdb54dbb2a81ae283250fdb8">convert</a>();</div>
 </div><!-- fragment --><p >This will initialize the <code>conv</code> object with information about the current local time in the timezone you have configured.</p>
-<p >Once you have the converted time, you can use methods such as:</p>
+<p >Additional useful <a class="el" href="class_local_time_convert.html" title="Perform time conversions. This is the main class you will need.">LocalTimeConvert</a> methods:</p>
+<p >&lt;details&gt;</p>
 <h3>bool <a class="el" href="class_local_time_convert.html#ad831b90ec679c969f785c46544297c80" title="Returns true if the current time is in daylight saving time.">LocalTimeConvert::isDST() const</a></h3>
 <p >Returns true if the current time is in daylight saving time.</p>
 <div class="fragment"><div class="line">bool isDST() const</div>
@@ -403,430 +260,1115 @@ $(function() {
 <div class="line"> </div>
 <div class="line"><a class="code hl_class" href="class_local_time_convert.html">LocalTimeConvert</a> conv;</div>
 <div class="line">conv.<a class="code hl_function" href="class_local_time_convert.html#a9674e17e4c260f2d5093436e84e1553b">withTime</a>(timeVal).<a class="code hl_function" href="class_local_time_convert.html#ab0ca70e6cdb54dbb2a81ae283250fdb8">convert</a>();</div>
-<div class="ttc" id="aclass_local_time_convert_html_a9674e17e4c260f2d5093436e84e1553b"><div class="ttname"><a href="class_local_time_convert.html#a9674e17e4c260f2d5093436e84e1553b">LocalTimeConvert::withTime</a></div><div class="ttdeci">LocalTimeConvert &amp; withTime(time_t time)</div><div class="ttdoc">Sets the UTC time to begin conversion from.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1606</div></div>
-</div><!-- fragment --><h2>Scheduling</h2>
-<p >The scheduling methods move the time set in the conv object forward to schedule a time in the future. These methods include:</p>
-<h3>void <a class="el" href="class_local_time_convert.html#aedfdeeee56bcaff38c2871497d5b360b" title="Moves the current time to the next day.">LocalTimeConvert::nextDay(LocalTimeHMS hms)</a></h3>
-<p >Moves the current time to the next day.</p>
-<div class="fragment"><div class="line">void nextDay(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
+<div class="ttc" id="aclass_local_time_convert_html_a9674e17e4c260f2d5093436e84e1553b"><div class="ttname"><a href="class_local_time_convert.html#a9674e17e4c260f2d5093436e84e1553b">LocalTimeConvert::withTime</a></div><div class="ttdeci">LocalTimeConvert &amp; withTime(time_t time)</div><div class="ttdoc">Sets the UTC time to begin conversion from.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1842</div></div>
+</div><!-- fragment --><p >&lt;/details&gt;</p>
+<h1>Advanced scheduling</h1>
+<p >An advanced scheduling mode was added in version 0.0.8. This allows complex schedules such as:</p>
 <ul>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
+<li>Every 15 minutes in the hour, between 9:00 AM and 5:00 PM local time, Monday - Friday, except on 2022-03-21</li>
+<li>Every 4 hours of the day starting at 00:00:00 (midnight) other times</li>
 </ul>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
+<p >This can either be specified in code, or it can be expressed in JSON. JSON allows the schedule to be updating using a Particle.function, for example.</p>
+<p >This is a compact representation of that schedule in 77 bytes of JSON data:</p>
+<div class="fragment"><div class="line">[{&quot;mh&quot;:15,&quot;y&quot;:62,&quot;s&quot;:&quot;09:00:00&quot;,&quot;e&quot;:&quot;16:59:59&quot;,&quot;x&quot;:[&quot;2022-03-21&quot;]},{&quot;hd&quot;:4}]</div>
+</div><!-- fragment --><p >While scheduling is designed to work with local time, each schedule calculator can optionally have a time zone override, which makes it possible to do some calculations at UTC if you prefer to do that.</p>
+<h2>Using a schedule</h2>
+<p >This is the code in examples/2-schedule:</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &quot;LocalTimeRK.h&quot;</span></div>
+<div class="line"> </div>
+<div class="line">SerialLogHandler logHandler;</div>
+<div class="line">SYSTEM_THREAD(ENABLED);</div>
+<div class="line"> </div>
+<div class="line"><a class="code hl_class" href="class_local_time_schedule.html">LocalTimeSchedule</a> publishSchedule;</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">void</span> setup() {</div>
+<div class="line">    <span class="comment">// Set timezone to the Eastern United States</span></div>
+<div class="line">    <a class="code hl_function" href="class_local_time.html#a37be620abc0478abb5379c02e00470b1">LocalTime::instance</a>().<a class="code hl_function" href="class_local_time.html#a5275a624cca0a3e0417a8b93bb90e44d">withConfig</a>(<a class="code hl_class" href="class_local_time_posix_timezone.html">LocalTimePosixTimezone</a>(<span class="stringliteral">&quot;EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00&quot;</span>));</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Publish every 5 minutes at :00, :05, :10, ...</span></div>
+<div class="line">    publishSchedule.<a class="code hl_function" href="class_local_time_schedule.html#a0f3e02eb918ae5b0a583c9d589fdb211">withMinuteOfHour</a>(5);</div>
+<div class="line">}</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">void</span> loop() {</div>
+<div class="line">    <span class="keywordflow">if</span> (publishSchedule.<a class="code hl_function" href="class_local_time_schedule.html#a0547cb821fd74d60c9911d8ddd5b1a0f">isScheduledTime</a>() &amp;&amp; Particle.connected()) {</div>
+<div class="line">        Particle.publish(<span class="stringliteral">&quot;testEvent&quot;</span>, <span class="stringliteral">&quot;scheduled publish!&quot;</span>);</div>
+<div class="line">    }</div>
+<div class="line">}</div>
+<div class="ttc" id="aclass_local_time_schedule_html"><div class="ttname"><a href="class_local_time_schedule.html">LocalTimeSchedule</a></div><div class="ttdoc">A complete time schedule.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1503</div></div>
+<div class="ttc" id="aclass_local_time_schedule_html_a0547cb821fd74d60c9911d8ddd5b1a0f"><div class="ttname"><a href="class_local_time_schedule.html#a0547cb821fd74d60c9911d8ddd5b1a0f">LocalTimeSchedule::isScheduledTime</a></div><div class="ttdeci">bool isScheduledTime()</div><div class="ttdoc">Determine if it's time to run the scheduled task based on the current time and internal nextTime memb...</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:938</div></div>
+<div class="ttc" id="aclass_local_time_schedule_html_a0f3e02eb918ae5b0a583c9d589fdb211"><div class="ttname"><a href="class_local_time_schedule.html#a0f3e02eb918ae5b0a583c9d589fdb211">LocalTimeSchedule::withMinuteOfHour</a></div><div class="ttdeci">LocalTimeSchedule &amp; withMinuteOfHour(int increment, LocalTimeRange timeRange=LocalTimeRange())</div><div class="ttdoc">Adds a minute multiple schedule in a time range.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.cpp:830</div></div>
+</div><!-- fragment --><p >This is a simple example that publishes at :00, :05, :10, .... Note that these are clock times, not rolling times.</p>
+<p >Technically you don't need a timezone for this example since it doesn't do any hour-based calculations, but it's set using <code>withConfig()</code> when you need to use one.</p>
+<p >The part in loop() tests to see if it's time to publish and then publishes. As shown in the example, if you are not connected to the cloud at the scheduled time, that scheduled time is skipped.</p>
+<p >If you reverse the order in the if statement, then if you are not connected to the cloud, it's possible to get publish immediately after reconnecting to the cloud to make up for the one that was missed.</p>
+<div class="fragment"><div class="line"><span class="comment">// Allow one out-of-schedule publish to catch up for a missed publish in this order</span></div>
+<div class="line"><span class="keywordflow">if</span> (Particle.connected() &amp;&amp; publishSchedule.<a class="code hl_function" href="class_local_time_schedule.html#a0547cb821fd74d60c9911d8ddd5b1a0f">isScheduledTime</a>())</div>
+</div><!-- fragment --><p >The real benefit is when you start to make more complex schedules, such as:</p>
+<div class="fragment"><div class="line"><span class="comment">// Every 15 minutes between 9:00 AM and 5:00 PM local time Monday - Friday</span></div>
+<div class="line">publishSchedule.<a class="code hl_function" href="class_local_time_schedule.html#a0f3e02eb918ae5b0a583c9d589fdb211">withMinuteOfHour</a>(15, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;09:00:00&quot;</span>), <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;16:59:59&quot;</span>), <a class="code hl_class" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a>(<a class="code hl_variable" href="class_local_time_day_of_week.html#af61f2d3564336024fd93d174c09ab225">LocalTimeDayOfWeek::MASK_WEEKDAY</a>)));</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Every hour otherwise</span></div>
+<div class="line">publishSchedule.<a class="code hl_function" href="class_local_time_schedule.html#a0f3e02eb918ae5b0a583c9d589fdb211">withMinuteOfHour</a>(60);</div>
+<div class="ttc" id="aclass_local_time_day_of_week_html_af61f2d3564336024fd93d174c09ab225"><div class="ttname"><a href="class_local_time_day_of_week.html#af61f2d3564336024fd93d174c09ab225">LocalTimeDayOfWeek::MASK_WEEKDAY</a></div><div class="ttdeci">static const uint8_t MASK_WEEKDAY</div><div class="ttdoc">Mask value for weekdays Monday - Friday 0x3e = 62.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:413</div></div>
+<div class="ttc" id="aclass_local_time_h_m_s_html"><div class="ttname"><a href="class_local_time_h_m_s.html">LocalTimeHMS</a></div><div class="ttdoc">Container for holding an hour minute second time value.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:422</div></div>
+<div class="ttc" id="aclass_local_time_range_html"><div class="ttname"><a href="class_local_time_range.html">LocalTimeRange</a></div><div class="ttdoc">Class to hold a time range in local time in HH:MM:SS format.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:1222</div></div>
+<div class="ttc" id="aclass_local_time_restricted_date_html"><div class="ttname"><a href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a></div><div class="ttdoc">Day of week, date, or date exception restrictions.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:690</div></div>
+</div><!-- fragment --><p >You can exclude dates from a schedule. For example, the every 15 minutes on weekdays schedule excludes Monday, April 11, 2022 with this schedule:</p>
+<div class="fragment"><div class="line">publishSchedule.<a class="code hl_function" href="class_local_time_schedule.html#a0f3e02eb918ae5b0a583c9d589fdb211">withMinuteOfHour</a>(15, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;09:00:00&quot;</span>), <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;16:59:59&quot;</span>), </div>
+<div class="line">    <a class="code hl_class" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a>(<a class="code hl_variable" href="class_local_time_day_of_week.html#af61f2d3564336024fd93d174c09ab225">LocalTimeDayOfWeek::MASK_WEEKDAY</a>, {}, {<span class="stringliteral">&quot;2022-04-11&quot;</span>})));</div>
+<div class="line">publishSchedule.<a class="code hl_function" href="class_local_time_schedule.html#a0f3e02eb918ae5b0a583c9d589fdb211">withMinuteOfHour</a>(60);</div>
+</div><!-- fragment --><h2><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> items</h2>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> include things like every n minutes, every n hours, as well as day of week and day of month multiples. Each multiple has a type, an increment, in some cases additional data, and a <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> that determines when the multiple is used.</p>
+<p ><code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> is itself composed of a <code>TimeRange</code>, and a <code><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></code>. This specifies both the time of day, as well as an optional restriction on the dates it applies. See above for for an explanation of these types.</p>
+<h3>Minute of hour</h3>
+<p >This schedule item is used for "every n minutes." For example, if you want to publish an event every 15 minutes.</p>
+<div class="fragment"><div class="line"><span class="comment">// PROTOTYPE (class LocalTimeSchedule)</span></div>
+<div class="line"><a class="code hl_class" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;withMinuteOfHour(<span class="keywordtype">int</span> increment, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a> timeRange = <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>());</div>
+</div><!-- fragment --><ul>
+<li>Minute multiples are relative to the hour, so you typically want to use an increment that 60 is evenly divisible by in order to keep the period constant (2, 3, 4, 5, 6, 10, 12, 15, 20, 30).</li>
+<li>The <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> can restrict this to certain hours of the day, and certain days of the week. It can also handle exception dates, both only on date, or to exclude dates.</li>
+<li>The minute of the start of the time range specifies the offset relative to the hour to start the increment from (modulo the increment).</li>
+<li>The second of the start of the time range specifies the second offset.</li>
+</ul>
+<p >For example, every 15 minutes all day, at 05:00, 20:00, 35:00, 50:00:</p>
+<div class="fragment"><div class="line">schedule.withMinuteOfHour(15, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;00:05:00&quot;</span>)));</div>
+</div><!-- fragment --><p >Every 5 minutes from 9:00 AM to 5:00 PM local time every day:</p>
+<div class="fragment"><div class="line">schedule.withMinuteOfHour(5, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;09:00:00&quot;</span>), <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;16:59:59&quot;</span>)))</div>
+</div><!-- fragment --><p >Every 5 minutes from 9:00 AM to 5:00 PM local time on weekdays (not Saturday or Sunday):</p>
+<div class="fragment"><div class="line">schedule.withMinuteOfHour(5, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;09:00:00&quot;</span>), <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;16:59:59&quot;</span>), <a class="code hl_class" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a>(<a class="code hl_variable" href="class_local_time_day_of_week.html#af61f2d3564336024fd93d174c09ab225">LocalTimeDayOfWeek::MASK_WEEKDAY</a>)));</div>
+</div><!-- fragment --><p >In generating from JSON:</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"mh"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Minute of hour multiple   </td><td class="markdownTableBodyLeft"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyLeft">"f"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Flag bits (optional)   </td><td class="markdownTableBodyLeft">0    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The start time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The end time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
+</table>
+<p>| "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
+<h3>Hour of day multiples</h3>
+<p >This schedule is used for "every n hours." For example, if you want to wake and publish every 4 hours.</p>
+<div class="fragment"><div class="line"><span class="comment">// PROTOTYPE (class LocalTimeSchedule)</span></div>
+<div class="line"><a class="code hl_class" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;withHourOfDay(<span class="keywordtype">int</span> hourMultiple, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a> timeRange = <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>());</div>
+</div><!-- fragment --><ul>
+<li>Hour multiples are relative to the day, so you typically want to use a value that 24 is evenly divisible by (2, 3, 4, 6, 8, 12).</li>
+<li>The <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> can restrict this to certain hours of the day, and certain days of the week. It can also handle exception dates, both only on date, or to exclude dates.</li>
+<li>The hour of the start of the time range specifies the offset relative to the day to start the increment from (modulo the increment)</li>
+<li>The minute and second of the start of the time range specifies the minute and second offset</li>
+</ul>
+<p >For example, every 2 hours (00:00, 02:00, 04:00) local time.</p>
+<div class="fragment"><div class="line">schedule.withHourOfDay(2);</div>
+</div><!-- fragment --><p >Every 2 hours, but starting at 01:30 local time (01:30, 03:30, 05:03, ...).</p>
+<div class="fragment"><div class="line">schedule.withHourOfDay(2, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;01:30:00&quot;</span>), <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;23:59:59&quot;</span>)));</div>
+</div><!-- fragment --><p >Every 15 minutes between 9:00 AM and 5:00 PM local time, otherwise every 2 hours (00:00, 02:00, 04:00 local time)</p>
+<div class="fragment"><div class="line">schedule.withMinuteOfHour(15, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;09:00:00&quot;</span>), <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;16:59:59&quot;</span>)));</div>
+<div class="line">schedule.withHourOfDay(2);</div>
+</div><!-- fragment --><p >If configuring by JSON:</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"hd"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Hour of day multiple   </td><td class="markdownTableBodyLeft"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyLeft">"f"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Flag bits (optional)   </td><td class="markdownTableBodyLeft">0    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The start time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The end time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
+</table>
+<p>| "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
+<h3>Day of week of the month</h3>
+<p >This is used for things like: "Every first Monday of the month," "Every second Tuesday of the month," or "Last Friday of the month."</p>
+<div class="fragment"><div class="line"><span class="comment">// PROTOTYPE (class LocalTimeSchedule)</span></div>
+<div class="line"><a class="code hl_class" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;withDayOfWeekOfMonth(<span class="keywordtype">int</span> dayOfWeek, <span class="keywordtype">int</span> instance, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a> timeRange = <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>());</div>
+</div><!-- fragment --><ul>
+<li>The dayOfWeek specifies the day of the week (Sunday = 0, Monday = 1, Tuesday = 2, ..., Saturday = 6).</li>
+<li>The instance specifies which instance (1 = first, 2 = second, ... Or -1 = last, -2 = second to last, ...)</li>
+<li>The <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> can restrict this to certain hours of the day, and certain days of the week. It can also handle exception dates, both only on date, or to exclude dates.</li>
+<li>The start of the time range specifies the hour, minute, and second (local time)</li>
+<li>Use a time of day with day of week restriction instead if you want to do "Every Monday"</li>
+</ul>
+<p >First Saturday of the month at midnight local time:</p>
+<div class="fragment"><div class="line">schedule.withDayOfWeekOfMonth(LocalTimeDayOfWeek::DAY_SATURDAY, 1);</div>
+</div><!-- fragment --><p >First Monday of the month at 9:00 AM local time:</p>
+<div class="fragment"><div class="line">schedule.withDayOfWeekOfMonth(LocalTimeDayOfWeek::DAY_MONDAY, 1, <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;09:00:00&quot;</span>));</div>
+</div><!-- fragment --><p >Last Friday of the month at 5 PM local time.</p>
+<div class="fragment"><div class="line">schedule.withDayOfWeekOfMonth(LocalTimeDayOfWeek::DAY_FRIDAY, -1, <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;17:00:00&quot;</span>));</div>
+</div><!-- fragment --><table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"dw"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Day of week instance (1 = first, 2 = second, ..., or -1 = last, -2 = second to last, ...   </td><td class="markdownTableBodyLeft"></td></tr>
+</table>
+<p>| "d" | integer | Day of the week 0 = Sunday, 1 = Monday, ..., 6 = Saturday | | "f" | integer | Flag bits (optional) | 0 | | "s" | string | The start time (HH:MM:SS format, can omit MM or SS) | "00:00:00" | | "e" | string | The end time (HH:MM:SS format, can omit MM or SS) | "23:59:59" | | "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
+<h3>Day of month</h3>
+<p >This is used for things like "The 1st of the month," "The 15th of the month," or "the last day of the month."</p>
+<div class="fragment"><div class="line"><span class="comment">// PROTOTYPE (class LocalTimeSchedule)</span></div>
+<div class="line"><a class="code hl_class" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;withDayOfMonth(<span class="keywordtype">int</span> dayOfMonth, <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a> timeRange = <a class="code hl_class" href="class_local_time_range.html">LocalTimeRange</a>());</div>
+</div><!-- fragment --><ul>
+<li>The dayOfMonth specifies which instance (1 = 1st of the month, 2 = 2nd of the month, ... Or -1 = last day, -2 = second to last day, ...)</li>
+<li>A <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> can handle exception dates, both only on date, or to exclude dates.</li>
+<li>The start of the time range specifies the hour, minute, and second (local time)</li>
+</ul>
+<p >For example, the 6th of the month at midnight:</p>
+<div class="fragment"><div class="line">schedule.withDayOfMonth(6);</div>
+</div><!-- fragment --><p >The 6th of the month at 6:00 AM local time:</p>
+<div class="fragment"><div class="line">schedule.withDayOfMonth(6, <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;06:00&quot;</span>)); </div>
+</div><!-- fragment --><p >The last day of the month at 11:59:59 PM:</p>
+<div class="fragment"><div class="line">schedule.withDayOfMonth(-1, <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;23:59:59&quot;</span>)); </div>
+</div><!-- fragment --><p >The second to last day of the month:</p>
+<div class="fragment"><div class="line">schedule.withDayOfMonth(-2);</div>
+</div><!-- fragment --><table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"dw"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Day of month instance (1 = 1st, 2 = 2nd, ... or -1 = last day of month, -2 = second to last, ...   </td><td class="markdownTableBodyLeft"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyLeft">"f"   </td><td class="markdownTableBodyLeft">integer   </td><td class="markdownTableBodyLeft">Flag bits (optional)   </td><td class="markdownTableBodyLeft">0    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The start time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">The end time (HH:MM:SS format, can omit MM or SS)   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
+</table>
+<p>| "y" | integer | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
+<h3>Time schedule</h3>
+<p >It's also possible to schedule at a specific time in local time. You can specify zero or more <code><a class="el" href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)">LocalTimeHMSRestricted</a></code> objects, limited by available RAM.</p>
+<p >The <code><a class="el" href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)">LocalTimeHMSRestricted</a></code> is itself composed of a <code><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a></code> object, for hours minutes and seconds, and a <code><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></code> which can optionally restrict which dates the times re used.</p>
+<p >Some ways you can use times:</p>
 <ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
+<li>"At 17:00:00" every day (local time)</li>
+<li>"At 17:00:00, Monday - Friday"</li>
+<li>"At 09:00:00, Monday - Friday, except for 2022-03-21"</li>
+<li>"At 23:59:59 on 2022-03-31"</li>
 </ul>
-<hr  />
-<h2>void <a class="el" href="class_local_time_convert.html#aee82015fe73bb364bcf6d3531b7d7c3e" title="Moves the current to the next day, or right after the next time change, whichever comes first.">LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms)</a></h2>
-<p >Moves the current to the next day, or right after the next time change, whichever comes first.</p>
-<div class="fragment"><div class="line">void nextDayOrTimeChange(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h3>Parameters</h3>
-<ul>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
-</ul>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<p >This method is used when you want to synchronize an external device clock daily to keep it synchronized, or right after a time change.</p>
-<p >Do not pick the local time of the time change as the hms time! For example, in the United State do <em>not</em> select 02:00:00. The reason is that on spring forward, that time doesn't actually exist, because as soon as the clock hits 02:00:00 it jumps forward to 03:00:00 local time. Picking 03:00:00 or really any other time that's not between 02:00:00 and 02:59:59 is fine. During fall back, even though you've picked the time sync time to be 03:00 local time it will sync at the time of the actual time change correctly, which is why this function is different than nextDay().</p>
-<hr  />
-<h3>bool <a class="el" href="class_local_time_convert.html#a7aaa0964693e24b411a748e33d2d4f35" title="Moves the current time to the next of the specified day of week.">LocalTimeConvert::nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms)</a></h3>
-<p >Moves the current time to the next of the specified day of week.</p>
-<div class="fragment"><div class="line">bool nextDayOfWeek(int dayOfWeek, LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>dayOfWeek</code> The day of week (0 - 6, 0 = Sunday, 1 = Monday, ..., 6 = Saturday)</li>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
-</ul>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h3>void <a class="el" href="class_local_time_convert.html#a0ecb451348dac5a3750f8b190d940b2b" title="Returns the next day that is a weekday (Monday - Friday)">LocalTimeConvert::nextWeekday(LocalTimeHMS hms)</a></h3>
-<p >Returns the next day that is a weekday (Monday - Friday)</p>
-<div class="fragment"><div class="line">void nextWeekday(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
-</ul>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h3>void <a class="el" href="class_local_time_convert.html#ab0f745a236128b7c6836329804651dc8" title="Returns the next day that is a weekend day (Saturday or Sunday)">LocalTimeConvert::nextWeekendDay(LocalTimeHMS hms)</a></h3>
-<p >Returns the next day that is a weekend day (Saturday or Sunday)</p>
-<div class="fragment"><div class="line">void nextWeekendDay(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
-</ul>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h3>bool <a class="el" href="class_local_time_convert.html#a62c30bb09d3770bcc26019f2a215179c" title="Moves the date and time (local time) forward to the specified day of month and local time.">LocalTimeConvert::nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms)</a></h3>
-<p >Moves the date and time (local time) forward to the specified day of month and local time.</p>
-<div class="fragment"><div class="line">bool nextDayOfMonth(int dayOfMonth, LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>dayOfMonth</code> The day of the month (1 = first day of the month). See also special cases below.</li>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
-</ul>
-<p >This version will move to the closest forward time. It could be as close as 1 second later, but it will always advance at least once second. It could be as much as 1 month minus 1 second later.</p>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<p >dayOfMonth is normally a a day number (1 = first day of the month). There are also special cases: 0 = the last day of the month, -1 the second to last day of month, ... The number of days in the month are based on the date in local time.</p>
-<hr  />
-<h3>bool <a class="el" href="class_local_time_convert.html#a4bf579736bb6da8e4374d031d8614d19" title="Moves the date and time (local time) forward to the specified day of month and local time.">LocalTimeConvert::nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms)</a></h3>
-<p >Moves the date and time (local time) forward to the specified day of month and local time.</p>
-<div class="fragment"><div class="line">bool nextDayOfNextMonth(int dayOfMonth, LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>dayOfMonth</code> The day of the month (1 = first day of the month). See also special cases below.</li>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
-</ul>
-<p >This version always picks the next month, even if the target day of month hasn't been reached in this month yet. This will always more forward at least a month, and may be as much as two months minus one day.</p>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<p >dayOfMonth is normally a a day number (1 = first day of the month). There are also special cases: 0 = the last day of the month, -1 the second to last day of month, ... The number of days in the month are based on the date in local time.</p>
-<hr  />
-<h3>bool <a class="el" href="class_local_time_convert.html#a9304dc205a47ed02e1ca22a4efdeeb7e" title="Moves the date and time (local time) forward to the specified day of month and local time.">LocalTimeConvert::nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms)</a></h3>
-<p >Moves the date and time (local time) forward to the specified day of month and local time.</p>
-<div class="fragment"><div class="line">bool nextDayOfWeekOrdinal(int dayOfWeek, int ordinal, LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>dayOfWeek</code> The day of week (0 - 6, 0 = Sunday, 1 = Monday, ..., 6 = Saturday)</li>
-<li><code>ordinal</code> 1 = first of that day of week in month, 2 = second, ...</li>
-<li><code>hms</code> If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.</li>
-</ul>
-<p >If you specify an ordinal that does not exist (for example, there may not be a 5th ordinal for certain days in certain months), returns false and leaves the date unchanged.</p>
-<p >Upon successful completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h3>void <a class="el" href="class_local_time_convert.html#a4e9bb0cbfa1a7a6d534ce46b8538fb49" title="Sets the time to the nearest hms in local time in the future.">LocalTimeConvert::nextLocalTime(LocalTimeHMS hms)</a></h3>
-<p >Sets the time to the nearest hms in local time in the future.</p>
-<div class="fragment"><div class="line">void nextLocalTime(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>hms</code> The time of day to set in local time</li>
-</ul>
-<p >Moves the time forward to the next instance of hms in local time. If hms has not occurred yet, it will select the one today, but it will always move the time forward.</p>
-<p >There is a weird special case on the beginning of daylight saving (spring forward in the northern hemisphere). If you select a hms between 2:00 AM and 2:59:59 AM local time, this time does not exist on spring forward day because it's the hour that is skipped. In order to preserve the requirement that the time will always be advanced by this call, it will jump forward to the next day when the 2:00 hour occurs next. (The hour may be different in other locations, for example it's 1:00 AM in the UK.)</p>
-<p >In the case of fall back, if you specify a hms in the repeated hour (1:00:00 to 1:59:59) the time returned will be the second time this time occurs, in standard time in the US.</p>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h2>void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple)</h2>
-<p >Moves the current time the next specified multiple of minutes.</p>
-<div class="fragment"><div class="line">void nextMinuteMultiple(int minuteMultiple)</div>
-</div><!-- fragment --><h3>Parameters</h3>
-<ul>
-<li><code>minuteMultiple</code> Typically something like 5, 15, 20, 30 that 60 is evenly divisible by</li>
-</ul>
-<p >Moves the time forward to the next multiple of that number of minutes. For example, if the clock is at :10 past the hour and the multiple is 15, then time will be updated to :15. If the time is equal to an even multple, the next multiple is selected.</p>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h2>void <a class="el" href="class_local_time_convert.html#a7dfc8d361db16ac2ffdd9f6f13a760a9" title="Moves the current time the next specified local time. This could be today or tomorrow.">LocalTimeConvert::nextTime(LocalTimeHMS hms)</a></h2>
-<p >Moves the current time the next specified local time. This could be today or tomorrow.</p>
-<div class="fragment"><div class="line">void nextTime(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h3>Parameters</h3>
-<ul>
-<li><code>hms</code> Moves to the next occurrence of that time of day (local time)</li>
-</ul>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h2>void <a class="el" href="class_local_time_convert.html#a73426cfb0de6cd90c8c6d398cda98897" title="Moves the current time the closest local time om hmsList. This could be today or tomorrow.">LocalTimeConvert::nextTimeList(std::initializer_list&lt; LocalTimeHMS &gt; hmsList)</a></h2>
-<p >Moves the current time the closest local time om hmsList. This could be today or tomorrow.</p>
-<div class="fragment"><div class="line">void nextTimeList(std::initializer_list&lt; LocalTimeHMS &gt; hmsList)</div>
-</div><!-- fragment --><h3>Parameters</h3>
-<ul>
-<li><code>hmsList</code> An initialize list of <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> surrounded by {}</li>
-</ul>
-<p >For example, this sets the time to the nearest noon or midnight local time greater than the time set in this object:</p>
-<p >conv.nextTimeList({<a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("00:00"), <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("12:00")});</p>
-<hr  />
-<h2>void <a class="el" href="class_local_time_convert.html#ae8cafda02231440f7291474a138b39be" title="Changes the time of day to the specified hms in local time on the same local day.">LocalTimeConvert::atLocalTime(LocalTimeHMS hms)</a></h2>
-<p >Changes the time of day to the specified hms in local time on the same local day.</p>
-<div class="fragment"><div class="line">void atLocalTime(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>hms</code> A <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> object with hour, minute, and second</li>
-</ul>
-<p >You can use the string constructor like this to set the time to 2:00 PM local time.</p>
-<div class="fragment"><div class="line">converter.atLocalTime(LocalTimeHms(<span class="stringliteral">&quot;14:00:00&quot;</span>));</div>
-</div><!-- fragment --><p >It's possible that this will set the time to a time earlier than the object's current time. To only set a time in the future, use nextLocalTime() instead.</p>
-<p >Upon completion, all fields are updated appropriately. For example:</p>
-<ul>
-<li>time specifies the time_t of the new time at UTC</li>
-<li>localTimeValue contains the broken-out values for the local time</li>
-<li>isDST() return true if the new time is in daylight saving time</li>
-</ul>
-<hr  />
-<h2>bool LocalTimeConvert::inLocalTimeRange(TimeRange localTimeRange)</h2>
-<p >Returns true if this object time is in the specified time range in local time.</p>
-<div class="fragment"><div class="line">bool inLocalTimeRange(TimeRange localTimeRange)</div>
-</div><!-- fragment --><h3>Parameters</h3>
-<ul>
-<li><code>localTimeRange</code> time in this object is: start &lt;= time &lt;= end (inclusive)</li>
-</ul>
-<h3>Returns</h3>
-<p >true</p>
-<h3>Returns</h3>
-<p >false</p>
-<h1>class <a class="el" href="class_local_time_convert_1_1_schedule.html" title="A complete time schedule.">LocalTimeConvert::Schedule</a></h1>
+<div class="fragment"><div class="line"><span class="comment">// PROTOTYPE (class LocalTimeSchedule)</span></div>
+<div class="line"><a class="code hl_class" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;withTime(<a class="code hl_class" href="class_local_time_h_m_s_restricted.html">LocalTimeHMSRestricted</a> hms);</div>
+<div class="line"><a class="code hl_class" href="class_local_time_schedule.html">LocalTimeSchedule</a> &amp;withTimes(std::initializer_list&lt;LocalTimeHMSRestricted&gt; timesParam);</div>
+<div class="ttc" id="aclass_local_time_h_m_s_restricted_html"><div class="ttname"><a href="class_local_time_h_m_s_restricted.html">LocalTimeHMSRestricted</a></div><div class="ttdoc">HMS values, but only on specific days of week or dates (with optional exceptions)</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:890</div></div>
+</div><!-- fragment --><p >At 4:00 AM local time, every day:</p>
+<div class="fragment"><div class="line">schedule.withTime(<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;04:00&quot;</span>));</div>
+</div><!-- fragment --><p >At 06:00 and 18:30 (4:30 PM) local time, every day. Note the {} surrounding a list of times.</p>
+<div class="fragment"><div class="line">schedule.withTimes({<a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;06:00&quot;</span>), <a class="code hl_class" href="class_local_time_h_m_s.html">LocalTimeHMS</a>(<span class="stringliteral">&quot;18:30&quot;</span>)});</div>
+</div><!-- fragment --><p >At 4:00 AM on weekdays:</p>
+<div class="fragment"><div class="line">schedule.withTime(<a class="code hl_class" href="class_local_time_h_m_s_restricted.html">LocalTimeHMSRestricted</a>(<span class="stringliteral">&quot;04:00&quot;</span>, <a class="code hl_class" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a>(<a class="code hl_variable" href="class_local_time_day_of_week.html#af61f2d3564336024fd93d174c09ab225">LocalTimeDayOfWeek::MASK_WEEKDAY</a>))); </div>
+</div><!-- fragment --><p >At midnight (local time) on Saturdays:</p>
+<div class="fragment"><div class="line">schedule.withTime(<a class="code hl_class" href="class_local_time_h_m_s_restricted.html">LocalTimeHMSRestricted</a>(<span class="stringliteral">&quot;00:00&quot;</span>, <a class="code hl_class" href="class_local_time_restricted_date.html">LocalTimeRestrictedDate</a>(<a class="code hl_variable" href="class_local_time_day_of_week.html#a8445e58c729f66c87e785fabf0a9a02c">LocalTimeDayOfWeek::MASK_SATURDAY</a>))); </div>
+<div class="ttc" id="aclass_local_time_day_of_week_html_a8445e58c729f66c87e785fabf0a9a02c"><div class="ttname"><a href="class_local_time_day_of_week.html#a8445e58c729f66c87e785fabf0a9a02c">LocalTimeDayOfWeek::MASK_SATURDAY</a></div><div class="ttdeci">static const uint8_t MASK_SATURDAY</div><div class="ttdoc">Mask value for Saturday.</div><div class="ttdef"><b>Definition:</b> LocalTimeRK.h:410</div></div>
+</div><!-- fragment --><p >If configuring by JSON:</p>
+<p >| Key | Type | Description | Default | | :&mdash; | :&mdash; | :&mdash; | :&mdash; | | "tm" | string | Time in "HH:MM:SS" format, 24 hour clock, local time | | "f" | integer | Flag bits (optional) | 0 | | "y" | number | Mask value for days of the week (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
+<h3>All methods</h3>
+<p >&lt;details&gt;</p>
 <p >A complete time schedule.</p>
 <p >A time schedule consists of minute multiples ("every 15 minutes"), optionally within a time range (all day, or from 09:00:00 to 17:00:00 local time, for example.</p>
 <p >It can also have hour multiples, optionally in a time range, at a defined minute ("every 4 hours at :15 
 past the hour").</p>
-<p >It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time").</p>
-<h2>Members</h2>
+<p >Schedules can be at a specifc day week, with an ordinal (first Monday, last Friday) at a specific time, optionally with exceptions.</p>
+<p >Schedules can be a specific day of the month (the 1st, the 5th of the month, the last day of the month, the second to last day of month).</p>
+<p >It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time") every day, specific days of the week, on specific dates, or with date exceptions.</p>
 <hr  />
-<h3>std::vector&lt; ScheduleItemMinuteMultiple &gt; minuteMultipleItems</h3>
-<p >Minute multiple items.</p>
-<div class="fragment"><div class="line">std::vector&lt; ScheduleItemMinuteMultiple &gt; minuteMultipleItems</div>
-</div><!-- fragment --><hr  />
-<h3>std::vector&lt; LocalTimeHMS &gt; times</h3>
-<p >Local time items (includes hour multiple items)</p>
-<div class="fragment"><div class="line">std::vector&lt; LocalTimeHMS &gt; times</div>
-</div><!-- fragment --><hr  />
-<h3><a class="el" href="class_local_time_convert_1_1_schedule.html#a30012c2816a5373c05f44130bf63913d" title="Construct a new, empty schedule.">LocalTimeConvert::Schedule::Schedule()</a></h3>
-<p >Construct a new, empty schedule.</p>
-<div class="fragment"><div class="line">Schedule()</div>
-</div><!-- fragment --><hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withMinuteMultiple(int minuteMultiple)</h3>
-<p >Adds a minute multiple schedule all day.</p>
-<div class="fragment"><div class="line">Schedule &amp; withMinuteMultiple(int minuteMultiple)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>minuteMultiple</code> Number of minutes (must be 1 &lt;= minutes &lt;= 59). A value that is is divisible by is recommended.</li>
-</ul>
-<p >This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be an inconsistent period at the top of the hour.</p>
-<p >If you want to schedule at a minute offset as well, for example every 15 minutes at 02:00, 17:00, 32:00, 47:00, see the overload with a time range.</p>
-<h4>Returns</h4>
-<p >Schedule&amp;</p>
-<hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withMinuteMultiple(int minuteMultiple, TimeRange timeRange)</h3>
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#a0f3e02eb918ae5b0a583c9d589fdb211" title="Adds a minute multiple schedule in a time range.">LocalTimeSchedule::withMinuteOfHour(int increment, LocalTimeRange timeRange)</a></h3>
 <p >Adds a minute multiple schedule in a time range.</p>
-<div class="fragment"><div class="line">Schedule &amp; withMinuteMultiple(int minuteMultiple, TimeRange timeRange)</div>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withMinuteOfHour(int increment, LocalTimeRange timeRange)</div>
 </div><!-- fragment --><h4>Parameters</h4>
 <ul>
-<li><code>minuteMultiple</code> Number of minutes (must be 1 &lt;= minutes &lt;= 59). A value that is is divisible by is recommended.</li>
-<li><code>timeRange</code> When to apply this minute multiple and/or minute offset.</li>
+<li><code>increment</code> Number of minutes (must be 1 &lt;= minutes &lt;= 59). A value that is is divisible by is recommended.</li>
+<li><code>timeRange</code> When to apply this minute multiple and/or minute offset (optional)</li>
 </ul>
 <p >This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be an inconsistent period at the top of the hour.</p>
-<p >If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule starts at. For example: <code>15, LocalTimeConvert::TimeRange(<a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("00:05:00"), <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("23:59:59")</code> will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.</p>
+<p >If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule starts at. For example: <code>15, <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>(<a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("00:05:00"), <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("23:59:59")</code> will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.</p>
 <p >The largest value for hmsEnd of the time range is 23:59:59.</p>
 <h4>Returns</h4>
-<p >Schedule&amp;</p>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
 <hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withMinuteMultiple(ScheduleItemMinuteMultiple item)</h3>
-<p >Adds a minute multiple schedule from a ScheduleItemMinuteMultiple object.</p>
-<div class="fragment"><div class="line">Schedule &amp; withMinuteMultiple(ScheduleItemMinuteMultiple item)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>item</code></li>
-</ul>
-<h4>Returns</h4>
-<p >Schedule&amp;</p>
-<hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withTime(LocalTimeHMS hms)</h3>
-<p >Add a scheduled item at a time in local time during the day.</p>
-<div class="fragment"><div class="line">Schedule &amp; withTime(LocalTimeHMS hms)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>hms</code> The time in local time 00:00:00 to 23:59:59.</li>
-</ul>
-<h4>Returns</h4>
-<p >Schedule&amp;</p>
-<p >You can call this multiple times, and also combine it with minute multiple schedules.</p>
-<hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withTimes(std::initializer_list&lt; LocalTimeHMS &gt; timesParam)</h3>
-<p >Add multiple scheduled items at a time in local time during the day.</p>
-<div class="fragment"><div class="line">Schedule &amp; withTimes(std::initializer_list&lt; LocalTimeHMS &gt; timesParam)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>timesParam</code> an auto-initialized list of <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> objects</li>
-</ul>
-<h4>Returns</h4>
-<p >Schedule&amp;</p>
-<p >You can call this multiple times, and also combine it with minute multiple schedules.</p>
-<p >schedule.withTimes({<a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("06:00"), <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("18:30")});</p>
-<hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withHours(std::initializer_list&lt; int &gt; hoursParam, int atMinute)</h3>
-<p >Adds multiple scheduled hours at a time in a local time during the day at a specified minute.</p>
-<div class="fragment"><div class="line">Schedule &amp; withHours(std::initializer_list&lt; int &gt; hoursParam, int atMinute)</div>
-</div><!-- fragment --><h4>Parameters</h4>
-<ul>
-<li><code>hoursParam</code></li>
-<li><code>atMinute</code></li>
-</ul>
-<h4>Returns</h4>
-<p >Schedule&amp;</p>
-<p >Example: Schedules at 00:05, 06:05, 09:05, 10:05, 12:05, 15:05, 18:05</p>
-<p >schedule.withHours({0, 6, 9, 10, 12, 15, 18}, 5);</p>
-<p >This is just a shortcut that is easier to type than using the version that takes <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> objects.</p>
-<hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withHourMultiple(int hourMultiple, TimeRange timeRange)</h3>
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#a7170b4c44b7231b0e7ac62a76ddc2bd6" title="Adds multiple times periodically in a time range with an hour increment.">LocalTimeSchedule::withHourOfDay(int hourMultiple, LocalTimeRange timeRange)</a></h3>
 <p >Adds multiple times periodically in a time range with an hour increment.</p>
-<div class="fragment"><div class="line">Schedule &amp; withHourMultiple(int hourMultiple, TimeRange timeRange)</div>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withHourOfDay(int hourMultiple, LocalTimeRange timeRange)</div>
 </div><!-- fragment --><h4>Parameters</h4>
 <ul>
 <li><code>hourMultiple</code> Hours between items must be &gt;= 1. For example: 2 = every other hour.</li>
 <li><code>timeRange</code> Time range to add items to. This is optional; if not specified then the entire day. Also is used to specify a minute offset.</li>
 </ul>
 <h4>Returns</h4>
-<p >Schedule&amp;</p>
-<p >Hours are per day, local time. For whole-day schedules, you will typically use a value that 24 is evenly divisible by (2, 3, 4, 6, 8, 12), because otherwise the time periods will brief unequal at the top of the hour.</p>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
+<p >Hours are per day, local time. For whole-day schedules, you will typically use a value that 24 is evenly divisible by (2, 3, 4, 6, 8, 12), because otherwise the time periods will brief unequal at midnight.</p>
 <p >Also note that times are local, and take into account daylight saving. Thus during a time switch, the interval may end up being a different number of hours than specified. For example, if the times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).</p>
 <hr  />
-<h3>Schedule &amp; LocalTimeConvert::Schedule::withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd)</h3>
-<p >Adds multiple times periodically in a time range with an hour increment.</p>
-<div class="fragment"><div class="line">Schedule &amp; withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd)</div>
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#a8009b3e69e7d9f4c5f4f9f1720bdcad0" title="Schedule an item on a specific instance of a day of week of the month.">LocalTimeSchedule::withDayOfWeekOfMonth(int dayOfWeek, int instance, LocalTimeRange timeRange)</a></h3>
+<p >Schedule an item on a specific instance of a day of week of the month.</p>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withDayOfWeekOfMonth(int dayOfWeek, int instance, LocalTimeRange timeRange)</div>
 </div><!-- fragment --><h4>Parameters</h4>
 <ul>
-<li><code>hourStart</code> Hour to start at 0 &lt;= hourStart &lt;= 23</li>
-<li><code>hourMultiple</code> Increment for hours</li>
-<li><code>atMinute</code> Minute past the hour for each item. Seconds is always 0.</li>
-<li><code>hourEnd</code> Hour to end, inclusive. 0 &lt;= hourEnd &lt;= 23</li>
+<li><code>dayOfWeek</code> Day of week 0 = Sunday, 1 = Monday, ..., 6 = Saturday</li>
+<li><code>instance</code> 1 = first week, 2 = second week, ..., -1 = last week, -2 = 2nd to last week</li>
+<li><code>timeRange</code> Optional to restrict dates or to set a time for the item</li>
 </ul>
 <h4>Returns</h4>
-<p >Schedule&amp;</p>
-<h1>class LocalTimeConvert::ScheduleItemMinuteMultiple</h1>
-<p >Schedule option for "every n minutes".</p>
-<h2>Members</h2>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
 <hr  />
-<h3>TimeRange timeRange</h3>
-<p >Range of local time, inclusive.</p>
-<div class="fragment"><div class="line">TimeRange timeRange</div>
-</div><!-- fragment --><hr  />
-<h3>int minuteMultiple</h3>
-<p >Increment for minutes. Typically a value 60 is evenly divisible by.</p>
-<div class="fragment"><div class="line">int minuteMultiple</div>
-</div><!-- fragment --><hr  />
-<h3>LocalTimeConvert::ScheduleItemMinuteMultiple::ScheduleItemMinuteMultiple()</h3>
-<p >Default constructor. Set minuteMultiple and optionally timeRange to use.</p>
-<div class="fragment"><div class="line">ScheduleItemMinuteMultiple()</div>
-</div><!-- fragment --><hr  />
-<h3>LocalTimeConvert::ScheduleItemMinuteMultiple::ScheduleItemMinuteMultiple(int minuteMultiple, TimeRange timeRange)</h3>
-<p >Construct an item with a time range and number of minutes.</p>
-<div class="fragment"><div class="line">ScheduleItemMinuteMultiple(int minuteMultiple, TimeRange timeRange)</div>
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#a65b94428538e5d7e2a76478b346d26da" title="Schedule an item on a specific day of the month.">LocalTimeSchedule::withDayOfMonth(int dayOfMonth, LocalTimeRange timeRange)</a></h3>
+<p >Schedule an item on a specific day of the month.</p>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withDayOfMonth(int dayOfMonth, LocalTimeRange timeRange)</div>
 </div><!-- fragment --><h4>Parameters</h4>
 <ul>
-<li><code>minuteMultiple</code> Number of minutes (must be 1 &lt;= minutes &lt;= 59). A value that is is divisible by is recommended.</li>
-<li><code>timeRange</code> When to apply this minute multiple (optional)</li>
+<li><code>dayOfMonth</code> 1 = 1st, 2 = 2nd of the month, ..., -1 = last day of the month, -2 = second to last day of the month, ...</li>
+<li><code>timeRange</code> Optional to restrict dates or to set a time for the item</li>
 </ul>
-<p >This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be an inconsistent period at the top of the hour.</p>
-<p >If you do not specify a time range, the entire day is the range, and it will always start at the top of the hour.</p>
-<p >If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule starts at. For example: <code>15, LocalTimeConvert::TimeRange(<a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("00:05:00"), <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("23:59:59")</code> will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.</p>
+<h4>Returns</h4>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
 <hr  />
-<h3>bool LocalTimeConvert::ScheduleItemMinuteMultiple::isValid() const</h3>
-<p >Returns true if minuteMultiple is non-zero.</p>
-<div class="fragment"><div class="line">bool isValid() const</div>
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#a7bde73278b84115839a38308edb393f4" title="Add a scheduled item at a time in local time during the day.">LocalTimeSchedule::withTime(LocalTimeHMSRestricted hms)</a></h3>
+<p >Add a scheduled item at a time in local time during the day.</p>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withTime(LocalTimeHMSRestricted hms)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>hms</code> The time in local time 00:00:00 to 23:59:59, optionally with date restrictions</li>
+</ul>
+<h4>Returns</h4>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
+<p >You can call this multiple times, and also combine it with minute multiple schedules.</p>
+<hr  />
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#a48fe453480a6fbcae734fd34a285dee6" title="Add multiple scheduled items at a time in local time during the day.">LocalTimeSchedule::withTimes(std::initializer_list&lt; LocalTimeHMSRestricted &gt; timesParam)</a></h3>
+<p >Add multiple scheduled items at a time in local time during the day.</p>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withTimes(std::initializer_list&lt; LocalTimeHMSRestricted &gt; timesParam)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>timesParam</code> an auto-initialized list of <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> objects</li>
+</ul>
+<h4>Returns</h4>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
+<p >You can call this multiple times, and also combine it with minute multiple schedules.</p>
+<p >schedule.withTimes({<a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("06:00"), <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>("18:30")});</p>
+<hr  />
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#acdb2b4d1052b77e7c43fb6ecce23c598" title="Sets the name of this schedule (optional)">LocalTimeSchedule::withName(const char * name)</a></h3>
+<p >Sets the name of this schedule (optional)</p>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withName(const char * name)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>name</code></li>
+</ul>
+<h4>Returns</h4>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
+<hr  />
+<h3><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a> &amp; <a class="el" href="class_local_time_schedule.html#a336d2c9b841e2be8569cd2d8a955db1d" title="Sets the flags for this schedule (optional)">LocalTimeSchedule::withFlags(uint32_t flags)</a></h3>
+<p >Sets the flags for this schedule (optional)</p>
+<div class="fragment"><div class="line">LocalTimeSchedule &amp; withFlags(uint32_t flags)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>flags</code></li>
+</ul>
+<h4>Returns</h4>
+<p ><a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a>&amp;</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_schedule.html#a8bff350b430ffe92b871710dc6e5ccdf" title="Returns true if the schedule does not have any items in it.">LocalTimeSchedule::isEmpty() const</a></h3>
+<p >Returns true if the schedule does not have any items in it.</p>
+<div class="fragment"><div class="line">bool isEmpty() const</div>
 </div><!-- fragment --><h4>Returns</h4>
 <p >true</p>
 <h4>Returns</h4>
 <p >false</p>
-<p >This is used to check if an object was constructed by the default constructor and never set.</p>
 <hr  />
-<h3>time_t LocalTimeConvert::ScheduleItemMinuteMultiple::getTimeSpan(const LocalTimeConvert &amp; conv) const</h3>
-<p >Get number of seconds in the time range at a given time.</p>
-<div class="fragment"><div class="line">time_t getTimeSpan(const LocalTimeConvert &amp; conv) const</div>
+<h3>void <a class="el" href="class_local_time_schedule.html#a6197185cae91a1f8254cb6ae0cabd90c" title="Clear the existing settings.">LocalTimeSchedule::clear()</a></h3>
+<p >Clear the existing settings.</p>
+<div class="fragment"><div class="line">void clear()</div>
+</div><!-- fragment --><hr  />
+<h3>void <a class="el" href="class_local_time_schedule.html#a22690d024e5195152be052ab218ee107" title="Set the schedule from a JSON string containing an array of objects.">LocalTimeSchedule::fromJson(const char * jsonStr)</a></h3>
+<p >Set the schedule from a JSON string containing an array of objects.</p>
+<div class="fragment"><div class="line">void fromJson(const char * jsonStr)</div>
 </div><!-- fragment --><h4>Parameters</h4>
 <ul>
-<li><code>conv</code> The timezone and date information for time span calculation</li>
+<li><code>jsonStr</code></li>
+</ul>
+<p >See the overload that takes a JSONValue if the JSON string has already been parsed.</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_schedule.html#aaf6bb85e98570cd286021fed42351a3d" title="Set the schedule of this object from a JSONValue, typically the outer object.">LocalTimeSchedule::fromJson(JSONValue jsonArray)</a></h3>
+<p >Set the schedule of this object from a JSONValue, typically the outer object.</p>
+<div class="fragment"><div class="line">void fromJson(JSONValue jsonArray)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>jsonArray</code> A JSONValue containing an array of objects</li>
+</ul>
+<p >Array of <a class="el" href="class_local_time_schedule_item.html" title="A single item in a schedule, such as minute of hour, hour of day, or a specific time.">LocalTimeScheduleItem</a> objects:</p>
+<ul>
+<li>mh (integer): Minute of hour (takes place of setting m and i separately)</li>
+<li>hd (integer): Hour of day (takes place of setting m and i separately)</li>
+<li>dw (integer): Day of week (takes place of setting m and i separately)</li>
+<li>dm (integer): Day of month (takes place of setting m and i separately)</li>
+<li>tm (string) Time string in HH:MM:SS format (can omit MM and SS parts, see <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>) for TIME items</li>
+<li>m (integer) type of multiple (optional if mm, )</li>
+<li>i (integer) increment</li>
+<li>f (integer) flag bits (optional)</li>
+<li>s (string) The start time (HH:MM:SS format, can omit MM or SS) [from <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>e (string) The end time (HH:MM:SS format, can omit MM or SS) [from <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>y (integer) mask value for onlyOnDays [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>a (array) Array of YYYY-MM-DD value strings to allow [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+<li>x (array) Array of YYYY-MM-DD values to exclude [from <a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> via <a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a>]</li>
+</ul>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_schedule.html#a32f70da470e822c2ca3a74f59e10b059" title="Update the conv object to point at the next schedule item.">LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &amp; conv) const</a></h3>
+<p >Update the conv object to point at the next schedule item.</p>
+<div class="fragment"><div class="line">bool getNextScheduledTime(LocalTimeConvert &amp; conv) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>conv</code> <a class="el" href="class_local_time_convert.html" title="Perform time conversions. This is the main class you will need.">LocalTimeConvert</a> object, may be modified</li>
 </ul>
 <h4>Returns</h4>
-<p >time_t</p>
-<p >The conv object is necessary because getTimeSpan takes into account daylight saving transitions. When springing forward to daylight saving, from 01:15:00 to 03:15:00 is only one hour because of the DST transition.</p>
-<h1>class LocalTimeConvert::TimeRange</h1>
-<p >Class to hold a time range in local time in HH:MM:SS format.</p>
-<h2>Members</h2>
+<p >true if there is an item available or false if not. if false, conv will be unchanged.</p>
+<p >This method finds closest scheduled time for this objecvt, if it's in the near future. The <a class="el" href="class_local_time.html#a37be620abc0478abb5379c02e00470b1" title="Get the global singleton instance of this class.">LocalTime::instance()</a>.getScheduleLookaheadDays() setting determines how far in the future to check; the default is 3 days. The way schedules work each day needs to be checked to make sure all of the constraints are met, so long look-aheads are computationally intensive. This is not normally an issue, because the idea is that you'll wake from sleep or check the schedule at least every few days, at which point the new schedule may be available.</p>
 <hr  />
-<h3><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> hmsStart</h3>
-<p >Starting time, inclusive.</p>
-<div class="fragment"><div class="line">LocalTimeHMS hmsStart</div>
-</div><!-- fragment --><hr  />
-<h3><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> hmsEnd</h3>
-<p >Ending time, inclusive.</p>
-<div class="fragment"><div class="line">LocalTimeHMS hmsEnd</div>
-</div><!-- fragment --><hr  />
-<h3>LocalTimeConvert::TimeRange::TimeRange()</h3>
-<p >Construct a new Time Range object with the range of the entire day (inclusive)</p>
-<div class="fragment"><div class="line">TimeRange()</div>
-</div><!-- fragment --><p >This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.</p>
-<hr  />
-<h3>LocalTimeConvert::TimeRange::TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd)</h3>
-<p >Construct a new Time Range object with the specifies start and end times.</p>
-<div class="fragment"><div class="line">TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd)</div>
+<h3>bool <a class="el" href="class_local_time_schedule.html#a9c5fa2bc212b563fac3e25f931467cbc" title="Update the conv object to point at the next schedule item.">LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &amp; conv, std::function&lt; bool(LocalTimeScheduleItem &amp;item)&gt; filter) const</a></h3>
+<p >Update the conv object to point at the next schedule item.</p>
+<div class="fragment"><div class="line">bool getNextScheduledTime(LocalTimeConvert &amp; conv, std::function&lt; bool(LocalTimeScheduleItem &amp;item)&gt; filter) const</div>
 </div><!-- fragment --><h4>Parameters</h4>
 <ul>
+<li><code>conv</code> <a class="el" href="class_local_time_convert.html" title="Perform time conversions. This is the main class you will need.">LocalTimeConvert</a> object, may be modified</li>
+<li><code>filter</code> A function to determine, for each schedule item, if it should be tested</li>
+</ul>
+<h4>Returns</h4>
+<p >true if there is an item available or false if not. if false, conv will be unchanged.</p>
+<p >This method finds closest scheduled time for this objecvt, if it's in the near future. The <a class="el" href="class_local_time.html#a37be620abc0478abb5379c02e00470b1" title="Get the global singleton instance of this class.">LocalTime::instance()</a>.getScheduleLookaheadDays() setting determines how far in the future to check; the default is 3 days. The way schedules work each day needs to be checked to make sure all of the constraints are met, so long look-aheads are computationally intensive. This is not normally an issue, because the idea is that you'll wake from sleep or check the schedule at least every few days, at which point the new schedule may be available.</p>
+<p >The filter function or lambda has this prototype:</p>
+<p >bool filterCallback(LocalTimeScheduleItem &amp;item)</p>
+<p >If should return true to check this item, or false to skip this item for schedule checking.</p>
+<p >&lt;/details&gt;</p>
+<h2><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a></h2>
+<p >This object holds a hour, minute, and second value (HMS). There are numerous methods to compare time values, and convert the values to other formats.</p>
+<p >When converting from string format always use 24-hour clock format; this object does not support AM/PM. Also when converting from strings you can omit the seconds, or even both the minutes and seconds.</p>
+<p >Note that hour 24 is never a valid value. Because HMS calculations are always inclusive, the end of the day is 23:59:59. Leap seconds are not supported by the underlying C standard time library.</p>
+<p >&lt;details&gt;</p>
+<h3><a class="el" href="class_local_time_h_m_s.html#aae1947a2f64a25ebdab3fd4870b98843" title="Default constructor. Sets time to 00:00:00.">LocalTimeHMS::LocalTimeHMS()</a></h3>
+<p >Default constructor. Sets time to 00:00:00.</p>
+<div class="fragment"><div class="line">LocalTimeHMS()</div>
+</div><!-- fragment --><hr  />
+<h3><a class="el" href="class_local_time_h_m_s.html#a0d432f4dde905e80ff3bfb16cfe8c9cf" title="Destructor.">LocalTimeHMS::~LocalTimeHMS()</a></h3>
+<p >Destructor.</p>
+<div class="fragment"><div class="line">virtual  ~LocalTimeHMS()</div>
+</div><!-- fragment --><hr  />
+<h3><a class="el" href="class_local_time_h_m_s.html#a8c70104cf5f1404a3219889661478090" title="Constructs the object from a time string.">LocalTimeHMS::LocalTimeHMS(const char * str)</a></h3>
+<p >Constructs the object from a time string.</p>
+<div class="fragment"><div class="line">LocalTimeHMS(const char * str)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>str</code> The time string</li>
+</ul>
+<p >The time string is normally of the form HH:MM:SS, such as "04:00:00" for 4:00 AM. The hour is in 24-hour format. Other formats are supported as well, including omitting the seconds (04:00), or including only the hour "04", or omitting the leadings zeros (4:0:0).</p>
+<p >Additionally, the hour could be negative, used in UTC DST offsets. The minute and second are always positive (0-59). The hour could also be &gt; 24 when used as a timezone offset.</p>
+<hr  />
+<h3><a class="el" href="class_local_time_h_m_s.html#a85a1773998bef17ba80ace57c1ea12fa" title="Construct this HMS from a LocalTimeValue (which contains YMD and HMS)">LocalTimeHMS::LocalTimeHMS(const LocalTimeValue &amp; value)</a></h3>
+<p >Construct this HMS from a <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a> (which contains YMD and HMS)</p>
+<div class="fragment"><div class="line">LocalTimeHMS(const LocalTimeValue &amp; value)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>value</code></li>
+</ul>
+<hr  />
+<h3>void <a class="el" href="class_local_time_h_m_s.html#aecfb5486936114e06176287f5f9818c6" title="Sets the hour, minute, and second to 0.">LocalTimeHMS::clear()</a></h3>
+<p >Sets the hour, minute, and second to 0.</p>
+<div class="fragment"><div class="line">void clear()</div>
+</div><!-- fragment --><hr  />
+<h3>void <a class="el" href="class_local_time_h_m_s.html#a09357a93ce14e2a78599c6c51365bda7" title="Parse a &quot;H:MM:SS&quot; string.">LocalTimeHMS::parse(const char * str)</a></h3>
+<p >Parse a "H:MM:SS" string.</p>
+<div class="fragment"><div class="line">void parse(const char * str)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>str</code> Input string</li>
+</ul>
+<p >Multiple formats are supported, and parts are optional:</p>
+<ul>
+<li>H:MM:SS (examples: "2:00:00" or "2:0:0")</li>
+<li>H:MM (examples: "2:00" or "2:0")</li>
+<li>H (examples: "2")</li>
+</ul>
+<p >Hours are always 0 - 23 (24-hour clock). Can also be a negative hour -1 to -23.</p>
+<hr  />
+<h3>String <a class="el" href="class_local_time_h_m_s.html#a325a825e6d99e25fcd1eca709935a6e9" title="Turns the parsed data into a normalized string of the form: &quot;HH:MM:SS&quot; (24-hour clock,...">LocalTimeHMS::toString() const</a></h3>
+<p >Turns the parsed data into a normalized string of the form: "HH:MM:SS" (24-hour clock, with leading zeroes)</p>
+<div class="fragment"><div class="line">String toString() const</div>
+</div><!-- fragment --><hr  />
+<h3>int <a class="el" href="class_local_time_h_m_s.html#aebae99c1b2c6154ee4e2aa0a012b946e" title="Convert hour minute second into a number of seconds (simple multiplication and addition)">LocalTimeHMS::toSeconds() const</a></h3>
+<p >Convert hour minute second into a number of seconds (simple multiplication and addition)</p>
+<div class="fragment"><div class="line">int toSeconds() const</div>
+</div><!-- fragment --><hr  />
+<h3>void <a class="el" href="class_local_time_h_m_s.html#af092e9cd92de2c68ff43944384147683" title="Sets the hour, minute, and second fields from a struct tm.">LocalTimeHMS::fromTimeInfo(const struct tm * pTimeInfo)</a></h3>
+<p >Sets the hour, minute, and second fields from a struct tm.</p>
+<div class="fragment"><div class="line">void fromTimeInfo(const struct tm * pTimeInfo)</div>
+</div><!-- fragment --><hr  />
+<h3>void <a class="el" href="class_local_time_h_m_s.html#a923ca6256cbaa7aa9b66b6049f866611" title="Sets the HMS from a LocalTimeValue.">LocalTimeHMS::fromLocalTimeValue(const LocalTimeValue &amp; value)</a></h3>
+<p >Sets the HMS from a <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a>.</p>
+<div class="fragment"><div class="line">void fromLocalTimeValue(const LocalTimeValue &amp; value)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>value</code></li>
+</ul>
+<hr  />
+<h3>void <a class="el" href="class_local_time_h_m_s.html#a1bff8e5946f5dbb7236a3e0f27846a9f" title="Fill in the tm_hour, tm_min, and tm_sec fields of a struct tm from the values in this object.">LocalTimeHMS::toTimeInfo(struct tm * pTimeInfo) const</a></h3>
+<p >Fill in the tm_hour, tm_min, and tm_sec fields of a struct tm from the values in this object.</p>
+<div class="fragment"><div class="line">void toTimeInfo(struct tm * pTimeInfo) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>pTimeInfo</code> The struct tm to modify</li>
+</ul>
+<hr  />
+<h3>void <a class="el" href="class_local_time_h_m_s.html#a31be71d84b7184f30dd69b7df5be5f3c" title="Adjust the values in a struct tm from the values in this object.">LocalTimeHMS::adjustTimeInfo(struct tm * pTimeInfo) const</a></h3>
+<p >Adjust the values in a struct tm from the values in this object.</p>
+<div class="fragment"><div class="line">void adjustTimeInfo(struct tm * pTimeInfo) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>pTimeInfo</code> The struct tm to modify</li>
+</ul>
+<p >After calling this, the values in the struct tm may be out of range, for example tm_hour &gt; 23. This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values into the other fields as necessary.</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_h_m_s.html#a1870536b6f5609aac489447a492244c3" title="Parses a JSON value of type string in HH:MM:SS format.">LocalTimeHMS::fromJson(JSONValue jsonObj)</a></h3>
+<p >Parses a JSON value of type string in HH:MM:SS format.</p>
+<div class="fragment"><div class="line">void fromJson(JSONValue jsonObj)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>jsonObj</code></li>
+</ul>
+<hr  />
+<h3><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> &amp; <a class="el" href="class_local_time_h_m_s.html#a0ea4f9cee93e97e230d667bd828a5859" title="Sets this object to be the specified hour, with minute and second set to 0.">LocalTimeHMS::withHour(int hour)</a></h3>
+<p >Sets this object to be the specified hour, with minute and second set to 0.</p>
+<div class="fragment"><div class="line">LocalTimeHMS &amp; withHour(int hour)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>hour</code> 0 &lt;= hour &lt; 24</li>
+</ul>
+<h4>Returns</h4>
+<p ><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>&amp;</p>
+<hr  />
+<h3><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> &amp; <a class="el" href="class_local_time_h_m_s.html#a4a5bc06fced90400e37662c1c9581026" title="Sets this object to be the specified hour and minute, with second set to 0.">LocalTimeHMS::withHourMinute(int hour, int minute)</a></h3>
+<p >Sets this object to be the specified hour and minute, with second set to 0.</p>
+<div class="fragment"><div class="line">LocalTimeHMS &amp; withHourMinute(int hour, int minute)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>hour</code> 0 &lt;= hour &lt; 24</li>
+<li><code>minute</code> 0 &lt;= minute &lt; 60</li>
+</ul>
+<h4>Returns</h4>
+<p ><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>&amp;</p>
+<hr  />
+<h3>int <a class="el" href="class_local_time_h_m_s.html#a8c59077a86a9111184d52ece17fce422" title="Compare two LocalTimeHMS objects.">LocalTimeHMS::compareTo(const LocalTimeHMS &amp; other) const</a></h3>
+<p >Compare two <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a> objects.</p>
+<div class="fragment"><div class="line">int compareTo(const LocalTimeHMS &amp; other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code> The item to compare to</li>
+</ul>
+<h4>Returns</h4>
+<p >int -1 if this item is &lt; other; 0 if this = other, or +1 if this &gt; other</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_h_m_s.html#a6e4872fb3d62d9398dc46f0704ee2602" title="Returns true if this item is equal to other. Compares hour, minute, and second.">LocalTimeHMS::operator==(const LocalTimeHMS &amp; other) const</a></h3>
+<p >Returns true if this item is equal to other. Compares hour, minute, and second.</p>
+<div class="fragment"><div class="line">bool operator==(const LocalTimeHMS &amp; other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_h_m_s.html#a66f0840e4b074a0f5a3242bafac92427" title="Returns true if this item is not equal to other.">LocalTimeHMS::operator!=(const LocalTimeHMS &amp; other) const</a></h3>
+<p >Returns true if this item is not equal to other.</p>
+<div class="fragment"><div class="line">bool operator!=(const LocalTimeHMS &amp; other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_h_m_s.html#a72c687582d251be2a3c5480e3e3a1c1a" title="Returns true if this item is &lt; other.">LocalTimeHMS::operator&lt;(const LocalTimeHMS &amp; other) const</a></h3>
+<p >Returns true if this item is &lt; other.</p>
+<div class="fragment"><div class="line">bool operator&lt;(const LocalTimeHMS &amp; other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_h_m_s.html#a43d66330fd210c132c55afe4d40a4e41" title="Returns true if this item is &gt; other.">LocalTimeHMS::operator&gt;(const LocalTimeHMS &amp; other) const</a></h3>
+<p >Returns true if this item is &gt; other.</p>
+<div class="fragment"><div class="line">bool operator&gt;(const LocalTimeHMS &amp; other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_h_m_s.html#a3c0a28b69d1c9f9075d0c89388babad2" title="Returns true if this item &lt;= other.">LocalTimeHMS::operator&lt;=(const LocalTimeHMS &amp; other) const</a></h3>
+<p >Returns true if this item &lt;= other.</p>
+<div class="fragment"><div class="line">bool operator&lt;=(const LocalTimeHMS &amp; other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_h_m_s.html#a04005d4f6e353d2043613cbd3620e584" title="Returns true if this item is &gt;= other.">LocalTimeHMS::operator&gt;=(const LocalTimeHMS &amp; other) const</a></h3>
+<p >Returns true if this item is &gt;= other.</p>
+<div class="fragment"><div class="line">bool operator&gt;=(const LocalTimeHMS &amp; other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<p >&lt;/details&gt;</p>
+<h2><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></h2>
+<p >This object specifies a year, month, and day. There are numerous methods to compare time values, and convert the values to other formats.</p>
+<p >When converting from a string this must always be "YYYY-MM-DD" format, with dashes, and in that order. Other date formats including common but poorly defined United States date formats cannot be used!</p>
+<p >&lt;details&gt;</p>
+<p >Class for holding a year month day efficiently (4 bytes of storage)</p>
+<p >There is no method to get this object from a time_t because time_t is at UTC and this object is intended to be the YMD at local time to correspond with a <a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a>. Thus it requires a <a class="el" href="class_local_time_convert.html" title="Perform time conversions. This is the main class you will need.">LocalTimeConvert</a> object, and there is a method to get a <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> from a <a class="el" href="class_local_time_convert.html" title="Perform time conversions. This is the main class you will need.">LocalTimeConvert</a>, not from this object.</p>
+<h3><a class="el" href="class_local_time_y_m_d.html#a4b33eff6df475af3e86d13f2ecca84f3" title="Default contructor with an invalid date (0000-00-00) set.">LocalTimeYMD::LocalTimeYMD()</a></h3>
+<p >Default contructor with an invalid date (0000-00-00) set.</p>
+<div class="fragment"><div class="line">LocalTimeYMD()</div>
+</div><!-- fragment --><hr  />
+<h3><a class="el" href="class_local_time_y_m_d.html#a2748b6abb6a73812d08d4ec33e58cb4f" title="Construct a YMD value from a string.">LocalTimeYMD::LocalTimeYMD(const char * s)</a></h3>
+<p >Construct a YMD value from a string.</p>
+<div class="fragment"><div class="line">LocalTimeYMD(const char * s)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>s</code> String, must be in YYYY-MM-DD format. No other formars are allowed!</li>
+</ul>
+<hr  />
+<h3><a class="el" href="class_local_time_y_m_d.html#a3a7ef686f882b241440b83f05e7c55b0" title="Construct from a LocalTimeValue object.">LocalTimeYMD::LocalTimeYMD(const LocalTimeValue &amp; value)</a></h3>
+<p >Construct from a <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a> object.</p>
+<div class="fragment"><div class="line">LocalTimeYMD(const LocalTimeValue &amp; value)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>value</code> The date to copy from</li>
+</ul>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#ac41a2fa5d455bb2bcd4ac58e2336fbe3" title="Returns true if the date is uninitialized, as from the default constructor.">LocalTimeYMD::isEmpty() const</a></h3>
+<p >Returns true if the date is uninitialized, as from the default constructor.</p>
+<div class="fragment"><div class="line">bool isEmpty() const</div>
+</div><!-- fragment --><h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>int <a class="el" href="class_local_time_y_m_d.html#a064b510c5726dfaee1af60fcd057e8d4" title="Get the year as a 4-digit year, for example: 2022.">LocalTimeYMD::getYear() const</a></h3>
+<p >Get the year as a 4-digit year, for example: 2022.</p>
+<div class="fragment"><div class="line">int getYear() const</div>
+</div><!-- fragment --><h4>Returns</h4>
+<p >int The year, 4-digit</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_y_m_d.html#a29055aa7c7c978dbbc573e138b4bf7b1" title="Set the year value.">LocalTimeYMD::setYear(int year)</a></h3>
+<p >Set the year value.</p>
+<div class="fragment"><div class="line">void setYear(int year)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>year</code> Year to set, can be several different values but typically is 4-digit year (2022, for example)</li>
+</ul>
+<hr  />
+<h3>int <a class="el" href="class_local_time_y_m_d.html#ad5951ad26b690a453ee4cfce6b41c287" title="Get the month, 1 - 12 inclusive.">LocalTimeYMD::getMonth() const</a></h3>
+<p >Get the month, 1 - 12 inclusive.</p>
+<div class="fragment"><div class="line">int getMonth() const</div>
+</div><!-- fragment --><h4>Returns</h4>
+<p >int month</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_y_m_d.html#a9a241b5279a9ef902d254fc9e7118603" title="Set the month, 1 - 12 inclusive.">LocalTimeYMD::setMonth(int month)</a></h3>
+<p >Set the month, 1 - 12 inclusive.</p>
+<div class="fragment"><div class="line">void setMonth(int month)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>month</code> Month value</li>
+</ul>
+<hr  />
+<h3>int <a class="el" href="class_local_time_y_m_d.html#a54b72635337bce6aee088717c7d3789a" title="Get the day of month, starting a 1.">LocalTimeYMD::getDay() const</a></h3>
+<p >Get the day of month, starting a 1.</p>
+<div class="fragment"><div class="line">int getDay() const</div>
+</div><!-- fragment --><h4>Returns</h4>
+<p >int</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_y_m_d.html#a6310b87921e6a1ca9392a882c67eb475" title="Set the day of the month, staring at 1.">LocalTimeYMD::setDay(int day)</a></h3>
+<p >Set the day of the month, staring at 1.</p>
+<div class="fragment"><div class="line">void setDay(int day)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>day</code></li>
+</ul>
+<p >This method does not validate the date value, but you should avoid setting invalid date values since the results can be unpredictable.</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_y_m_d.html#a8c81d591a713c28000ff4a179e96f657" title="Copies the year, month, and day from a struct tm.">LocalTimeYMD::fromTimeInfo(const struct tm * pTimeInfo)</a></h3>
+<p >Copies the year, month, and day from a struct tm.</p>
+<div class="fragment"><div class="line">void fromTimeInfo(const struct tm * pTimeInfo)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>pTimeInfo</code> The pointer to a struct tm to copy the year, month, and day from.</li>
+</ul>
+<p >The tm should be in local time.</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_y_m_d.html#a17452873f35e9cae3700d241a93b8c31" title="The LocalTimeValue to copy the year, month and day from.">LocalTimeYMD::fromLocalTimeValue(const LocalTimeValue &amp; value)</a></h3>
+<p >The <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a> to copy the year, month and day from.</p>
+<div class="fragment"><div class="line">void fromLocalTimeValue(const LocalTimeValue &amp; value)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>value</code> Source of the year, month, and day values</li>
+</ul>
+<p >Since <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a> contains a struct tm, this uses fromTimeInfo internally.</p>
+<hr  />
+<h3>void <a class="el" href="class_local_time_y_m_d.html#aac36c31908686b386e9198b28408b528" title="Add a number of days to the current YMD (updating month or year as necessary)">LocalTimeYMD::addDay(int numberOfDays)</a></h3>
+<p >Add a number of days to the current YMD (updating month or year as necessary)</p>
+<div class="fragment"><div class="line">void addDay(int numberOfDays)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>numberOfDays</code> Number of days to add (positive) or subtract (negative)</li>
+</ul>
+<p >Works correctly with leap years.</p>
+<hr  />
+<h3>int <a class="el" href="class_local_time_y_m_d.html#a69ffe73663af806e57e9ae496ce26c7c" title="Get the day of the week, 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday.">LocalTimeYMD::getDayOfWeek() const</a></h3>
+<p >Get the day of the week, 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday.</p>
+<div class="fragment"><div class="line">int getDayOfWeek() const</div>
+</div><!-- fragment --><h4>Returns</h4>
+<p >int the day of the week</p>
+<hr  />
+<h3>int <a class="el" href="class_local_time_y_m_d.html#a734d105df9a0acbeb3df9177d9ed4fac" title="Compare to another LocalTimeYMD object.">LocalTimeYMD::compareTo(const LocalTimeYMD other) const</a></h3>
+<p >Compare to another <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> object.</p>
+<div class="fragment"><div class="line">int compareTo(const LocalTimeYMD other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >int -1 if this is &lt; other, 0 if this == other, or 1 if this &gt; other.</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#afcb847d4baea8d3c51e1bf070c057034" title="Tests if this LocalTimeYMD is equal to other.">LocalTimeYMD::operator==(const LocalTimeYMD other) const</a></h3>
+<p >Tests if this <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> is equal to other.</p>
+<div class="fragment"><div class="line">bool operator==(const LocalTimeYMD other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#a93556a4d3123a79b365716a977b9618c" title="Tests if this LocalTimeYMD is not equal to other.">LocalTimeYMD::operator!=(const LocalTimeYMD other) const</a></h3>
+<p >Tests if this <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> is not equal to other.</p>
+<div class="fragment"><div class="line">bool operator!=(const LocalTimeYMD other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#a4613a64f0e5451d212a16e0cf606d100" title="Tests if this LocalTimeYMD is less than other.">LocalTimeYMD::operator&lt;(const LocalTimeYMD other) const</a></h3>
+<p >Tests if this <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> is less than other.</p>
+<div class="fragment"><div class="line">bool operator&lt;(const LocalTimeYMD other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#a7ecef70ad515ce037cadfcce798f093f" title="Tests if this LocalTimeYMD is less than or equal to other.">LocalTimeYMD::operator&lt;=(const LocalTimeYMD other) const</a></h3>
+<p >Tests if this <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> is less than or equal to other.</p>
+<div class="fragment"><div class="line">bool operator&lt;=(const LocalTimeYMD other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#a45254ccc72e15a85f132f1ca7e7395ae" title="Tests if this LocalTimeYMD is greater than other.">LocalTimeYMD::operator&gt;(const LocalTimeYMD other) const</a></h3>
+<p >Tests if this <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> is greater than other.</p>
+<div class="fragment"><div class="line">bool operator&gt;(const LocalTimeYMD other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#a2c84228e00ba0cda6ba00d9c623fbb41" title="Tests if this LocalTimeYMD is greater than or equal to other.">LocalTimeYMD::operator&gt;=(const LocalTimeYMD other) const</a></h3>
+<p >Tests if this <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> is greater than or equal to other.</p>
+<div class="fragment"><div class="line">bool operator&gt;=(const LocalTimeYMD other) const</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>other</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<hr  />
+<h3>bool <a class="el" href="class_local_time_y_m_d.html#a7d031b677727455b1ae094f412b9f05b" title="Parse a YMD string in the format &quot;YYYY-MD-DD&quot;. Only this format is supported!">LocalTimeYMD::parse(const char * s)</a></h3>
+<p >Parse a YMD string in the format "YYYY-MD-DD". Only this format is supported!</p>
+<div class="fragment"><div class="line">bool parse(const char * s)</div>
+</div><!-- fragment --><h4>Parameters</h4>
+<ul>
+<li><code>s</code></li>
+</ul>
+<h4>Returns</h4>
+<p >true</p>
+<h4>Returns</h4>
+<p >false</p>
+<p >Do not use this function with other date formats like "mm/dd/yyyy"!</p>
+<hr  />
+<h3>String <a class="el" href="class_local_time_y_m_d.html#a5c16912bac04af3333af48fa0da7258f" title="Converts the value to YYYY-MM-DD format as a String with leading zeros.">LocalTimeYMD::toString() const</a></h3>
+<p >Converts the value to YYYY-MM-DD format as a String with leading zeros.</p>
+<div class="fragment"><div class="line">String toString() const</div>
+</div><!-- fragment --><h4>Returns</h4>
+<p >String</p>
+<h1>struct <a class="el" href="struct_local_time_y_m_d_1_1_y_m_d.html" title="Packed structure to hold the YMD value.">LocalTimeYMD::YMD</a></h1>
+<p >Packed structure to hold the YMD value.</p>
+<p >&lt;/details&gt;</p>
+<h3><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></h3>
+<p >A <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> is a start time and end time in local time, expressed as <code><a class="el" href="class_local_time_h_m_s.html" title="Container for holding an hour minute second time value.">LocalTimeHMS</a></code> objects (hours, minutes, seconds).</p>
+<p >Time ranges are inclusive, so the entire day is 00:00:00 to 23:59:59.</p>
+<p >The default constructor for <code><a class="el" href="class_local_time_range.html" title="Class to hold a time range in local time in HH:MM:SS format.">LocalTimeRange</a></code> sets the time range to the entire day.</p>
+<p >When converting from JSON:</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description   </th><th class="markdownTableHeadLeft">Default    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"s"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">Starting time in "HH:MM:SS" format, 24 hour clock, local time   </td><td class="markdownTableBodyLeft">"00:00:00"    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyLeft">"e"   </td><td class="markdownTableBodyLeft">string   </td><td class="markdownTableBodyLeft">Ending time in "HH:MM:SS" format, 24 hour clock, local time   </td><td class="markdownTableBodyLeft">"23:59:59"   </td></tr>
+</table>
+<p >&lt;details&gt;</p>
+<h4><a class="el" href="class_local_time_range.html#a549f18d3f7594fa99f2832751bb8bdc7" title="Construct a new Time Range object with the range of the entire day (inclusive)">LocalTimeRange::LocalTimeRange()</a></h4>
+<p >Construct a new Time Range object with the range of the entire day (inclusive)</p>
+<div class="fragment"><div class="line">LocalTimeRange()</div>
+</div><!-- fragment --><p >This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.</p>
+<hr  />
+<h4><a class="el" href="class_local_time_range.html#add498a3441118ce11d7dcf5a11248147" title="Construct a new Time Range object with the specifies start and end times.">LocalTimeRange::LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd)</a></h4>
+<p >Construct a new Time Range object with the specifies start and end times.</p>
+<div class="fragment"><div class="line">LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
 <li><code>hmsStart</code> Start time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59</li>
-<li><code>hmsEnd</code> End time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59</li>
+<li><code>hmsEnd</code> End time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59 (optional)</li>
 </ul>
 <p >Note that 24:00:00 is not a valid time. You should generally use inclusive times such that 23:59:59 is the end of the day.</p>
 <hr  />
-<h3>time_t LocalTimeConvert::TimeRange::getTimeSpan(const LocalTimeConvert &amp; conv) const</h3>
+<h4><a class="el" href="class_local_time_range.html#a80707e0e54b96fa3f11a80326dfe6b79" title="Construct a new object that specifies start time, end time, and date restrictions.">LocalTimeRange::LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate dateRestriction)</a></h4>
+<p >Construct a new object that specifies start time, end time, and date restrictions.</p>
+<div class="fragment"><div class="line">LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd, LocalTimeRestrictedDate dateRestriction)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>hmsStart</code> Start time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59</li>
+<li><code>hmsEnd</code> End time in local time 00:00:00 &lt;= hmsStart &lt;= 23:59:59</li>
+<li><code>dateRestriction</code> Only use this time range on certain dates</li>
+</ul>
+<hr  />
+<h4>void <a class="el" href="class_local_time_range.html#a7839680a919a19a0ea5f482e76633770" title="Clear time range to all day, every day.">LocalTimeRange::clear()</a></h4>
+<p >Clear time range to all day, every day.</p>
+<div class="fragment"><div class="line">void clear()</div>
+</div><!-- fragment --><hr  />
+<h4>time_t <a class="el" href="class_local_time_range.html#a046d461962c4a06f07b795c9dd95281e" title="Get the number of seconds between start and end based on a LocalTimeConvert object.">LocalTimeRange::getTimeSpan(const LocalTimeConvert &amp; conv) const</a></h4>
 <p >Get the number of seconds between start and end based on a <a class="el" href="class_local_time_convert.html" title="Perform time conversions. This is the main class you will need.">LocalTimeConvert</a> object.</p>
 <div class="fragment"><div class="line">time_t getTimeSpan(const LocalTimeConvert &amp; conv) const</div>
 </div><!-- fragment --><p >The reason for the conv object is that it contains the time to calculate at, as well as the daylight saving time settings. This methods takes into account the actual number of seconds including when a time change is crossed.</p>
-<h4>Parameters</h4>
+<h5>Parameters</h5>
 <ul>
 <li><code>conv</code> The time and timezone settings to calculate the time span at</li>
 </ul>
-<h4>Returns</h4>
+<h5>Returns</h5>
 <p >time_t Time difference in seconds</p>
 <p >In the weird case that start &gt; end, it can return a negative value, as time_t is a signed long (or long long) value.</p>
+<p >This does not take into account date restrictions!</p>
+<hr  />
+<h4>int <a class="el" href="class_local_time_range.html#ab8502ab5009275d9f295f6f48266ab11" title="Compares a time (LocalTimeHHS, local time) to this time range.">LocalTimeRange::compareTo(LocalTimeHMS hms) const</a></h4>
+<p >Compares a time (LocalTimeHHS, local time) to this time range.</p>
+<div class="fragment"><div class="line">int compareTo(LocalTimeHMS hms) const</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>hms</code></li>
+</ul>
+<h5>Returns</h5>
+<p >int -1 if hms is before hmsStart, 0 if in range, +1 if hms is after hmsEnd</p>
+<hr  />
+<h4>bool <a class="el" href="class_local_time_range.html#a8bd876d85c61e2293b37e4382b08bdc8" title="Returns true if the date restrictions allow this day.">LocalTimeRange::isValidDate(LocalTimeYMD ymd) const</a></h4>
+<p >Returns true if the date restrictions allow this day.</p>
+<div class="fragment"><div class="line">bool isValidDate(LocalTimeYMD ymd) const</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>ymd</code></li>
+</ul>
+<h5>Returns</h5>
+<p >true</p>
+<h5>Returns</h5>
+<p >false</p>
+<hr  />
+<h4>bool <a class="el" href="class_local_time_range.html#a516772f0d8392b5c9462c1899f54f524" title="Returns true if the date restrictions allow this date and the time is in this range (inclusive)">LocalTimeRange::inRange(LocalTimeValue localTimeValue) const</a></h4>
+<p >Returns true if the date restrictions allow this date and the time is in this range (inclusive)</p>
+<div class="fragment"><div class="line">bool inRange(LocalTimeValue localTimeValue) const</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>localTimeValue</code></li>
+</ul>
+<h5>Returns</h5>
+<p >true</p>
+<h5>Returns</h5>
+<p >false</p>
+<hr  />
+<h4>void <a class="el" href="class_local_time_range.html#a89210c8a30ca5b7eb3e47c307dde1a47" title="Set the date restrictions from a LocalTimeHMSRestricted object.">LocalTimeRange::fromTime(LocalTimeHMSRestricted hms)</a></h4>
+<p >Set the date restrictions from a <a class="el" href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)">LocalTimeHMSRestricted</a> object.</p>
+<div class="fragment"><div class="line">void fromTime(LocalTimeHMSRestricted hms)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>hms</code> <a class="el" href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)">LocalTimeHMSRestricted</a>, really only uses the date restrictions, not the HMS part</li>
+</ul>
+<hr  />
+<h4>void <a class="el" href="class_local_time_range.html#a592c5be087a3d90cb1568237906e063d" title="Fills in the time range from a JSON object.">LocalTimeRange::fromJson(JSONValue jsonObj)</a></h4>
+<p >Fills in the time range from a JSON object.</p>
+<div class="fragment"><div class="line">void fromJson(JSONValue jsonObj)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>jsonObj</code></li>
+</ul>
+<p >Keys:</p>
+<ul>
+<li>s (string) The start time (HH:MM:SS format, can omit MM or SS)</li>
+<li>e (string) The end time (HH:MM:SS format, can omit MM or SS)</li>
+</ul>
+<p >&lt;/details&gt;</p>
+<h5><a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a></h5>
+<p >A <code><a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a></code> specifies zero or more days of the week (Sunday, Monday, ...)</p>
+<p >Common mask values:</p>
+<p >| Value Hex | Value Decimal | Constant | Description | | :&mdash; | &mdash;: | :&mdash; | | 0x01 | 1 | MASK_SUNDAY | Sunday | | 0x02 | 2 | MASK_MONDAY | Monday | | 0x04 | 4 | MASK_TUESDAY | Tuesday | | 0x08 | 8 | MASK_WEDNESDAY | Wednesday | | 0x10 | 16 | MASK_THURSDAY | Thursday | | 0x20 | 32 | MASK_FRIDAY | Friday | | 0x40 | 64 | MASK_SATURDAY | Saturday | | 0x7f | 127 | MASK_ALL | Every day | | 0x3e | 62 | MASK_WEEKDAY | Weekdays (Monday - Friday) | | 0x41 | 65 | MASK_WEEKEND | Weekends (Saturday - Sunday) |</p>
+<p >Note that you can combine any mask bits. For example, Monday, Wednesday, Friday is 2 + 8 + 32 = 42,</p>
+<p >In JSON, you can only use the numeric mask values, as a decimal number. For example, weekdays Monday - Friday is 62.</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadLeft">Key   </th><th class="markdownTableHeadLeft">Type   </th><th class="markdownTableHeadLeft">Description    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft">"y"   </td><td class="markdownTableBodyLeft">number   </td><td class="markdownTableBodyLeft">Mask value for days of the week, see table above   </td></tr>
+</table>
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></h4>
+<p >A <code><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a></code> is used for both multiples and times (below). It can have:</p>
+<ul>
+<li>A day of week selection (<code><a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a></code>), which is a bitmask of days to allow. This makes it easy to specify, for example, weekdays (Monday - Friday).</li>
+<li>A list of dates to allow (vector of <code><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></code>)</li>
+<li>A list of dates to exclude (vector of <code><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></code>)</li>
+</ul>
+<p >| Key | Type | Description | Default | | :&mdash; | :&mdash; | :&mdash; | :&mdash; | | "y" | number | Mask value for days of the week, see table above (optional) | | "a" | Array of string | Array of strings of the form YYYY-MM-DD to allow specific dates (optional) | | "x" | Array of string | Array of strings of the form YYYY-MM-DD to exclude specific dates (optional) |</p>
+<p >&lt;details&gt;</p>
+<h4><a class="el" href="class_local_time_restricted_date.html#a337bb0015b6cd26506b9884d1c3c4f0b" title="Create a date restricted object restricted to days of the week.">LocalTimeRestrictedDate::LocalTimeRestrictedDate(uint8_t mask)</a></h4>
+<p >Create a date restricted object restricted to days of the week.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate(uint8_t mask)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>mask</code> The days of the week to enable. Pass <a class="el" href="class_local_time_day_of_week.html#a1ae26d2e584d02e67ec951ff193e87a5" title="Mask value for every day of the week 0x7f = 127.">LocalTimeDayOfWeek::MASK_ALL</a> to allow on every day (no restrictions)</li>
+</ul>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html#aa01c495ecd7290ded2a797172cb5f340" title="Construct an object with an initializer list of strings.">LocalTimeRestrictedDate::LocalTimeRestrictedDate(uint8_t mask, std::initializer_list&lt; const char * &gt; onlyOnDates, std::initializer_list&lt; const char * &gt; exceptDates)</a></h4>
+<p >Construct an object with an initializer list of strings.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate(uint8_t mask, std::initializer_list&lt; const char * &gt; onlyOnDates, std::initializer_list&lt; const char * &gt; exceptDates)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>mask</code> mask value, see <a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a> for values</li>
+<li><code>onlyOnDates</code> Initializer list of strings of the form YYYY-MM-DD</li>
+<li><code>exceptDates</code> Initializer list of strings of the form YYYY-MM-DD</li>
+</ul>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html#a19e09b6ebabe28b9f0d465496dcaaac4" title="Construct an object with an initializer list of LocalTimeYMD objects.">LocalTimeRestrictedDate::LocalTimeRestrictedDate(uint8_t mask, std::initializer_list&lt; LocalTimeYMD &gt; onlyOnDates, std::initializer_list&lt; LocalTimeYMD &gt; exceptDates)</a></h4>
+<p >Construct an object with an initializer list of <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> objects.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate(uint8_t mask, std::initializer_list&lt; LocalTimeYMD &gt; onlyOnDates, std::initializer_list&lt; LocalTimeYMD &gt; exceptDates)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>mask</code> mask value, see <a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a> for values</li>
+<li><code>onlyOnDates</code> Initializer list of <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> values</li>
+<li><code>exceptDates</code> Initializer list of <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> values</li>
+</ul>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> &amp; <a class="el" href="class_local_time_restricted_date.html#ae02da60d2708268a121fa809a1e15528" title="Set the mask value to MASK_ALL. Does not change only on date or except on date lists.">LocalTimeRestrictedDate::withOnAllDays()</a></h4>
+<p >Set the mask value to MASK_ALL. Does not change only on date or except on date lists.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate &amp; withOnAllDays()</div>
+</div><!-- fragment --><h5>Returns</h5>
+<p ><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a>&amp;</p>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> &amp; <a class="el" href="class_local_time_restricted_date.html#a45f4617eb05446b341175ec9e8c2e474" title="Restrict to days of the week.">LocalTimeRestrictedDate::withOnlyOnDays(LocalTimeDayOfWeek value)</a></h4>
+<p >Restrict to days of the week.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate &amp; withOnlyOnDays(LocalTimeDayOfWeek value)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>value</code> A <a class="el" href="class_local_time_day_of_week.html" title="Class for managing a mask value of zero or more days of the week.">LocalTimeDayOfWeek</a> object specifying the days of the week (mask bits for Sunday - Saturday)</li>
+</ul>
+<h5>Returns</h5>
+<p ><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a>&amp;</p>
+<p >A day of the week is allowed if the day of week mask bit is set. If a date is in the except dates list, then isValid return false. If a date is in the only on days mask OR only on dates list, then isValid will return true.</p>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> &amp; <a class="el" href="class_local_time_restricted_date.html#ade9defb4b9ec4cb555f7b4483cdba2ac" title="Restrict to certain dates.">LocalTimeRestrictedDate::withOnlyOnDays(uint8_t mask)</a></h4>
+<p >Restrict to certain dates.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate &amp; withOnlyOnDays(uint8_t mask)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>mask</code> Mask value, such as <a class="el" href="class_local_time_day_of_week.html#a11371665dc835f68c2ffb7547521e418" title="Mask value for Monday.">LocalTimeDayOfWeek::MASK_MONDAY</a></li>
+</ul>
+<h5>Returns</h5>
+<p ><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a>&amp;</p>
+<p >A day of the week is allowed if the day of week mask bit is set. If a date is in the except dates list, then isValid return false. If a date is in the only on days mask OR only on dates list, then isValid will return true.</p>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> &amp; <a class="el" href="class_local_time_restricted_date.html#a31a65d67dd48a52a4b9c557c5b1bee0d" title="Restrict to certain dates.">LocalTimeRestrictedDate::withOnlyOnDates(std::initializer_list&lt; const char * &gt; dates)</a></h4>
+<p >Restrict to certain dates.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate &amp; withOnlyOnDates(std::initializer_list&lt; const char * &gt; dates)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>dates</code> A {} list of strings of the form YYYY-MM-DD. No other date formats are allowed!</li>
+</ul>
+<h5>Returns</h5>
+<p ><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a>&amp;</p>
+<p >If a date is in the except dates list, then isValid return false. If a date is in the only on days mask OR only on dates list, then isValid will return true.</p>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> &amp; <a class="el" href="class_local_time_restricted_date.html#aa2bbacbbe3a41d956ba522486e278f08" title="Restrict to certain dates.">LocalTimeRestrictedDate::withOnlyOnDates(std::initializer_list&lt; LocalTimeYMD &gt; dates)</a></h4>
+<p >Restrict to certain dates.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate &amp; withOnlyOnDates(std::initializer_list&lt; LocalTimeYMD &gt; dates)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>dates</code> A {} list of <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> objects</li>
+</ul>
+<h5>Returns</h5>
+<p ><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a>&amp;</p>
+<p >If a date is in the except dates list, then isValid return false. If a date is in the only on days mask OR only on dates list, then isValid will return true.</p>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> &amp; <a class="el" href="class_local_time_restricted_date.html#aff623822dea89caf0874828875326c2a" title="Dates that will always return false for isValid.">LocalTimeRestrictedDate::withExceptDates(std::initializer_list&lt; const char * &gt; dates)</a></h4>
+<p >Dates that will always return false for isValid.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate &amp; withExceptDates(std::initializer_list&lt; const char * &gt; dates)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>dates</code> A {} list of strings of the form YYYY-MM-DD. No other date formats are allowed!</li>
+</ul>
+<h5>Returns</h5>
+<p ><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a>&amp;</p>
+<p >If a date is in the except dates list, then isValid return false. If a date is in the only on days mask OR only on dates list, then isValid will return true.</p>
+<hr  />
+<h4><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a> &amp; <a class="el" href="class_local_time_restricted_date.html#ad2f546f5d172a9d4272f67ec7117bffd" title="Dates that will always return false for isValid.">LocalTimeRestrictedDate::withExceptDates(std::initializer_list&lt; LocalTimeYMD &gt; dates)</a></h4>
+<p >Dates that will always return false for isValid.</p>
+<div class="fragment"><div class="line">LocalTimeRestrictedDate &amp; withExceptDates(std::initializer_list&lt; LocalTimeYMD &gt; dates)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>dates</code> A {} list of <a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a> objects</li>
+</ul>
+<h5>Returns</h5>
+<p ><a class="el" href="class_local_time_restricted_date.html" title="Day of week, date, or date exception restrictions.">LocalTimeRestrictedDate</a>&amp;</p>
+<p >If a date is in the except dates list, then isValid return false. If a date is in the only on days mask OR only on dates list, then isValid will return true.</p>
+<hr  />
+<h4>bool <a class="el" href="class_local_time_restricted_date.html#aa58e174e83cca24b3af2cd4b060c7416" title="Returns true if onlyOnDays mask is 0 and the onlyOnDates and exceptDates lists are empty.">LocalTimeRestrictedDate::isEmpty() const</a></h4>
+<p >Returns true if onlyOnDays mask is 0 and the onlyOnDates and exceptDates lists are empty.</p>
+<div class="fragment"><div class="line">bool isEmpty() const</div>
+</div><!-- fragment --><h5>Returns</h5>
+<p >true</p>
+<h5>Returns</h5>
+<p >false</p>
+<hr  />
+<h4>void <a class="el" href="class_local_time_restricted_date.html#a812462c0dabf80088473befdc3be0873" title="Clear all settings.">LocalTimeRestrictedDate::clear()</a></h4>
+<p >Clear all settings.</p>
+<div class="fragment"><div class="line">void clear()</div>
+</div><!-- fragment --><hr  />
+<h4>bool <a class="el" href="class_local_time_restricted_date.html#a64c7b5bfa57cb755e209ab18ab324e38" title="Returns true if a date is in the onlyOnDays or onlyOnDates list, and not in the exceptDates list.">LocalTimeRestrictedDate::isValid(LocalTimeValue localTimeValue) const</a></h4>
+<p >Returns true if a date is in the onlyOnDays or onlyOnDates list, and not in the exceptDates list.</p>
+<div class="fragment"><div class="line">bool isValid(LocalTimeValue localTimeValue) const</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>localTimeValue</code> Date to check (local time)</li>
+</ul>
+<h5>Returns</h5>
+<p >true</p>
+<h5>Returns</h5>
+<p >false</p>
+<hr  />
+<h4>bool <a class="el" href="class_local_time_restricted_date.html#a4656b5df3355df37ee58f4d890e9d3c9" title="Returns true if a date is in the onlyOnDays or onlyOnDates list, and not in the exceptDates list.">LocalTimeRestrictedDate::isValid(LocalTimeYMD ymd) const</a></h4>
+<p >Returns true if a date is in the onlyOnDays or onlyOnDates list, and not in the exceptDates list.</p>
+<div class="fragment"><div class="line">bool isValid(LocalTimeYMD ymd) const</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>ymd</code> Date to check (local time)</li>
+</ul>
+<h5>Returns</h5>
+<p >true</p>
+<h5>Returns</h5>
+<p >false</p>
+<hr  />
+<h4>bool <a class="el" href="class_local_time_restricted_date.html#a55320569e24fc812097ea222c7755fcf" title="Returns true of a date is in the onlyOnDates list.">LocalTimeRestrictedDate::inOnlyOnDates(LocalTimeYMD ymd) const</a></h4>
+<p >Returns true of a date is in the onlyOnDates list.</p>
+<div class="fragment"><div class="line">bool inOnlyOnDates(LocalTimeYMD ymd) const</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>ymd</code></li>
+</ul>
+<h5>Returns</h5>
+<p >true</p>
+<h5>Returns</h5>
+<p >false</p>
+<hr  />
+<h4>bool <a class="el" href="class_local_time_restricted_date.html#a90c155e90d0f5c7dbcd50568a86066d3" title="Returns true of a date is in the exceptDates list.">LocalTimeRestrictedDate::inExceptDates(LocalTimeYMD ymd) const</a></h4>
+<p >Returns true of a date is in the exceptDates list.</p>
+<div class="fragment"><div class="line">bool inExceptDates(LocalTimeYMD ymd) const</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>ymd</code></li>
+</ul>
+<h5>Returns</h5>
+<p >true</p>
+<h5>Returns</h5>
+<p >false</p>
+<hr  />
+<h4>void <a class="el" href="class_local_time_restricted_date.html#a1b98bbc34b09ed3c948872ef5b885f06" title="Fills in this object from JSON data.">LocalTimeRestrictedDate::fromJson(JSONValue jsonObj)</a></h4>
+<p >Fills in this object from JSON data.</p>
+<div class="fragment"><div class="line">void fromJson(JSONValue jsonObj)</div>
+</div><!-- fragment --><h5>Parameters</h5>
+<ul>
+<li><code>jsonObj</code></li>
+</ul>
+<p >Keys:</p>
+<ul>
+<li>y (integer) mask value for onlyOnDays (optional)</li>
+<li>a (array) Array of YYYY-MM-DD value strings to allow (optional)</li>
+<li>x (array) Array of YYYY-MM-DD values to exclude (optional)</li>
+</ul>
+<h1>class <a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a></h1>
+<p >A complete time schedule.</p>
+<p >A time schedule consists of minute multiples ("every 15 minutes"), optionally within a time range (all day, or from 09:00:00 to 17:00:00 local time, for example.</p>
+<p >It can also have hour multiples, optionally in a time range, at a defined minute ("every 4 hours at :15 
+past the hour").</p>
+<p >Schedules can be at a specifc day week, with an ordinal (first Monday, last Friday) at a specific time, optionally with exceptions.</p>
+<p >Schedules can be a specific day of the month (the 1st, the 5th of the month, the last day of the month, the second to last day of month).</p>
+<p >It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time") every day, specific days of the week, on specific dates, or with date exceptions.</p>
+<p >&lt;/details&gt;</p>
 <hr  />
 <h2>Version history</h2>
-<h3>0.1.0 (2022-03-21)</h3>
+<h3>0.0.8 (2022-03-22)</h3>
 <ul>
 <li>Added advanced scheduling modes (JSON scheduling)</li>
 </ul>
 <h3>0.0.7 (2022-03-08)</h3>
 <ul>
 <li>Added inLocalTimeRange and nextTimeList functions</li>
-<li>Added <a class="el" href="class_local_time_convert_1_1_schedule.html" title="A complete time schedule.">LocalTimeConvert::Schedule</a></li>
+<li>Added <a class="el" href="class_local_time_schedule.html" title="A complete time schedule.">LocalTimeSchedule</a></li>
 </ul>
 <h3>0.0.6 (2022-03-08)</h3>
 <ul>

@@ -392,6 +392,14 @@ public:
     bool operator!=(const LocalTimeDayOfWeek &other) const { return dayOfWeekMask != other.dayOfWeekMask; };
 
 
+    static const int DAY_SUNDAY = 0;
+    static const int DAY_MONDAY = 1;
+    static const int DAY_TUESDAY = 2;
+    static const int DAY_WEDNESDAY = 3;
+    static const int DAY_THURSDAY = 4;
+    static const int DAY_FRIDAY = 5;
+    static const int DAY_SATURDAY = 6;
+
 
     static const uint8_t MASK_SUNDAY = 0x01;    //!< Mask value for Sunday
     static const uint8_t MASK_MONDAY = 0x02;    //!< Mask value for Monday
@@ -499,7 +507,7 @@ public:
      * @brief Adjust the values in a struct tm from the values in this object
      * 
      * @param pTimeInfo The struct tm to modify
-     *      * 
+     * 
      * After calling this, the values in the struct tm may be out of range, for example tm_hour > 23. 
      * This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values
      * into the other fields as necessary.
@@ -847,6 +855,17 @@ public:
      * @return false 
      */
     bool inExceptDates(LocalTimeYMD ymd) const;
+
+    /**
+     * @brief Get the last date (YMD) that this restricted date could be valid
+     * 
+     * @return LocalTimeYMD 
+     * 
+     * This will return the empty date for most cases. A valid value is returned if the only on 
+     * date mode is used. In this case, there's as point in time where this range will 
+     * never be true. This is used to optimize scheduling.
+     */
+    LocalTimeYMD getExpirationDate() const;
 
     /**
      * @brief Fills in this object from JSON data
@@ -1234,6 +1253,17 @@ public:
     }
 
     /**
+     * @brief Construct a new object that specifies start time and date restrictions, used for at time and date schedules
+     * 
+     * @param hmsStart Start time in local time 00:00:00 <= hmsStart <= 23:59:59
+     * @param hmsEnd  End time in local time 00:00:00 <= hmsStart <= 23:59:59
+     * @param dateRestriction Only use this time range on certain dates
+     */
+    LocalTimeRange(LocalTimeHMS hmsStart, LocalTimeRestrictedDate dateRestriction) : LocalTimeRestrictedDate(dateRestriction), hmsStart(hmsStart) {
+        hmsEnd = LocalTimeHMS("23:59:59");
+    }
+
+    /**
      * @brief Clear time range to all day, every day
      */
     void clear() {
@@ -1259,8 +1289,6 @@ public:
      * long (or long long) value.
      * 
      * This does not take into account date restrictions!
-     * 
-     * TODO: I think I can remove this
      */
     time_t getTimeSpan(const LocalTimeConvert &conv) const;
 
@@ -1312,6 +1340,19 @@ public:
     }
 
     /**
+     * @brief For restricted time ranges, get the last date (YMD) that this time range could be valid
+     * 
+     * @return LocalTimeYMD 
+     * 
+     * This will return the empty date for most cases. A valid value is returned if the LocalTimeRestrictedDate
+     * is used, and an only on date is set. In this case, there's as point in time where this range will 
+     * never be true. This is used to optimize scheduling.
+     */
+    LocalTimeYMD getExpirationDate() const {
+        return LocalTimeRestrictedDate::getExpirationDate();
+    }
+
+    /**
      * @brief Set the date restrictions from a LocalTimeHMSRestricted object
      * 
      * @param hms LocalTimeHMSRestricted, really only uses the date restrictions, not the HMS part
@@ -1339,7 +1380,7 @@ public:
 
 
 /**
- * @brief LocalTimeSchedule option for "every n minutes"
+ * @brief A single item in a schedule, such as minute of hour, hour of day, or a specific time.
  */
 class LocalTimeScheduleItem {
 public: 
@@ -1347,7 +1388,7 @@ public:
      * @brief Type of schedule item this is
      */
     enum class ScheduleItemType : int {
-        NONE = 0,               //!< No multiple defined
+        NONE = 0,               //!< No schedule defined
         MINUTE_OF_HOUR,         //!< Minute of the hour (1)
         HOUR_OF_DAY,            //!< Hour of day (2)
         DAY_OF_WEEK_OF_MONTH,   //!< The nth day of week of the month (3)
@@ -1393,12 +1434,25 @@ public:
      * 
      * This method finds the next scheduled time of this item, if it's in the near future.
      * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
-     * to check; the default is 3 days. The way schedules work each day needs to be checked to make
+     * to check; the default is 100 days. The way schedules work each day needs to be checked to make
      * sure all of the constraints are met, so long look-aheads are computationally intensive. This
      * is not normally an issue, because the idea is that you'll wake from sleep or check the
      * schedule at least every few days, at which point the new schedule may be available.
      */
     bool getNextScheduledTime(LocalTimeConvert &conv) const;
+
+    /**
+     * @brief For restricted time ranges, get the last date (YMD) that this time range could be valid
+     * 
+     * @return LocalTimeYMD 
+     * 
+     * This will return the empty date for most cases. A valid value is returned if the LocalTimeRestrictedDate
+     * is used, and an only on date is set. In this case, there's as point in time where this range will 
+     * never be true. This is used to optimize scheduling.
+     */
+    LocalTimeYMD getExpirationDate() const {
+        return timeRange.getExpirationDate();
+    }
 
     /**
      * @brief Creates an object from JSON
@@ -1459,7 +1513,7 @@ public:
      * @brief Adds a minute multiple schedule in a time range
      * 
      * @param increment Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
-     * @param timeRange When to apply this minute multiple and/or minute offset.
+     * @param timeRange When to apply this minute multiple and/or minute offset (optional)
      * 
      * This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you
      * should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be
@@ -1487,7 +1541,7 @@ public:
      * 
      * Hours are per day, local time. For whole-day schedules, you will typically use a value that
      * 24 is evenly divisible by (2, 3, 4, 6, 8, 12), because otherwise the time periods will brief
-     * unequal at the top of the hour.
+     * unequal at midnight.
      * 
      * Also note that times are local, and take into account daylight saving. Thus during a time switch,
      * the interval may end up being a different number of hours than specified. For example, if the
@@ -1614,12 +1668,10 @@ public:
      * @param conv LocalTimeConvert object, may be modified
      * @return true if there is an item available or false if not. if false, conv will be unchanged.
      * 
-     * This method finds closest scheduled time for this objecvt, if it's in the near future.
+     * This method finds closest scheduled time for this object, if it's in the relatively near future.
      * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
-     * to check; the default is 3 days. The way schedules work each day needs to be checked to make
-     * sure all of the constraints are met, so long look-aheads are computationally intensive. This
-     * is not normally an issue, because the idea is that you'll wake from sleep or check the
-     * schedule at least every few days, at which point the new schedule may be available.
+     * to check; the default is 100 days. The way schedules work each day needs to be checked to make
+     * sure all of the constraints are met, so long look-aheads are computationally intensive. 
      */
     bool getNextScheduledTime(LocalTimeConvert &conv) const;
 
@@ -1630,12 +1682,10 @@ public:
      * @param filter A function to determine, for each schedule item, if it should be tested
      * @return true if there is an item available or false if not. if false, conv will be unchanged.
      * 
-     * This method finds closest scheduled time for this objecvt, if it's in the near future.
+     * This method finds closest scheduled time for this object, if it's in the relatively near future.
      * The LocalTime::instance().getScheduleLookaheadDays() setting determines how far in the future
-     * to check; the default is 3 days. The way schedules work each day needs to be checked to make
-     * sure all of the constraints are met, so long look-aheads are computationally intensive. This
-     * is not normally an issue, because the idea is that you'll wake from sleep or check the
-     * schedule at least every few days, at which point the new schedule may be available.
+     * to check; the default is 100 days. The way schedules work each day needs to be checked to make
+     * sure all of the constraints are met, so long look-aheads are computationally intensive. 
      * 
      * The filter function or lambda has this prototype:
      * 
@@ -1645,6 +1695,24 @@ public:
      */
     bool getNextScheduledTime(LocalTimeConvert &conv, std::function<bool(LocalTimeScheduleItem &item)> filter) const;
 
+    /**
+     * @brief Determine if it's time to run the scheduled task based on the current time and internal nextTime member variable
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool isScheduledTime();
+
+    /**
+     * @brief Low-level function used for unit testing
+     * 
+     * @param conv 
+     * @param timeNow 
+     * @return true 
+     * @return false 
+     */
+    bool isScheduledTime(LocalTimeConvert &conv, time_t timeNow);
+
     static const uint32_t FLAG_QUICK_WAKE       = 0x00000001; //!< Schedule is for quick wake
     static const uint32_t FLAG_FULL_WAKE        = 0x00000002; //!< Schedule is for full wake with publish
     // Other wake constants go here, up to 0x00000080
@@ -1652,9 +1720,15 @@ public:
 
     String name; //!< Name of this schedule (optional, typically used with LocalTimeScheduleManager)
     uint32_t flags = 0; //!< Flags (optional, typically used with LocalTimeScheduleManager)
+    time_t nextTime = 0; //!< Optional, used with isScheduleTime()
     std::vector<LocalTimeScheduleItem> scheduleItems; //!< LocalTimeSchedule items
 };
 
+/**
+ * @brief Class for managing multiple named schedules
+ * 
+ * This is used for the quick and full wake schedules, but can be extended for other uses.
+ */
 class LocalTimeScheduleManager {
 public:
     /**
@@ -1683,10 +1757,20 @@ public:
     time_t getNextFullWake(const LocalTimeConvert &conv) const;
 
     /**
-     * @brief 
+     * @brief Get the next scheduled data capture. Data capture schedules are a 
+     * special class of quick wake that also runs while powered on.
      * 
-     * @param callback 
+     * @param conv 
+     * @return time_t 
+     */
+    time_t getNextDataCapture(const LocalTimeConvert &conv) const;
+
+    /**
+     * @brief Call a function or lambda for each schedule.
      * 
+     * @param callback Function or lambda to call.
+     * 
+     * The callback has this prototype:
      * 
      * void callback(LocalTimeSchedule &schedule)
      */
@@ -1714,7 +1798,7 @@ public:
      */
     void setFromJsonObject(const JSONValue &obj);
 
-    std::vector<LocalTimeSchedule> schedules;
+    std::vector<LocalTimeSchedule> schedules; //!< Vector of all of the schedules. Names and flags are in the schedule object
 };
 
 /**
@@ -2311,9 +2395,9 @@ protected:
     LocalTimePosixTimezone config;
 
     /**
-     * @brief Number of days to look forward to see if there are scheduled events. Default: 3
+     * @brief Number of days to look forward to see if there are scheduled events. Default: 100
      */
-    int scheduleLookaheadDays = 3;
+    int scheduleLookaheadDays = 100;
 
     /**
      * @brief Singleton instance of this class

@@ -139,6 +139,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>clear</b> ()</td></tr
 <tr class="memitem:a90c155e90d0f5c7dbcd50568a86066d3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_restricted_date.html#a90c155e90d0f5c7dbcd50568a86066d3">inExceptDates</a> (<a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a> ymd) const</td></tr>
 <tr class="memdesc:a90c155e90d0f5c7dbcd50568a86066d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true of a date is in the exceptDates list.  <a href="class_local_time_restricted_date.html#a90c155e90d0f5c7dbcd50568a86066d3">More...</a><br /></td></tr>
 <tr class="separator:a90c155e90d0f5c7dbcd50568a86066d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39d57ae35fe10c3656fa9169b8592a0d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_restricted_date.html#a39d57ae35fe10c3656fa9169b8592a0d">getExpirationDate</a> () const</td></tr>
+<tr class="memdesc:a39d57ae35fe10c3656fa9169b8592a0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the last date (YMD) that this restricted date could be valid.  <a href="class_local_time_restricted_date.html#a39d57ae35fe10c3656fa9169b8592a0d">More...</a><br /></td></tr>
+<tr class="separator:a39d57ae35fe10c3656fa9169b8592a0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b98bbc34b09ed3c948872ef5b885f06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_restricted_date.html#a1b98bbc34b09ed3c948872ef5b885f06">fromJson</a> (JSONValue jsonObj)</td></tr>
 <tr class="memdesc:a1b98bbc34b09ed3c948872ef5b885f06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in this object from JSON data.  <a href="class_local_time_restricted_date.html#a1b98bbc34b09ed3c948872ef5b885f06">More...</a><br /></td></tr>
 <tr class="separator:a1b98bbc34b09ed3c948872ef5b885f06"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -329,6 +332,27 @@ std::vector&lt; <a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a
 <li>a (array) Array of YYYY-MM-DD value strings to allow (optional)</li>
 <li>x (array) Array of YYYY-MM-DD values to exclude (optional) </li>
 </ul>
+
+</div>
+</div>
+<a id="a39d57ae35fe10c3656fa9169b8592a0d" name="a39d57ae35fe10c3656fa9169b8592a0d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39d57ae35fe10c3656fa9169b8592a0d">&#9670;&nbsp;</a></span>getExpirationDate()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_local_time_y_m_d.html">LocalTimeYMD</a> LocalTimeRestrictedDate::getExpirationDate </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the last date (YMD) that this restricted date could be valid. </p>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_local_time_y_m_d.html" title="Class for holding a year month day efficiently (4 bytes of storage)">LocalTimeYMD</a></dd></dl>
+<p>This will return the empty date for most cases. A valid value is returned if the only on date mode is used. In this case, there's as point in time where this range will never be true. This is used to optimize scheduling. </p>
 
 </div>
 </div>

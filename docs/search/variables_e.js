@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['week_0',['week',['../class_local_time_change.html#af09771f43f608f68d869d8a4d3a99ad4',1,'LocalTimeChange']]]
+  ['valid_0',['valid',['../class_local_time_change.html#a014c97250e9ee2e827fb8bd458402959',1,'LocalTimeChange::valid()'],['../class_local_time_posix_timezone.html#a87f30efb4c3260b62d54bf9bc29937cd',1,'LocalTimePosixTimezone::valid()']]]
 ];
