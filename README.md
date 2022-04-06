@@ -2131,9 +2131,14 @@ It can also have any number of specific times in the day ("at 08:17:30 local tim
 
 ## Version history
 
-### 0.0.8 (2022-03-22)
+### 0.0.9 (2022-04-06)
+
+- Remove automated test from Particle library upload
+
+### 0.0.8 (2022-04-06)
 
 - Added advanced scheduling modes (JSON scheduling)
+- Updated docs
 
 ### 0.0.7 (2022-03-08)
 
