@@ -30,6 +30,16 @@ char *readTestData(const char *filename) {
 	return data;
 }
 
+JSONValue readTestDataJson(const char *filename) {
+	JSONValue jsonObj;
+
+	char *data = readTestData(filename);
+
+	jsonObj = JSONValue::parse(data, strlen(data));
+
+	return jsonObj;
+}
+
 #define assertInt(msg, got, expected) _assertInt(msg, got, expected, __LINE__)
 void _assertInt(const char *msg, int got, int expected, int line) {
 	if (expected != got) {
@@ -55,6 +65,26 @@ void _assertTime(const char *msg, time_t got, const char *expected, int line) {
 	struct tm timeInfo;
 	LocalTime::timeToTm(got, &timeInfo);
 	String gotStr = LocalTime::getTmString(&timeInfo);
+	if (strcmp(expected, gotStr) != 0) {
+		printf("assertion failed %s line %d\n", msg, line);
+		printf("expected: %s\n", expected);
+		printf("     got: %s\n", gotStr.c_str());
+		assert(false);
+	}
+}
+
+
+#define assertTime2(msg, got, expected) _assertTime2(msg, got, expected, __LINE__)
+void _assertTime2(const char *msg, time_t got, const char *expected, int line) {
+	struct tm timeInfo;
+	LocalTimeYMD ymd;
+	LocalTimeHMS hms;
+
+	LocalTime::timeToTm(got, &timeInfo);
+	ymd.fromTimeInfo(&timeInfo);
+	hms.fromTimeInfo(&timeInfo);
+	
+	String gotStr = ymd.toString() + String(" ") + hms.toString();
 	if (strcmp(expected, gotStr) != 0) {
 		printf("assertion failed %s line %d\n", msg, line);
 		printf("expected: %s\n", expected);
@@ -388,11 +418,39 @@ void testLocalTimePosixTimezone() {
 	assert(tz.dstStart.hms.second == 0);
 	assert(tz.dstStart.valid == 1);
 
+	// Newfoundland Time Zone (Canada) Newfoundland and southeastern Labrador
+	tz.parse("NST3:30NDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
+	assert(strcmp(tz.standardName.c_str(), "NST") == 0);
+	assert(tz.standardHMS.hour == 3);
+	assert(tz.standardHMS.minute == 30);
+	assert(tz.standardHMS.second == 0);
+	assert(tz.standardStart.month == 11);
+	assert(tz.standardStart.week == 1);
+	assert(tz.standardStart.dayOfWeek == 0);
+	assert(tz.standardStart.hms.hour == 2);
+	assert(tz.standardStart.hms.minute == 0);
+	assert(tz.standardStart.hms.second == 0);
+	assert(tz.standardStart.valid == 1);
+	assert(strcmp(tz.dstName.c_str(), "NDT") == 0);
+	assert(tz.dstStart.valid == 1);
+	assert(tz.dstHMS.hour == 2);
+	assert(tz.dstHMS.minute == 30);
+	assert(tz.dstHMS.second == 0);
+	assert(tz.dstStart.month == 3);
+	assert(tz.dstStart.week == 2);
+	assert(tz.dstStart.dayOfWeek == 0);
+	assert(tz.dstStart.hms.hour == 2);
+	assert(tz.dstStart.hms.minute == 0);
+	assert(tz.dstStart.hms.second == 0);
+	assert(tz.dstStart.valid == 1);
 }
+
 
 void test1() {
 	LocalTimePosixTimezone tzConfig("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
 	// Also works with: EST+5EDT,M3.2.0/2,M11.1.0/2
+
+	LocalTimePosixTimezone tzConfigNewfoundland("NST3:30NDT,M3.2.0/2:00:00,M11.1.0/2:00:00");
 
 	//
 	// LocalTimeValue
@@ -856,56 +914,321 @@ void test1() {
 	assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=15 tm_sec=30 tm_wday=6");	
 
 	// inLocalTimeRange
+	/*
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time EST
-	assert(conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
-	assert(!conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("06:00"), LocalTimeHMS("06:59:59"))));
+	assert(conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
+	assert(!conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("06:00"), LocalTimeHMS("06:59:59"))));
 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:00:00")).convert(); // 05:00:00 local time EST
-	assert(conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
+	assert(conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 11:00:00")).convert(); // 6:00:00 local time EST
-	assert(!conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
+	assert(!conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("05:00"), LocalTimeHMS("05:59:59"))));
 
 	// Crossing day boundary
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 03:10:52")).convert(); // 22:10:52 local time EST
-	assert(conv.inLocalTimeRange(LocalTimeConvert::TimeRange(LocalTimeHMS("22:00"), LocalTimeHMS("22:59:59"))));
+	assert(conv.inLocalTimeRange(LocalTimeRange(LocalTimeHMS("22:00"), LocalTimeHMS("22:59:59"))));
+	*/
 
 	// Time range tests
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
 	{
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("00:15:35"));
+		LocalTimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("00:15:35"));
 		assertInt("", timeRange.getTimeSpan(conv), 5);
 	}
 	{
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("01:15:30"));
+		LocalTimeRange timeRange(LocalTimeHMS("00:15:30"), LocalTimeHMS("01:15:30"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
 	}
 	// Right before spring forward
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 19:10:52")).convert(); // 1:10:52 AM EST
 	{
 		// This crosses spring forward, so 2 hours on the clock is actually 1 hour
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("1:10:52"), LocalTimeHMS("3:10:52"));
+		LocalTimeRange timeRange(LocalTimeHMS("1:10:52"), LocalTimeHMS("3:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
 	}
 	{
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("3:10:52"), LocalTimeHMS("4:10:52"));
+		LocalTimeRange timeRange(LocalTimeHMS("3:10:52"), LocalTimeHMS("4:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
 	}
 	// Right before fall back
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-07 18:10:52")).convert(); // 12:10:52 AM EDT
 	{
 		// This crosses fall back, so 3 hours on the clock is actually 4 hours
-		LocalTimeConvert::TimeRange timeRange(LocalTimeHMS("00:10:52"), LocalTimeHMS("3:10:52"));
+		LocalTimeRange timeRange(LocalTimeHMS("00:10:52"), LocalTimeHMS("3:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 4 * 3600);
 	}
+
+	// LocalTimeRange expiration
+
+
+	// LocalTimeYMD
+	{
+		LocalTimeYMD ymd;
+		bool bResult;
+
+		assertInt("", ymd.isEmpty(), true);
+		
+		bResult = ymd.parse("2022-03-12");
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		assertInt("", ymd.isEmpty(), false);
+
+		ymd.setYear(2021);
+		ymd.setMonth(12);
+		ymd.setDay(10);
+		assertInt("", ymd.getYear(), 2021);
+		assertInt("", ymd.getMonth(), 12);
+		assertInt("", ymd.getDay(), 10);
+		assertInt("", ymd.getDayOfWeek(), 5);
+
+
+		bResult = ymd.parse("2022-3-1");
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 1);
+		assertInt("", ymd.getDayOfWeek(), 2);
+
+		LocalTimeYMD ymd2("2022-03-12");
+		assertInt("", ymd2.getYear(), 2022);
+		assertInt("", ymd2.getMonth(), 3);
+		assertInt("", ymd2.getDay(), 12);
+		assertInt("", ymd2.getDayOfWeek(), 6);
+
+		LocalTimeYMD ymd3 = ymd2;
+		assertInt("", ymd3.getYear(), 2022);
+		assertInt("", ymd3.getMonth(), 3);
+		assertInt("", ymd3.getDay(), 12);
+		assertInt("", ymd3.getDayOfWeek(), 6);
+
+		assertInt("", LocalTimeYMD("2022-03-12") == LocalTimeYMD("2022-03-12"), true);
+		assertInt("", LocalTimeYMD("2022-03-12") == LocalTimeYMD("2022-03-13"), false);
+		assertInt("", LocalTimeYMD("2022-03-12") <= LocalTimeYMD("2022-03-12"), true);
+		assertInt("", LocalTimeYMD("2022-03-13") <= LocalTimeYMD("2022-03-12"), false);
+		assertInt("", LocalTimeYMD("2022-03-12") >= LocalTimeYMD("2022-03-12"), true);
+		assertInt("", LocalTimeYMD("2022-03-12") != LocalTimeYMD("2022-03-13"), true);
+		assertInt("", LocalTimeYMD("2022-03-12") < LocalTimeYMD("2022-03-13"), true);
+		assertInt("", LocalTimeYMD("2022-03-12") <= LocalTimeYMD("2022-03-13"), true);
+		assertInt("", LocalTimeYMD("2022-03-14") > LocalTimeYMD("2022-03-13"), true);
+		assertInt("", LocalTimeYMD("2022-03-14") >= LocalTimeYMD("2022-03-13"), true);
+		assertInt("", LocalTimeYMD("2022-02-14") < LocalTimeYMD("2022-03-13"), true);
+		assertInt("", LocalTimeYMD("2021-03-14") < LocalTimeYMD("2022-03-13"), true);
+
+		bResult = ymd.parse("2022-03-11");
+		ymd.addDay(1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2022-03-10");
+		ymd.addDay(2);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2022-02-28");
+		ymd.addDay(12);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2022-03-13");
+		ymd.addDay(-1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2022);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 12);
+		assertInt("", ymd.getDayOfWeek(), 6);
+
+		bResult = ymd.parse("2024-02-28");
+		ymd.addDay(1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2024);
+		assertInt("", ymd.getMonth(), 2);
+		assertInt("", ymd.getDay(), 29);
+		assertInt("", ymd.getDayOfWeek(), 4);
+
+		ymd.addDay(1);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2024);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 1);
+		assertInt("", ymd.getDayOfWeek(), 5);
+
+		bResult = ymd.parse("2024-02-28");
+		ymd.addDay(2);
+		assertInt("", bResult, true);
+		assertInt("", ymd.getYear(), 2024);
+		assertInt("", ymd.getMonth(), 3);
+		assertInt("", ymd.getDay(), 1);
+		assertInt("", ymd.getDayOfWeek(), 5);
+
+
+	}
+
+	// LocalTimeRestrictedDate - Day Of Week
+	{
+		LocalTimeRestrictedDate t1;
+		t1.withOnlyOnDays(LocalTimeDayOfWeek::MASK_WEEKDAY);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-08")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-09")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-10")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-11")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-12")), false);
+
+		LocalTimeRestrictedDate t2;
+		t2.withOnlyOnDays(LocalTimeDayOfWeek::MASK_WEEKEND);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-06")), true);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-07")), false);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-12")), true);
+
+		LocalTimeRestrictedDate t3;
+		t3.withOnlyOnDays(LocalTimeDayOfWeek::MASK_MONDAY);
+		assertInt("", t3.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t3.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t3.isValid(LocalTimeYMD("2022-03-08")), false);
+	}
+	// LocalTimeRestrictedDate - Day Of Week JSON
+	{
+		LocalTimeRestrictedDate t1;
+		t1.fromJson(readTestDataJson("testfiles/test09.json"));
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-08")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-09")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-10")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-11")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-12")), false);		
+	}
+
+	// LocalTimeRestrictedDate - Only on dates
+	{
+		LocalTimeRestrictedDate t2;
+		t2.withOnlyOnDates({"2022-03-07", "2022-04-04"});
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-08")), false);
+
+		assertInt("", t2.isValid(LocalTimeYMD("2022-04-03")), false);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-04-04")), true);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-04-05")), false);
+
+		LocalTimeRestrictedDate t3;
+		t3.withOnlyOnDates({"2022-03-07"});
+		assertInt("", t3.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t3.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t3.isValid(LocalTimeYMD("2022-03-08")), false);
+	}
+	// LocalTimeRestrictedDate - Only on dates - JSON
+	{
+		LocalTimeRestrictedDate t2;
+		t2.fromJson(readTestDataJson("testfiles/test10.json"));
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-03-08")), false);
+
+		assertInt("", t2.isValid(LocalTimeYMD("2022-04-03")), false);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-04-04")), true);
+		assertInt("", t2.isValid(LocalTimeYMD("2022-04-05")), false);
+	}
+
+
+	// LocalTimeRestrictions - Except Date
+	{
+		LocalTimeRestrictedDate t1;
+		t1.withOnlyOnDays(LocalTimeDayOfWeek::MASK_WEEKDAY)
+		  .withExceptDates({"2022-03-08"});
+
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-08")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-09")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-10")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-11")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-12")), false);
+	}
+	// LocalTimeRestrictions - Except Date JSON
+	{
+		LocalTimeRestrictedDate t1;
+		t1.fromJson(readTestDataJson("testfiles/test11.json"));
+
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-08")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-09")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-10")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-11")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-12")), false);
+	}
+	// LocalTimeRestrictions - Only Date
+	{
+		LocalTimeRestrictedDate t1;
+		t1.withOnlyOnDates({"2022-03-07", "2022-03-09"});
+
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-08")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-09")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-10")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-11")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-12")), false);
+	}
+	// LocalTimeRestrictions - Only Date and only on days (adds additional day)
+	{
+		LocalTimeRestrictedDate t1;
+		t1.withOnlyOnDays(LocalTimeDayOfWeek::MASK_TUESDAY);
+		t1.withOnlyOnDates({"2022-03-07", "2022-03-09"});
+
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-06")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-07")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-08")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-09")), true);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-10")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-11")), false);
+		assertInt("", t1.isValid(LocalTimeYMD("2022-03-12")), false);
+
+	}
+
+	{
+		LocalTimeRestrictedDate t1;
+		t1.withOnlyOnDays(LocalTimeDayOfWeek::MASK_TUESDAY);
+
+		assertInt("", t1.getExpirationDate().isEmpty(), true);
+	}
+	{
+		LocalTimeRestrictedDate t1;
+		t1.withOnlyOnDates({"2022-03-07", "2022-03-09"});
+
+		assertInt("", t1.getExpirationDate() == LocalTimeYMD("2022-03-09"), true);
+	}
+	{
+		LocalTimeRestrictedDate t1;
+		t1.withOnlyOnDates({"2022-04-09", "2022-03-09"});
+
+		assertInt("", t1.getExpirationDate() == LocalTimeYMD("2022-04-09"), true);
+	}
+
 
 
 	// Scheduling
 	{
-		LocalTimeConvert::Schedule schedule;
-		schedule.withMinuteMultiple(5);
+		LocalTimeSchedule schedule;
+		schedule.withMinuteOfHour(5);
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:30")).convert(); 
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=15 tm_sec=0 tm_wday=6");	
 
@@ -917,21 +1240,51 @@ void test1() {
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:19:59")).convert();
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:19:00")).convert();
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 23:58:52")).convert();
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 23:58:00")).convert(); // 18:58:00 EST
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=0");	
+	}
+	{
+		LocalTimeSchedule schedule;
+		schedule.withMinuteOfHour(5);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:30")).convert(); 
+		
+		time_t now = LocalTime::stringToTime("2021-12-04 16:14:59");
+		assertInt("", schedule.isScheduledTime(conv, now), false);
+
+		now = LocalTime::stringToTime("2021-12-04 16:15:00");
+		conv.withTime(now).convert();
+		assertInt("", schedule.isScheduledTime(conv, now), true);
+
+		now = LocalTime::stringToTime("2021-12-04 16:15:00");
+		conv.withTime(now).convert();
+		assertInt("", schedule.isScheduledTime(conv, now), false);
+
+		now = LocalTime::stringToTime("2021-12-04 16:19:59");
+		conv.withTime(now).convert();
+		assertInt("", schedule.isScheduledTime(conv, now), false);
+
+		now = LocalTime::stringToTime("2021-12-04 16:20:00");
+		conv.withTime(now).convert();
+		assertInt("", schedule.isScheduledTime(conv, now), true);
+
+		now = LocalTime::stringToTime("2021-12-04 16:20:00");
+		conv.withTime(now).convert();
+		assertInt("", schedule.isScheduledTime(conv, now), false);
+
 	}
 
 	{
 		// Every 15 minutes all day, at 05:00, 20:00, 35:00, 50:00
-		LocalTimeConvert::Schedule schedule;
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")));
+		LocalTimeSchedule schedule;
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")));
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:00")).convert(); 
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=20 tm_sec=0 tm_wday=6");	
 
@@ -946,11 +1299,11 @@ void test1() {
 	}
 
 	{
-		LocalTimeConvert::Schedule schedule;
+		LocalTimeSchedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:00")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=6");	
 
@@ -971,8 +1324,6 @@ void test1() {
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=6");	
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 21:55:00")).convert(); // 17:55:00 local time
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=22 tm_min=0 tm_sec=0 tm_wday=6");	
 
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=0");	
@@ -982,12 +1333,36 @@ void test1() {
 
 	}
 
+
 	{
-		LocalTimeConvert::Schedule schedule;
+		LocalTimeSchedule schedule;
+		// Every 15 minutes between 09:02:30 and 5 PM local time (14:02:30 to 22:00 UTC)
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:02:30"), LocalTimeHMS("16:59:59")));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:00")).convert(); // 05:10:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=2 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=17 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=32 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=47 tm_sec=30 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=15 tm_min=2 tm_sec=30 tm_wday=6");	
+
+
+	}
+	{
+		LocalTimeSchedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
 		// Every hour otherwise
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
-		schedule.withMinuteMultiple(60);
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withMinuteOfHour(60);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1044,8 +1419,508 @@ void test1() {
 	}
 
 	{
+		LocalTimeSchedule schedule;
+		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
+		// Every hour otherwise
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY)));
+		schedule.withMinuteOfHour(60);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=12 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 21:40:52")).convert(); // 04:40:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=21 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=22 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=23 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=1 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-06 13:40:52")).convert(); // 08:40:52 local time Monday
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=1");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=1");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=1");	
+
+	}
+
+	// JSON
+	{
+		LocalTimeSchedule schedule;
+		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
+		// Every hour otherwise
+		schedule.fromJson(readTestDataJson("testfiles/test12.json"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=12 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 21:40:52")).convert(); // 04:40:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=21 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=22 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=23 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=1 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-06 13:40:52")).convert(); // 08:40:52 local time Monday
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=1");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=1");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=1");	
+
+	}
+	{
+		LocalTimeSchedule schedule;
+		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every hour otherwise
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59"), 
+			LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY, {}, {"2021-12-06"})));
+		schedule.withMinuteOfHour(60);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=12 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 21:40:52")).convert(); // 04:40:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=21 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=22 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=23 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=1 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-06 13:40:52")).convert(); // 08:40:52 local time Monday
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=1");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=1");
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=16 tm_min=0 tm_sec=0 tm_wday=1");
+
+	}
+
+	{
+		LocalTimeSchedule schedule;
+		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every hour otherwise
+		schedule.fromJson(readTestDataJson("testfiles/test13.json"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=12 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 21:40:52")).convert(); // 04:40:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=21 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=22 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=23 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=1 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-06 13:40:52")).convert(); // 08:40:52 local time Monday
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=1");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=1");
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=16 tm_min=0 tm_sec=0 tm_wday=1");
+
+	}
+
+	{
+		LocalTimeSchedule schedule;
+		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC) Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every 4 hours otherwise (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 local time) (05:00, 09:00, 13:00, 17:00, 21:00, 01:00 UTC)
+		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
+
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 10:10:52")).convert(); // 05:10:52 EDT local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=13 tm_min=0 tm_sec=0 tm_wday=5");	// 08:00:00 local time
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=30 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=14 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=15 tm_min=15 tm_sec=0 tm_wday=5");	
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-03 21:40:52")).convert(); // 04:40:52 local time
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=3 tm_hour=21 tm_min=45 tm_sec=0 tm_wday=5");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=1 tm_min=0 tm_sec=0 tm_wday=6");	 // 20:00:00 local time
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=6");	 // 00:00:00 local time
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-06 13:40:52")).convert(); // 08:40:52 local time Monday
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=17 tm_min=0 tm_sec=0 tm_wday=1");
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=6 tm_hour=21 tm_min=0 tm_sec=0 tm_wday=1");	
+	}
+
+	{
+		LocalTimeSchedule schedule;
+		// Using Newfoundland standard time -0330
+		// Every 15 minutes between 9:00 AM and 5 PM local time (12:30 to 20:30 UTC) Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every 4 hours otherwise (00:00, 04:00, ...)
+		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
+
+		conv.withConfig(tzConfigNewfoundland).withTime(LocalTime::stringToTime("2021-12-03 10:15:00")).convert(); // 06:45:00 NST
+
+		conv.atLocalTime(LocalTimeHMS("09:00:00"));
+		assertTime2("", conv.time, "2021-12-03 12:30:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("17:00:00"));
+		assertTime2("", conv.time, "2021-12-03 20:30:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("08:15:00"));
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 12:30:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 12:45:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 13:00:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("16:50:00"));
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 23:30:00"); // 20:00 NST
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 03:30:00"); // 00:00 NST Saturday
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 07:30:00"); // 04:00 NST
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 11:30:00"); // 08:00 NST
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 15:30:00"); // 12:00 NST 
+
+	}
+
+	{
+		LocalTimeSchedule schedule;
+		// Using UTC
+		// Every 15 minutes between 09:00 and 17:00 UTC Monday - Friday
+		//   Except 2021-12-06 (Monday), maybe it was a holiday
+		// Every 4 hours otherwise (00:00, 04:00, ...)
+		schedule.fromJson(readTestDataJson("testfiles/test16.json"));
+
+		conv.withConfig("UTC").withTime(LocalTime::stringToTime("2021-12-03 08:15:00")).convert();
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:00:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:15:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:30:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 09:45:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 10:00:00"); 
+
+		conv.atLocalTime(LocalTimeHMS("16:50:00"));
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-03 20:00:00"); 
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 00:00:00"); // 00:00 Saturday
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 04:00:00");
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 08:00:00");
+
+		conv.nextSchedule(schedule);
+		assertTime2("", conv.time, "2021-12-04 12:00:00");
+
+	}
+
+	// withDayOfWeekOfMonth
+	{
+		// First Saturday (0) of the month
+		LocalTimeSchedule schedule;
+		schedule.withDayOfWeekOfMonth(LocalTimeDayOfWeek::DAY_SATURDAY, 1);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-02 04:00:00");
+
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-07 04:00:00");
+
+	}
+	{
+		// First Monday of the month at 9:00 AM local time
+		LocalTimeSchedule schedule;
+		schedule.withDayOfWeekOfMonth(LocalTimeDayOfWeek::DAY_MONDAY, 1, LocalTimeHMS("09:00:00"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-04 13:00:00");
+
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-02 13:00:00");
+
+	}
+	{
+		// Last Friday of the month at 5:00 PM local time
+		LocalTimeSchedule schedule;
+		schedule.withDayOfWeekOfMonth(LocalTimeDayOfWeek::DAY_FRIDAY, -1, LocalTimeHMS("17:00:00"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-29 21:00:00");
+
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-27 21:00:00");
+
+	}
+
+	// withDayOfMonth
+	{
+		LocalTimeSchedule schedule;
+		schedule.withDayOfMonth(6); // 6th of the month at midnight local time
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-06 04:00:00");
+
+	}
+	{
+		LocalTimeSchedule schedule;
+		schedule.withDayOfMonth(6, LocalTimeHMS("06:00")); // 6th of the month at 6:00 AM local time
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-06 10:00:00");
+
+	}
+	{
+		LocalTimeSchedule schedule;
+		schedule.withDayOfMonth(-1); // last day of the month
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-30 04:00:00");
+
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-31 04:00:00");
+
+	}
+	{
+		LocalTimeSchedule schedule;
+		schedule.withDayOfMonth(-2); // 2nd to last day of the month
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-29 04:00:00");
+
+	}
+	{
+		LocalTimeSchedule schedule;
+		schedule.withDayOfMonth(-1, LocalTimeHMS("23:59:59")); // last day of the month at 11:59:59 PM
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-01 03:59:59");
+
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-06-01 03:59:59");
+
+	}
+
+	// withTimes
+	{
 		// At specified times of the day (local time)
-		LocalTimeConvert::Schedule schedule;
+		LocalTimeSchedule schedule;
 		schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")}); // 11:00 UTC and 23:30 UTC
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
@@ -1063,8 +1938,32 @@ void test1() {
 	}
 	{
 		// At specified times of the day (local time) across spring forward time change
-		LocalTimeConvert::Schedule schedule;
+		LocalTimeSchedule schedule;
 		schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")}); // 11:00 UTC and 23:30 UTC
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-12 06:10:52")).convert(); // 1:10:52 AM EST
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=12 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=12 tm_hour=23 tm_min=30 tm_sec=0 tm_wday=6");	
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=13 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=0"); 
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=13 tm_hour=22 tm_min=30 tm_sec=0 tm_wday=0");
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=14 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=1"); 
+
+		conv.nextSchedule(schedule);
+		assertTime("", conv.time, "tm_year=122 tm_mon=2 tm_mday=14 tm_hour=22 tm_min=30 tm_sec=0 tm_wday=1");
+	}
+		{
+		// At specified times of the day (local time) across spring forward time change
+		LocalTimeSchedule schedule;
+		schedule.fromJson(readTestDataJson("testfiles/test14.json"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-12 06:10:52")).convert(); // 1:10:52 AM EST
 		conv.nextSchedule(schedule);
@@ -1087,7 +1986,7 @@ void test1() {
 	}
 	{
 		// At specified times of the day (local time) across fall back time change
-		LocalTimeConvert::Schedule schedule;
+		LocalTimeSchedule schedule;
 		schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")}); // 11:00 UTC and 23:30 UTC
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-07 05:10:52")).convert(); // 12:10:52 AM EDT
@@ -1098,102 +1997,111 @@ void test1() {
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=23 tm_min=30 tm_sec=0 tm_wday=0"); // 
 	}
-
 	{
-		LocalTimeConvert::Schedule schedule;
-		// At 0:05, 3:05, ... 
-		schedule.withHours({0, 3, 6, 9, 12, 15, 18, 21}, 5);
+		LocalTimeSchedule schedule;
+		schedule.withTime(LocalTimeHMS("04:00")); // 04:00 local time every day
 
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=11 tm_min=5 tm_sec=0 tm_wday=6");	
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-05 08:00:00");
 
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=5 tm_sec=0 tm_wday=6");	
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-06 08:00:00");
+	}
+	{
+		// 04:00 local time on weekdays
+		LocalTimeSchedule schedule;
+		schedule.withTime(LocalTimeHMSRestricted("04:00", LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_WEEKDAY))); 
 
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=5 tm_sec=0 tm_wday=6");	
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-05 08:00:00");
 
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=20 tm_min=5 tm_sec=0 tm_wday=6");	
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-06 08:00:00");
 
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=23 tm_min=5 tm_sec=0 tm_wday=6");	
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-07 08:00:00");
 
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=2 tm_min=5 tm_sec=0 tm_wday=0");	
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-08 08:00:00");
 
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=5 tm_min=5 tm_sec=0 tm_wday=0");	
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-11 08:00:00");
 
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=8 tm_min=5 tm_sec=0 tm_wday=0");	
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-12 08:00:00");
+
+	}
+	{
+		// Saturday at midnight local time
+		LocalTimeSchedule schedule;
+		schedule.withTime(LocalTimeHMSRestricted("00:00", LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_SATURDAY))); 
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-08 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-09 04:00:00");
+
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-16 04:00:00");
+	}
+		{
+		LocalTimeSchedule schedule;
+		schedule.withTime(LocalTimeHMS("04:00")); // 04:00 local time every day
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-05 06:10:52")).convert();
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-05 08:00:00");
+
+		bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-06 08:00:00");
 	}
 
 	{
-		LocalTimeConvert::Schedule schedule;
-		// At 0:05, 3:05, ... 
-		schedule.withHourMultiple(0, 3, 5);
+		LocalTimeSchedule schedule;
+		// Every 2 hours between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
+		schedule.withHourOfDay(2, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("17:00:00")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=11 tm_min=5 tm_sec=0 tm_wday=6");	
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=6");	
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=14 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=17 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=20 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=23 tm_min=5 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=2 tm_min=5 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=5 tm_min=5 tm_sec=0 tm_wday=0");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=8 tm_min=5 tm_sec=0 tm_wday=0");	
-	}
-
-
-	{
-		LocalTimeConvert::Schedule schedule;
-		// At 01:00, 04:00, ... 
-		schedule.withHourMultiple(1, 3, 0);
-
-		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=12 tm_min=0 tm_sec=0 tm_wday=6");	
-
-		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=15 tm_min=0 tm_sec=0 tm_wday=6");	
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=16 tm_min=0 tm_sec=0 tm_wday=6");	
 
 		conv.nextSchedule(schedule);
 		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=18 tm_min=0 tm_sec=0 tm_wday=6");	
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=21 tm_min=0 tm_sec=0 tm_wday=6");	
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=20 tm_min=0 tm_sec=0 tm_wday=6");	
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=0 tm_min=0 tm_sec=0 tm_wday=0");	
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=4 tm_hour=22 tm_min=0 tm_sec=0 tm_wday=6");	
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=3 tm_min=0 tm_sec=0 tm_wday=0");	
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=14 tm_min=0 tm_sec=0 tm_wday=0");	
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0");	
+		assertTime("", conv.time, "tm_year=121 tm_mon=11 tm_mday=5 tm_hour=16 tm_min=0 tm_sec=0 tm_wday=0");	
 	}
 
+
 	{
-		LocalTimeConvert::Schedule schedule;
+		LocalTimeSchedule schedule;
 		// Every 2 hours between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
-		schedule.withHourMultiple(2, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("17:00:00")));
+		schedule.fromJson(readTestDataJson("testfiles/test15.json"));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 		conv.nextSchedule(schedule);
@@ -1219,11 +2127,136 @@ void test1() {
 	}
 
 	{
-		LocalTimeConvert::Schedule schedule;
+		LocalTimeSchedule schedule;
+		// First Monday of the month at 9:00 AM local time
+		schedule.fromJson(readTestDataJson("testfiles/test17.json"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-06 10:10:52")).convert(); // 05:10:52 local time
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-07 14:00:00"); // Before DST switch 
+	}
+
+	{
+		LocalTimeSchedule schedule;
+		// Last day of the month at 5:00 PM local time
+		schedule.fromJson(readTestDataJson("testfiles/test18.json"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-29 10:10:52")).convert(); // 05:10:52 local time
+		bool bResult = conv.nextSchedule(schedule);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-31 21:00:00");
+	}
+
+	// Test using named schedule items to switch between a normal (2 hour updates) and low-power (6 hour updates)
+	{
+		LocalTimeSchedule schedule;
+		// Every 15 minutes between 09:00 and 17:00 local time (13:00 to 21:00 UTC) Monday - Friday
+		// Every 6 hours in slow mode (00:00, 06:00, 18:00)
+		// Every 2 hours in fast mode (00:00, 02:00, 04:00, ...)
+		schedule.fromJson(readTestDataJson("testfiles/test19.json"));
+
+		std::function<bool(LocalTimeScheduleItem &item)> lowFilter = [](LocalTimeScheduleItem &item) {
+			return (item.name == "" || item.name == "low");
+		};
+		std::function<bool(LocalTimeScheduleItem &item)> normalFilter = [](LocalTimeScheduleItem &item) {
+			return (item.name == "" || item.name == "normal");
+		};
+
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-22 09:15:00")).convert(); // 05:15 EDT
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 10:00:00"); 
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 13:00:00"); 
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 13:15:00"); 
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 13:30:00"); 
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 13:45:00"); 
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 14:00:00"); 
+
+		conv.withTime(LocalTime::stringToTime("2022-03-22 20:30:00")).convert(); 
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 20:45:00"); 
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-22 22:00:00"); // 18:00 EDT
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-23 04:00:00"); // 00:00 EDT
+
+		schedule.getNextScheduledTime(conv, lowFilter);
+		assertTime2("", conv.time, "2022-03-23 10:00:00"); // 06:00 EDT
+
+
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-22 09:15:00")).convert(); // 05:15 EDT
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 10:00:00"); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 12:00:00"); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 13:00:00"); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 13:15:00"); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 13:30:00"); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 13:45:00"); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 14:00:00"); 
+
+		conv.withTime(LocalTime::stringToTime("2022-03-22 20:30:00")).convert(); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 20:45:00"); 
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-22 22:00:00"); // 18:00 EDT
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-23 00:00:00"); // 20:00 EDT
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-23 02:00:00"); // 22:00 EDT
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-23 04:00:00"); // 00:00 EDT
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-23 06:00:00"); // 02:00 EDT
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-23 08:00:00"); // 04:00 EDT
+
+		schedule.getNextScheduledTime(conv, normalFilter);
+		assertTime2("", conv.time, "2022-03-23 10:00:00"); // 06:00 EDT
+
+	}
+
+	{
+		LocalTimeSchedule schedule;
 		// Every 15 minutes between 9:00 AM and 5 PM local time (14:00 to 22:00 UTC)
 		// Every 2 hours from 1:00 AM otherwise
-		schedule.withMinuteMultiple(15, LocalTimeConvert::TimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
-		schedule.withHourMultiple(2, LocalTimeConvert::TimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59")));
+		schedule.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")));
+		schedule.withHourOfDay(2, LocalTimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59")));
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 10:10:52")).convert(); // 05:10:52 local time
 
@@ -1270,8 +2303,8 @@ void test1() {
 
 	{
 		// Every 15 minutes over spring forward
-		LocalTimeConvert::Schedule schedule;
-		schedule.withMinuteMultiple(15);
+		LocalTimeSchedule schedule;
+		schedule.withMinuteOfHour(15);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 19:10:52")).convert(); // 1:10:52 AM EST
 
@@ -1312,8 +2345,8 @@ void test1() {
 
 	{
 		// Every 15 minutes over fall back
-		LocalTimeConvert::Schedule schedule;
-		schedule.withMinuteMultiple(15);
+		LocalTimeSchedule schedule;
+		schedule.withMinuteOfHour(15);
 
 		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-07 04:10:52")).convert(); // 00:10:52 EDT
 
@@ -1327,24 +2360,590 @@ void test1() {
 		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=4 tm_min=45 tm_sec=0 tm_wday=0");	
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=0");
+		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=0"); // 01:00:00 EDT
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=15 tm_sec=0 tm_wday=0");
+		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=15 tm_sec=0 tm_wday=0"); // 01:15:00 EDT
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=30 tm_sec=0 tm_wday=0");
+		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=30 tm_sec=0 tm_wday=0"); // 01:30:00 EDT
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=45 tm_sec=0 tm_wday=0");
+		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=5 tm_min=45 tm_sec=0 tm_wday=0"); // 01:45:00 EDT
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0");
+		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=0 tm_sec=0 tm_wday=0"); // 02:00:00 EDT = 01:00:00 EST
 
 		conv.nextSchedule(schedule);
-		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=15 tm_sec=0 tm_wday=0");
+		assertTime("", conv.time, "tm_year=121 tm_mon=10 tm_mday=7 tm_hour=6 tm_min=15 tm_sec=0 tm_wday=0"); // 01:15:00 EST
 
 	}
+
+	// LocalTimeScheduleItem - low level tests
+	// 
+	{
+		LocalTimeScheduleItem item;
+		
+		// Increment 15 minutes
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
+		item.increment = 5;
+		
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:10:52")).convert(); 
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2021-12-04 16:15:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:15:00")).convert();
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2021-12-04 16:20:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:15:01")).convert(); 
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2021-12-04 16:20:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 16:19:59")).convert();
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2021-12-04 16:20:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-12-04 23:58:52")).convert();
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2021-12-05 00:00:00");
+	}
+
+	{
+		LocalTimeScheduleItem item;
+		
+		// Increment 15 minutes, starting at 00:05 past the hour
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
+		item.increment = 15;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59"));
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 10:10:52")).convert(); 
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 10:20:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 10:35:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 10:50:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 11:05:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 23:50:52")).convert(); 
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-20 00:05:00");
+
+	}
+
+	{
+		LocalTimeScheduleItem item;
+		
+		// Increment 3 hours
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::HOUR_OF_DAY;
+		item.increment = 3;
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 10:10:52")).convert(); // UTC; 06:10:52 local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 13:00:00"); // UTC; 9:00:00 local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 16:00:00"); // UTC; 12:00:00 local time
+
+	}
+
+	{
+		LocalTimeScheduleItem item;
+		
+		// Increment 4 hours across EST->EDT switch
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::HOUR_OF_DAY;
+		item.increment = 3;
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 04:00:00")).convert(); // UTC; 23:00:00 local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-13 05:00:00"); // UTC; 00:00:00 EST local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-13 07:00:00"); // UTC; 3:00:00 EDT local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-13 10:00:00"); // UTC; 06:00:00 local time
+	}
+
+	{
+		LocalTimeScheduleItem item;
+		
+		// Increment 4 hours across EST->EDT switch with 01:00:00 offset
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::HOUR_OF_DAY;
+		item.increment = 3;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("01:00:00"), LocalTimeHMS("23:59:59"));
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-13 04:00:00")).convert(); // UTC; 23:00:00 local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-13 06:00:00"); // UTC; 01:00:00 EDT local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-13 08:00:00"); // UTC; 04:00:00 EDT (this is right)
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-13 11:00:00"); // UTC; 07:00:00 EDT (this is right)
+	}
+
+	{
+		LocalTimeScheduleItem item;
+		
+		// Increment 3 hours with offset of 1:15
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::HOUR_OF_DAY;
+		item.increment = 3;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("01:15:00"), LocalTimeHMS("23:59:59"));
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 10:10:52")).convert(); // UTC; 06:10:52 local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 11:15:00"); // UTC; 07:15:00 local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 14:15:00"); // UTC; 10:00:00 local time
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 17:15:00"); // UTC; 13:00:00 local time
+	}
+
+	/*
+		April 2022       
+	Su Mo Tu We Th Fr Sa  
+					1  2  
+	3  4  5  6  7  8  9  
+	10 11 12 13 14 15 16  
+	17 18 19 20 21 22 23  
+	24 25 26 27 28 29 30 	
+
+	      May 2022        
+	Su Mo Tu We Th Fr Sa  
+	1  2  3  4  5  6  7  
+	8  9 10 11 12 13 14  
+	15 16 17 18 19 20 21  
+	22 23 24 25 26 27 28  
+	29 30 31   
+	*/
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		// First Friday of the month at 4:00 AM EDT 
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+		item.dayOfWeek = 5;
+		item.increment = 1;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 04:00:00")).convert(); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-01 08:00:00"); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-06 08:00:00"); // UTC
+	}
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		// First Saturday of the month at 4:00 AM EDT 
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+		item.dayOfWeek = 6;
+		item.increment = 1;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 04:00:00")).convert(); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-02 08:00:00"); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-07 08:00:00"); // UTC
+	}
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		// Second Sunday of the month at 4:00 AM EDT 
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+		item.dayOfWeek = 0;
+		item.increment = 2;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-07 04:00:00")).convert(); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-10 08:00:00"); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-08 08:00:00"); // UTC
+	}
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		// Last Friday of the month at 11:59:59 PM EDT 
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+		item.dayOfWeek = 5;
+		item.increment = -1;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("23:59:59"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-28 04:00:00")).convert(); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-30 03:59:59"); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-28 03:59:59"); // UTC
+	}
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		// First Sunday of the month at 4:00 AM EDT 
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+		item.dayOfWeek = 0;
+		item.increment = 1;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-29 04:00:00")).convert(); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-01 08:00:00"); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-06-05 08:00:00"); // UTC
+	}
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		// 1st of the month at 4:00 AM EDT 
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_MONTH;
+		item.increment = 1;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
+
+		assertInt("", item.getExpirationDate().isEmpty(), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-29 04:00:00")).convert(); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-05-01 08:00:00"); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-06-01 08:00:00"); // UTC
+	}
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		// 1st of the month at 4:00 AM EDT 
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::TIME;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"), LocalTimeRestrictedDate(0, {LocalTimeYMD("2022-04-05")}, {}));
+
+		assertInt("", item.getExpirationDate() == LocalTimeYMD("2022-04-05"), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-04-01 04:00:00")).convert(); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-05 08:00:00"); // UTC
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, false);
+	}
+		{
+		LocalTimeScheduleItem item;
+		
+		// Increment 15 minutes, starting at 00:05 past the hour, but only on 2022-04-05
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
+		item.increment = 15;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59"), LocalTimeRestrictedDate(0, {LocalTimeYMD("2022-03-19")}, {}));
+
+		assertInt("", item.getExpirationDate() == LocalTimeYMD("2022-03-19"), true);
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 10:10:52")).convert(); 
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 10:20:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 10:35:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 10:50:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-19 11:05:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-19 23:50:52")).convert(); 
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-20 00:05:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-20 00:20:00");
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-20 03:30:52")).convert(); 
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-20 03:35:00");
+
+		item.getNextScheduledTime(conv);
+		assertTime2("", conv.time, "2022-03-20 03:50:00");
+
+		bool bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, 0);
+
+	}
+
+	// LocalTimeRange JSON operations
+
+	{
+		
+		const char *jsonStr = readTestData("testfiles/test08.json");
+		JSONValue outerObj = JSONValue::parseCopy(jsonStr);
+		free((void *)jsonStr);
+
+		/*		
+		{
+			"t1": {},
+			"t2": { "s": "09:00:00", "e": "16:59:59" },
+			"t3": { "s": "10" }
+		}
+		*/
+
+	    JSONObjectIterator iter(outerObj);
+		while(iter.next()) {
+			String key = (const char *) iter.name();
+			if (key == "t1") {
+				LocalTimeRange tr;
+
+				tr.fromJson(iter.value());
+				assertStr("", tr.hmsStart.toString(), "00:00:00");
+				assertStr("", tr.hmsEnd.toString(), "23:59:59");
+			}			
+			else
+			if (key == "t2") {
+				LocalTimeRange tr;
+
+				tr.fromJson(iter.value());
+				assertStr("", tr.hmsStart.toString(), "09:00:00");
+				assertStr("", tr.hmsEnd.toString(), "16:59:59");
+			}			
+			else
+			if (key == "t3") {
+				LocalTimeRange tr;
+
+				tr.fromJson(iter.value());
+				assertStr("", tr.hmsStart.toString(), "10:00:00");
+				assertStr("", tr.hmsEnd.toString(), "23:59:59");
+			}			
+		}
+
+
+	}
+
+
+	{
+		LocalTimeScheduleItem item;
+		bool bResult;
+		
+		// On the 5th of the month at 4:00 AM local time
+		item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_MONTH;
+		item.increment = 5;
+		item.timeRange = LocalTimeRange(LocalTimeHMS("04:00:00"));
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:10:52")).convert(); // UTC; 03:10:52 local time
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-05 08:00:00"); // UTC; 04:00:00 EDT - DST switch!
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-04 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-03 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-02 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-03-05 09:00:00"); // UTC; 04:00:00 EST
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-06 07:10:52")).convert(); // UTC; 03:10:52 local time
+		bResult = item.getNextScheduledTime(conv);
+		assertInt("", bResult, true);
+		assertTime2("", conv.time, "2022-04-05 08:00:00"); // UTC; 04:00:00 EDT
+
+	}
+
+	// LocalTimeSchedule JSON operations
+
+	// LocalTimeScheduleManager tests
+	{
+		// Empty schedule
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:10:52")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE);
+		
+		t = sm.getNextWake(conv);
+		assertInt("", t, 0);
+
+		t = sm.getNextFullWake(conv);
+		assertInt("", t, 0);
+	}
+
+	{
+		// Full wake every 15 minutes
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:10:52")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE).withMinuteOfHour(15);
+		
+		t = sm.getNextWake(conv);
+		assertTime2("", t, "2022-03-05 07:15:00"); // UTC;
+
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-05 07:15:00"); // UTC;
+	}
+
+	{
+		// Full wake every 15 minutes
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:15:00")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE).withMinuteOfHour(15);
+		
+		t = sm.getNextWake(conv);
+		assertTime2("", t, "2022-03-05 07:30:00"); // UTC;
+
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-05 07:30:00"); // UTC;
+	}
+
+	{
+		// Full wake every 15 minutes, quick wake every 5
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-05 07:09:00")).convert(); // UTC; 02:10:52 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE).withMinuteOfHour(5);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE).withMinuteOfHour(15);
+		
+		t = sm.getNextWake(conv);
+		assertTime2("", t, "2022-03-05 07:10:00"); // UTC;
+
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-05 07:15:00"); // UTC;
+	}
+
+	{
+		// Full wake every 15 minutes 09:00 to 16:59, every 2 hours other times
+		LocalTimeScheduleManager sm;
+		time_t t;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-15 07:09:00")).convert(); // UTC; 03:09 local time
+
+		sm.getScheduleByName("quick").withFlags(LocalTimeSchedule::FLAG_QUICK_WAKE);
+		sm.getScheduleByName("full").withFlags(LocalTimeSchedule::FLAG_FULL_WAKE)
+			.withMinuteOfHour(15, LocalTimeRange(LocalTimeHMS("09:00:00"), LocalTimeHMS("16:59:59")))
+			.withHourOfDay(2, LocalTimeRange(LocalTimeHMS("00:00:00"), LocalTimeHMS("23:59:59")));
+		
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 08:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 10:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 12:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 13:00:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 13:15:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 13:30:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2022-03-15 20:40:00")).convert(); // UTC; 
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 20:45:00"); // UTC;
+
+		conv.withConfig(tzConfig).withTime(t).convert();
+		t = sm.getNextFullWake(conv);
+		assertTime2("", t, "2022-03-15 22:00:00"); // UTC;
+
+	}
+
 
 	// Make sure the closest minute multiple is used
 
@@ -1407,6 +3006,75 @@ void test1() {
 
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-04-01 16:00:00")).convert();
 	assertStr("", conv.format(TIME_FORMAT_ISO8601_FULL).c_str(), "2021-04-01T12:00:00-04:00");
+
+	// dayOfWeekOfMonth
+	{
+		/*
+			March 2022       
+		Su Mo Tu We Th Fr Sa  
+		      1  2  3  4  5  
+		6  7  8  9 10 11 12  
+		13 14 15 16 17 18 19  
+		20 21 22 23 24 25 26  
+		27 28 29 30 31 
+		*/	
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 1), 1);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 3, 1), 2);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 4, 1), 3);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 5, 1), 4);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 6, 1), 5);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, 1), 6);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 1, 1), 7);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 2), 8);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 3, 2), 9);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 3), 15);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 4), 22);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 5), 29);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, 6), 0);
+
+
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, -1), 27);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, -2), 20);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, -3), 13);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, -4), 6);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, -5), 0);
+
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 4, -1), 31);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 3, -1), 30);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 2, -1), 29);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 1, -1), 28);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 0, -1), 27);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 6, -1), 26);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 5, -1), 25);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2022, 3, 4, -2), 24);
+
+		/*
+		February 2024      
+		Su Mo Tu We Th Fr Sa  
+					1  2  3  
+		4  5  6  7  8  9 10  
+		11 12 13 14 15 16 17  
+		18 19 20 21 22 23 24  
+		25 26 27 28 29  
+		*/
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 1), 4);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 2), 11);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 3), 18);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 4), 25);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 0, 5), 0);
+
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 1), 1);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 2), 8);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 3), 15);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 4), 22);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 5), 29);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, 6), 0);
+
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, -1), 29);
+		assertInt("", LocalTime::dayOfWeekOfMonth(2024, 2, 4, -2), 22);
+
+	}
+
 }
 
 

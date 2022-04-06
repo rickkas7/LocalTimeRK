@@ -352,6 +352,82 @@ bool isStandardTime() const
 
 ---
 
+### void LocalTimeConvert::addSeconds(int seconds) 
+
+Adds a number of seconds to the current object.
+
+```
+void addSeconds(int seconds)
+```
+
+#### Parameters
+* `seconds`
+
+---
+
+### void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple, int startingModulo) 
+
+Moves the current time the next specified multiple of minutes.
+
+```
+void nextMinuteMultiple(int minuteMultiple, int startingModulo)
+```
+
+#### Parameters
+* `minuteMultiple` Typically something like 5, 15, 20, 30 that 60 is evenly divisible by
+
+* `startingModulo` (optional). If present, must be 0 < startingModulo < minuteMultiple
+
+Moves the time forward to the next multiple of that number of minutes. For example, if the clock is at :10 past the hour and the multiple is 15, then time will be updated to :15. If the time is equal to an even multple, the next multiple is selected.
+
+Upon completion, all fields are updated appropriately. For example:
+
+* time specifies the time_t of the new time at UTC
+
+* localTimeValue contains the broken-out values for the local time
+
+* isDST() return true if the new time is in daylight saving time
+
+---
+
+### void LocalTimeConvert::nextTime(LocalTimeHMS hms) 
+
+Moves the current time the next specified local time. This could be today or tomorrow.
+
+```
+void nextTime(LocalTimeHMS hms)
+```
+
+#### Parameters
+* `hms` Moves to the next occurrence of that time of day (local time)
+
+Upon completion, all fields are updated appropriately. For example:
+
+* time specifies the time_t of the new time at UTC
+
+* localTimeValue contains the broken-out values for the local time
+
+* isDST() return true if the new time is in daylight saving time
+
+---
+
+### void LocalTimeConvert::nextTimeList(std::initializer_list< LocalTimeHMS > hmsList) 
+
+Moves the current time the closest local time om hmsList. This could be today or tomorrow.
+
+```
+void nextTimeList(std::initializer_list< LocalTimeHMS > hmsList)
+```
+
+#### Parameters
+* `hmsList` An initialize list of LocalTimeHMS surrounded by {}
+
+For example, this sets the time to the nearest noon or midnight local time greater than the time set in this object:
+
+conv.nextTimeList({LocalTimeHMS("00:00"), LocalTimeHMS("12:00")});
+
+---
+
 ### void LocalTimeConvert::nextDay(LocalTimeHMS hms) 
 
 Moves the current time to the next day.
@@ -370,6 +446,31 @@ Upon completion, all fields are updated appropriately. For example:
 * localTimeValue contains the broken-out values for the local time
 
 * isDST() return true if the new time is in daylight saving time
+
+---
+
+### void LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms) 
+
+Moves the current to the next day, or right after the next time change, whichever comes first.
+
+```
+void nextDayOrTimeChange(LocalTimeHMS hms)
+```
+
+#### Parameters
+* `hms` If specified, moves to that time of day (local time). If omitted, leaves the current time and only changes the date.
+
+Upon completion, all fields are updated appropriately. For example:
+
+* time specifies the time_t of the new time at UTC
+
+* localTimeValue contains the broken-out values for the local time
+
+* isDST() return true if the new time is in daylight saving time
+
+This method is used when you want to synchronize an external device clock daily to keep it synchronized, or right after a time change.
+
+Do not pick the local time of the time change as the hms time! For example, in the United State do *not* select 02:00:00. The reason is that on spring forward, that time doesn't actually exist, because as soon as the clock hits 02:00:00 it jumps forward to 03:00:00 local time. Picking 03:00:00 or really any other time that's not between 02:00:00 and 02:59:59 is fine. During fall back, even though you've picked the time sync time to be 03:00 local time it will sync at the time of the actual time change correctly, which is why this function is different than nextDay().
 
 ---
 
@@ -546,6 +647,19 @@ Upon completion, all fields are updated appropriately. For example:
 
 ---
 
+### bool LocalTimeConvert::nextSchedule(const Schedule & schedule) 
+
+Sets the time to the nearest scheduled time in the future base on the schedule.
+
+```
+bool nextSchedule(const Schedule & schedule)
+```
+
+#### Parameters
+* `schedule`
+
+---
+
 ### void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) 
 
 Changes the time of day to the specified hms in local time on the same local day.
@@ -572,6 +686,44 @@ Upon completion, all fields are updated appropriately. For example:
 * localTimeValue contains the broken-out values for the local time
 
 * isDST() return true if the new time is in daylight saving time
+
+---
+
+### bool LocalTimeConvert::inLocalTimeRange(TimeRange localTimeRange) 
+
+Returns true if this object time is in the specified time range in local time.
+
+```
+bool inLocalTimeRange(TimeRange localTimeRange)
+```
+
+#### Parameters
+* `localTimeRange` time in this object is: start <= time <= end (inclusive) 
+
+#### Returns
+true 
+
+#### Returns
+false
+
+---
+
+### bool LocalTimeConvert::beforeLocalTimeRange(TimeRange localTimeRange) 
+
+Returns true if this object time before the specified time range in local time.
+
+```
+bool beforeLocalTimeRange(TimeRange localTimeRange)
+```
+
+#### Parameters
+* `localTimeRange` time in this object is: time < start (exclusive) 
+
+#### Returns
+true 
+
+#### Returns
+false
 
 ---
 
@@ -815,20 +967,182 @@ void toTimeInfo(struct tm * pTimeInfo) const
 
 ---
 
-### void LocalTimeHMS::adjustTimeInfo(struct tm * pTimeInfo, bool subtract) const 
+### void LocalTimeHMS::adjustTimeInfo(struct tm * pTimeInfo) const 
 
 Adjust the values in a struct tm from the values in this object.
 
 ```
-void adjustTimeInfo(struct tm * pTimeInfo, bool subtract) const
+void adjustTimeInfo(struct tm * pTimeInfo) const
 ```
 
 #### Parameters
 * `pTimeInfo` The struct tm to modify
 
-* `subtract` If false, the values in hour, minute, second are added to the struct tm. If true, subtracted
+* After calling this, the values in the struct tm may be out of range, for example tm_hour > 23. This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values into the other fields as necessary.
 
-After calling this, the values in the struct tm may be out of range, for example tm_hour > 23. This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values into the other fields as necessary.
+---
+
+### LocalTimeHMS & LocalTimeHMS::withHour(int hour) 
+
+Sets this object to be the specified hour, with minute and second set to 0.
+
+```
+LocalTimeHMS & withHour(int hour)
+```
+
+#### Parameters
+* `hour` 0 <= hour < 24 
+
+#### Returns
+LocalTimeHMS&
+
+---
+
+### LocalTimeHMS & LocalTimeHMS::withHourMinute(int hour, int minute) 
+
+Sets this object to be the specified hour and minute, with second set to 0.
+
+```
+LocalTimeHMS & withHourMinute(int hour, int minute)
+```
+
+#### Parameters
+* `hour` 0 <= hour < 24 
+
+* `minute` 0 <= minute < 60 
+
+#### Returns
+LocalTimeHMS&
+
+---
+
+### int LocalTimeHMS::compareTo(const LocalTimeHMS & other) const 
+
+Compare two LocalTimeHMS objects.
+
+```
+int compareTo(const LocalTimeHMS & other) const
+```
+
+#### Parameters
+* `other` The item to compare to 
+
+#### Returns
+int -1 if this item is < other; 0 if this = other, or +1 if this > other
+
+---
+
+### bool LocalTimeHMS::operator==(const LocalTimeHMS & other) const 
+
+Returns true if this item is equal to other. Compares hour, minute, and second.
+
+```
+bool operator==(const LocalTimeHMS & other) const
+```
+
+#### Parameters
+* `other` 
+
+#### Returns
+true 
+
+#### Returns
+false
+
+---
+
+### bool LocalTimeHMS::operator!=(const LocalTimeHMS & other) const 
+
+Returns true if this item is not equal to other.
+
+```
+bool operator!=(const LocalTimeHMS & other) const
+```
+
+#### Parameters
+* `other` 
+
+#### Returns
+true 
+
+#### Returns
+false
+
+---
+
+### bool LocalTimeHMS::operator<(const LocalTimeHMS & other) const 
+
+Returns true if this item is < other.
+
+```
+bool operator<(const LocalTimeHMS & other) const
+```
+
+#### Parameters
+* `other` 
+
+#### Returns
+true 
+
+#### Returns
+false
+
+---
+
+### bool LocalTimeHMS::operator>(const LocalTimeHMS & other) const 
+
+Returns true if this item is > other.
+
+```
+bool operator>(const LocalTimeHMS & other) const
+```
+
+#### Parameters
+* `other` 
+
+#### Returns
+true 
+
+#### Returns
+false
+
+---
+
+### bool LocalTimeHMS::operator<=(const LocalTimeHMS & other) const 
+
+Returns true if this item <= other.
+
+```
+bool operator<=(const LocalTimeHMS & other) const
+```
+
+#### Parameters
+* `other` 
+
+#### Returns
+true 
+
+#### Returns
+false
+
+---
+
+### bool LocalTimeHMS::operator>=(const LocalTimeHMS & other) const 
+
+Returns true if this item is >= other.
+
+```
+bool operator>=(const LocalTimeHMS & other) const
+```
+
+#### Parameters
+* `other` 
+
+#### Returns
+true 
+
+#### Returns
+false
 
 # class LocalTimeIgnoreHMS 
 
@@ -1231,5 +1545,382 @@ int ordinal() const
 For example, if this day is a Friday and it's the first Friday of the month, then 1 is returned. If it's the second Friday, then 2 is returned.
 
 (This is different than the week number of the month, which depends on which day you begin the week on.)
+
+# class LocalTimeConvert::Schedule 
+
+A complete time schedule.
+
+A time schedule consists of minute multiples ("every 15 minutes"), optionally within a time range (all day, or from 09:00:00 to 17:00:00 local time, for example.
+
+It can also have hour multiples, optionally in a time range, at a defined minute ("every 4 hours at :15 
+past the hour").
+
+It can also have any number of specific times in the day ("at 08:17:30 local time, 18:15:20 local time").
+
+## Members
+
+---
+
+### std::vector< ScheduleItemMinuteMultiple > minuteMultipleItems 
+
+Minute multiple items.
+
+```
+std::vector< ScheduleItemMinuteMultiple > minuteMultipleItems
+```
+
+---
+
+### std::vector< LocalTimeHMS > times 
+
+Local time items (includes hour multiple items)
+
+```
+std::vector< LocalTimeHMS > times
+```
+
+---
+
+###  LocalTimeConvert::Schedule::Schedule() 
+
+Construct a new, empty schedule.
+
+```
+ Schedule()
+```
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withMinuteMultiple(int minuteMultiple) 
+
+Adds a minute multiple schedule all day.
+
+```
+Schedule & withMinuteMultiple(int minuteMultiple)
+```
+
+#### Parameters
+* `minuteMultiple` Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended.
+
+This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be an inconsistent period at the top of the hour.
+
+If you want to schedule at a minute offset as well, for example every 15 minutes at 02:00, 17:00, 32:00, 47:00, see the overload with a time range.
+
+#### Returns
+Schedule&
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withMinuteMultiple(int minuteMultiple, TimeRange timeRange) 
+
+Adds a minute multiple schedule in a time range.
+
+```
+Schedule & withMinuteMultiple(int minuteMultiple, TimeRange timeRange)
+```
+
+#### Parameters
+* `minuteMultiple` Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended. 
+
+* `timeRange` When to apply this minute multiple and/or minute offset.
+
+This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be an inconsistent period at the top of the hour.
+
+If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
+
+The largest value for hmsEnd of the time range is 23:59:59.
+
+#### Returns
+Schedule&
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withMinuteMultiple(ScheduleItemMinuteMultiple item) 
+
+Adds a minute multiple schedule from a ScheduleItemMinuteMultiple object.
+
+```
+Schedule & withMinuteMultiple(ScheduleItemMinuteMultiple item)
+```
+
+#### Parameters
+* `item` 
+
+#### Returns
+Schedule&
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withTime(LocalTimeHMS hms) 
+
+Add a scheduled item at a time in local time during the day.
+
+```
+Schedule & withTime(LocalTimeHMS hms)
+```
+
+#### Parameters
+* `hms` The time in local time 00:00:00 to 23:59:59. 
+
+#### Returns
+Schedule&
+
+You can call this multiple times, and also combine it with minute multiple schedules.
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withTimes(std::initializer_list< LocalTimeHMS > timesParam) 
+
+Add multiple scheduled items at a time in local time during the day.
+
+```
+Schedule & withTimes(std::initializer_list< LocalTimeHMS > timesParam)
+```
+
+#### Parameters
+* `timesParam` an auto-initialized list of LocalTimeHMS objects 
+
+#### Returns
+Schedule&
+
+You can call this multiple times, and also combine it with minute multiple schedules.
+
+schedule.withTimes({LocalTimeHMS("06:00"), LocalTimeHMS("18:30")});
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withHours(std::initializer_list< int > hoursParam, int atMinute) 
+
+Adds multiple scheduled hours at a time in a local time during the day at a specified minute.
+
+```
+Schedule & withHours(std::initializer_list< int > hoursParam, int atMinute)
+```
+
+#### Parameters
+* `hoursParam` 
+
+* `atMinute` 
+
+#### Returns
+Schedule&
+
+Example: Schedules at 00:05, 06:05, 09:05, 10:05, 12:05, 15:05, 18:05
+
+schedule.withHours({0, 6, 9, 10, 12, 15, 18}, 5);
+
+This is just a shortcut that is easier to type than using the version that takes LocalTimeHMS objects.
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withHourMultiple(int hourMultiple, TimeRange timeRange) 
+
+Adds multiple times periodically in a time range with an hour increment.
+
+```
+Schedule & withHourMultiple(int hourMultiple, TimeRange timeRange)
+```
+
+#### Parameters
+* `hourMultiple` Hours between items must be >= 1. For example: 2 = every other hour. 
+
+* `timeRange` Time range to add items to. This is optional; if not specified then the entire day. Also is used to specify a minute offset.
+
+#### Returns
+Schedule&
+
+Hours are per day, local time. For whole-day schedules, you will typically use a value that 24 is evenly divisible by (2, 3, 4, 6, 8, 12), because otherwise the time periods will brief unequal at the top of the hour.
+
+Also note that times are local, and take into account daylight saving. Thus during a time switch, the interval may end up being a different number of hours than specified. For example, if the times would have been 00:00 and 04:00, a hourMultiple of 4, and you do this over a spring forward, the actual number hours between 00:00 and 04:00 is 5 (at least in the US where DST starts at 2:00).
+
+---
+
+### Schedule & LocalTimeConvert::Schedule::withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd) 
+
+Adds multiple times periodically in a time range with an hour increment.
+
+```
+Schedule & withHourMultiple(int hourStart, int hourMultiple, int atMinute, int hourEnd)
+```
+
+#### Parameters
+* `hourStart` Hour to start at 0 <= hourStart <= 23 
+
+* `hourMultiple` Increment for hours 
+
+* `atMinute` Minute past the hour for each item. Seconds is always 0. 
+
+* `hourEnd` Hour to end, inclusive. 0 <= hourEnd <= 23 
+
+#### Returns
+Schedule&
+
+# class LocalTimeConvert::ScheduleItemMinuteMultiple 
+
+Schedule option for "every n minutes".
+
+## Members
+
+---
+
+### TimeRange timeRange 
+
+Range of local time, inclusive.
+
+```
+TimeRange timeRange
+```
+
+---
+
+### int minuteMultiple 
+
+Increment for minutes. Typically a value 60 is evenly divisible by.
+
+```
+int minuteMultiple
+```
+
+---
+
+###  LocalTimeConvert::ScheduleItemMinuteMultiple::ScheduleItemMinuteMultiple() 
+
+Default constructor. Set minuteMultiple and optionally timeRange to use.
+
+```
+ ScheduleItemMinuteMultiple()
+```
+
+---
+
+###  LocalTimeConvert::ScheduleItemMinuteMultiple::ScheduleItemMinuteMultiple(int minuteMultiple, TimeRange timeRange) 
+
+Construct an item with a time range and number of minutes.
+
+```
+ ScheduleItemMinuteMultiple(int minuteMultiple, TimeRange timeRange)
+```
+
+#### Parameters
+* `minuteMultiple` Number of minutes (must be 1 <= minutes <= 59). A value that is is divisible by is recommended. 
+
+* `timeRange` When to apply this minute multiple (optional)
+
+This schedule publishes every n minutes within the hour. This really is every hour, not rolling, so you should use a value that 60 is divisible by (2, 3, 4, 5, 6, 10, 12, 15, 20, 30) otherwise there will be an inconsistent period at the top of the hour.
+
+If you do not specify a time range, the entire day is the range, and it will always start at the top of the hour.
+
+If you specify a time range that does not start at 00:00:00 you can customize which minute the schedule starts at. For example: `15, LocalTimeConvert::TimeRange(LocalTimeHMS("00:05:00"), LocalTimeHMS("23:59:59")` will schedule every 15 minutes, but starting at 5 minutes past the hour, so 05:00, 20:00, 35:00, 50:00.
+
+---
+
+### bool LocalTimeConvert::ScheduleItemMinuteMultiple::isValid() const 
+
+Returns true if minuteMultiple is non-zero.
+
+```
+bool isValid() const
+```
+
+#### Returns
+true 
+
+#### Returns
+false
+
+This is used to check if an object was constructed by the default constructor and never set.
+
+---
+
+### time_t LocalTimeConvert::ScheduleItemMinuteMultiple::getTimeSpan(const LocalTimeConvert & conv) const 
+
+Get number of seconds in the time range at a given time.
+
+```
+time_t getTimeSpan(const LocalTimeConvert & conv) const
+```
+
+#### Parameters
+* `conv` The timezone and date information for time span calculation 
+
+#### Returns
+time_t
+
+The conv object is necessary because getTimeSpan takes into account daylight saving transitions. When springing forward to daylight saving, from 01:15:00 to 03:15:00 is only one hour because of the DST transition.
+
+# class LocalTimeConvert::TimeRange 
+
+Class to hold a time range in local time in HH:MM:SS format.
+
+## Members
+
+---
+
+### LocalTimeHMS hmsStart 
+
+Starting time, inclusive.
+
+```
+LocalTimeHMS hmsStart
+```
+
+---
+
+### LocalTimeHMS hmsEnd 
+
+Ending time, inclusive.
+
+```
+LocalTimeHMS hmsEnd
+```
+
+---
+
+###  LocalTimeConvert::TimeRange::TimeRange() 
+
+Construct a new Time Range object with the range of the entire day (inclusive)
+
+```
+ TimeRange()
+```
+
+This is start = 00:00:00, end = 23:59:59. The system clock does not have a concept of leap seconds.
+
+---
+
+###  LocalTimeConvert::TimeRange::TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd) 
+
+Construct a new Time Range object with the specifies start and end times.
+
+```
+ TimeRange(LocalTimeHMS hmsStart, LocalTimeHMS hmsEnd)
+```
+
+#### Parameters
+* `hmsStart` Start time in local time 00:00:00 <= hmsStart <= 23:59:59 
+
+* `hmsEnd` End time in local time 00:00:00 <= hmsStart <= 23:59:59
+
+Note that 24:00:00 is not a valid time. You should generally use inclusive times such that 23:59:59 is the end of the day.
+
+---
+
+### time_t LocalTimeConvert::TimeRange::getTimeSpan(const LocalTimeConvert & conv) const 
+
+Get the number of seconds between start and end based on a LocalTimeConvert object.
+
+```
+time_t getTimeSpan(const LocalTimeConvert & conv) const
+```
+
+The reason for the conv object is that it contains the time to calculate at, as well as the daylight saving time settings. This methods takes into account the actual number of seconds including when a time change is crossed.
+
+#### Parameters
+* `conv` The time and timezone settings to calculate the time span at 
+
+#### Returns
+time_t Time difference in seconds
+
+In the weird case that start > end, it can return a negative value, as time_t is a signed long (or long long) value.
 
 Generated by [Moxygen](https://sourcey.com/moxygen)

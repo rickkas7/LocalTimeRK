@@ -79,7 +79,8 @@ Inheritance diagram for LocalTimeHMS:</div>
  <div class="center">
   <img src="class_local_time_h_m_s.png" usemap="#LocalTimeHMS_map" alt=""/>
   <map id="LocalTimeHMS_map" name="LocalTimeHMS_map">
-<area href="class_local_time_ignore_h_m_s.html" title="This class can be passed to most functions that take a LocalTimeHMS to instead not set the HMS." alt="LocalTimeIgnoreHMS" shape="rect" coords="0,56,133,80"/>
+<area href="class_local_time_h_m_s_restricted.html" title="HMS values, but only on specific days of week or dates (with optional exceptions)" alt="LocalTimeHMSRestricted" shape="rect" coords="0,56,153,80"/>
+<area href="class_local_time_ignore_h_m_s.html" title="This class can be passed to most functions that take a LocalTimeHMS to instead not set the HMS." alt="LocalTimeIgnoreHMS" shape="rect" coords="163,56,316,80"/>
   </map>
 </div></div>
 <table class="memberdecls">
@@ -96,6 +97,9 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><b>~LocalTimeHMS</b> 
 <tr class="memitem:a8c70104cf5f1404a3219889661478090"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_h_m_s.html#a8c70104cf5f1404a3219889661478090">LocalTimeHMS</a> (const char *str)</td></tr>
 <tr class="memdesc:a8c70104cf5f1404a3219889661478090"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs the object from a time string.  <a href="class_local_time_h_m_s.html#a8c70104cf5f1404a3219889661478090">More...</a><br /></td></tr>
 <tr class="separator:a8c70104cf5f1404a3219889661478090"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85a1773998bef17ba80ace57c1ea12fa"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_h_m_s.html#a85a1773998bef17ba80ace57c1ea12fa">LocalTimeHMS</a> (const <a class="el" href="class_local_time_value.html">LocalTimeValue</a> &amp;value)</td></tr>
+<tr class="memdesc:a85a1773998bef17ba80ace57c1ea12fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct this HMS from a <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a> (which contains YMD and HMS)  <a href="class_local_time_h_m_s.html#a85a1773998bef17ba80ace57c1ea12fa">More...</a><br /></td></tr>
+<tr class="separator:a85a1773998bef17ba80ace57c1ea12fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aecfb5486936114e06176287f5f9818c6"><td class="memItemLeft" align="right" valign="top"><a id="aecfb5486936114e06176287f5f9818c6" name="aecfb5486936114e06176287f5f9818c6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>clear</b> ()</td></tr>
 <tr class="memdesc:aecfb5486936114e06176287f5f9818c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the hour, minute, and second to 0. <br /></td></tr>
@@ -105,7 +109,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>clear</b> ()</td></tr
 <tr class="separator:a09357a93ce14e2a78599c6c51365bda7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a325a825e6d99e25fcd1eca709935a6e9"><td class="memItemLeft" align="right" valign="top"><a id="a325a825e6d99e25fcd1eca709935a6e9" name="a325a825e6d99e25fcd1eca709935a6e9"></a>
 String&#160;</td><td class="memItemRight" valign="bottom"><b>toString</b> () const</td></tr>
-<tr class="memdesc:a325a825e6d99e25fcd1eca709935a6e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Turns the parsed data into a normalized string of the form: "H:MM:SS" (24-hour clock) <br /></td></tr>
+<tr class="memdesc:a325a825e6d99e25fcd1eca709935a6e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Turns the parsed data into a normalized string of the form: "HH:MM:SS" (24-hour clock, with leading zeroes) <br /></td></tr>
 <tr class="separator:a325a825e6d99e25fcd1eca709935a6e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aebae99c1b2c6154ee4e2aa0a012b946e"><td class="memItemLeft" align="right" valign="top"><a id="aebae99c1b2c6154ee4e2aa0a012b946e" name="aebae99c1b2c6154ee4e2aa0a012b946e"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>toSeconds</b> () const</td></tr>
@@ -115,12 +119,18 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>toSeconds</b> () const
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fromTimeInfo</b> (const struct tm *pTimeInfo)</td></tr>
 <tr class="memdesc:af092e9cd92de2c68ff43944384147683"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the hour, minute, and second fields from a struct tm. <br /></td></tr>
 <tr class="separator:af092e9cd92de2c68ff43944384147683"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a923ca6256cbaa7aa9b66b6049f866611"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_h_m_s.html#a923ca6256cbaa7aa9b66b6049f866611">fromLocalTimeValue</a> (const <a class="el" href="class_local_time_value.html">LocalTimeValue</a> &amp;value)</td></tr>
+<tr class="memdesc:a923ca6256cbaa7aa9b66b6049f866611"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the HMS from a <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a>.  <a href="class_local_time_h_m_s.html#a923ca6256cbaa7aa9b66b6049f866611">More...</a><br /></td></tr>
+<tr class="separator:a923ca6256cbaa7aa9b66b6049f866611"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1bff8e5946f5dbb7236a3e0f27846a9f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_h_m_s.html#a1bff8e5946f5dbb7236a3e0f27846a9f">toTimeInfo</a> (struct tm *pTimeInfo) const</td></tr>
 <tr class="memdesc:a1bff8e5946f5dbb7236a3e0f27846a9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fill in the tm_hour, tm_min, and tm_sec fields of a struct tm from the values in this object.  <a href="class_local_time_h_m_s.html#a1bff8e5946f5dbb7236a3e0f27846a9f">More...</a><br /></td></tr>
 <tr class="separator:a1bff8e5946f5dbb7236a3e0f27846a9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31be71d84b7184f30dd69b7df5be5f3c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_h_m_s.html#a31be71d84b7184f30dd69b7df5be5f3c">adjustTimeInfo</a> (struct tm *pTimeInfo) const</td></tr>
 <tr class="memdesc:a31be71d84b7184f30dd69b7df5be5f3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adjust the values in a struct tm from the values in this object.  <a href="class_local_time_h_m_s.html#a31be71d84b7184f30dd69b7df5be5f3c">More...</a><br /></td></tr>
 <tr class="separator:a31be71d84b7184f30dd69b7df5be5f3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1870536b6f5609aac489447a492244c3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_h_m_s.html#a1870536b6f5609aac489447a492244c3">fromJson</a> (JSONValue jsonObj)</td></tr>
+<tr class="memdesc:a1870536b6f5609aac489447a492244c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses a JSON value of type string in HH:MM:SS format.  <a href="class_local_time_h_m_s.html#a1870536b6f5609aac489447a492244c3">More...</a><br /></td></tr>
+<tr class="separator:a1870536b6f5609aac489447a492244c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ea4f9cee93e97e230d667bd828a5859"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_local_time_h_m_s.html">LocalTimeHMS</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_local_time_h_m_s.html#a0ea4f9cee93e97e230d667bd828a5859">withHour</a> (int <a class="el" href="class_local_time_h_m_s.html#a7103217de18d37e2fb6fa86838353796">hour</a>)</td></tr>
 <tr class="memdesc:a0ea4f9cee93e97e230d667bd828a5859"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets this object to be the specified hour, with minute and second set to 0.  <a href="class_local_time_h_m_s.html#a0ea4f9cee93e97e230d667bd828a5859">More...</a><br /></td></tr>
 <tr class="separator:a0ea4f9cee93e97e230d667bd828a5859"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -172,7 +182,7 @@ int8_t&#160;</td><td class="memItemRight" valign="bottom"><b>ignore</b> = 0</td>
 <div class="textblock"><p >Container for holding an hour minute second time value. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a8c70104cf5f1404a3219889661478090" name="a8c70104cf5f1404a3219889661478090"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8c70104cf5f1404a3219889661478090">&#9670;&nbsp;</a></span>LocalTimeHMS()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c70104cf5f1404a3219889661478090">&#9670;&nbsp;</a></span>LocalTimeHMS() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -199,6 +209,32 @@ int8_t&#160;</td><td class="memItemRight" valign="bottom"><b>ignore</b> = 0</td>
 
 </div>
 </div>
+<a id="a85a1773998bef17ba80ace57c1ea12fa" name="a85a1773998bef17ba80ace57c1ea12fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85a1773998bef17ba80ace57c1ea12fa">&#9670;&nbsp;</a></span>LocalTimeHMS() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LocalTimeHMS::LocalTimeHMS </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_local_time_value.html">LocalTimeValue</a> &amp;&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Construct this HMS from a <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a> (which contains YMD and HMS) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">value</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a31be71d84b7184f30dd69b7df5be5f3c" name="a31be71d84b7184f30dd69b7df5be5f3c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a31be71d84b7184f30dd69b7df5be5f3c">&#9670;&nbsp;</a></span>adjustTimeInfo()</h2>
@@ -219,13 +255,11 @@ int8_t&#160;</td><td class="memItemRight" valign="bottom"><b>ignore</b> = 0</td>
 <p>Adjust the values in a struct tm from the values in this object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">pTimeInfo</td><td>The struct tm to modify<ul>
-<li>After calling this, the values in the struct tm may be out of range, for example tm_hour &gt; 23. This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values into the other fields as necessary. </li>
-</ul>
-</td></tr>
+    <tr><td class="paramname">pTimeInfo</td><td>The struct tm to modify</td></tr>
   </table>
   </dd>
 </dl>
+<p>After calling this, the values in the struct tm may be out of range, for example tm_hour &gt; 23. This is fine, as calling mktime/gmtime normalizes this case and carries out-of-range values into the other fields as necessary. </p>
 
 </div>
 </div>
@@ -261,6 +295,58 @@ int8_t&#160;</td><td class="memItemRight" valign="bottom"><b>ignore</b> = 0</td>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>int -1 if this item is &lt; other; 0 if this = other, or +1 if this &gt; other </dd></dl>
+
+</div>
+</div>
+<a id="a1870536b6f5609aac489447a492244c3" name="a1870536b6f5609aac489447a492244c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1870536b6f5609aac489447a492244c3">&#9670;&nbsp;</a></span>fromJson()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void LocalTimeHMS::fromJson </td>
+          <td>(</td>
+          <td class="paramtype">JSONValue&#160;</td>
+          <td class="paramname"><em>jsonObj</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Parses a JSON value of type string in HH:MM:SS format. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">jsonObj</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a923ca6256cbaa7aa9b66b6049f866611" name="a923ca6256cbaa7aa9b66b6049f866611"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a923ca6256cbaa7aa9b66b6049f866611">&#9670;&nbsp;</a></span>fromLocalTimeValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void LocalTimeHMS::fromLocalTimeValue </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_local_time_value.html">LocalTimeValue</a> &amp;&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets the HMS from a <a class="el" href="class_local_time_value.html" title="Container for a local time value with accessors similar to the Wiring Time class.">LocalTimeValue</a>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">value</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

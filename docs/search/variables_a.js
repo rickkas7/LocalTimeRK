@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['valid_0',['valid',['../class_local_time_change.html#a014c97250e9ee2e827fb8bd458402959',1,'LocalTimeChange::valid()'],['../class_local_time_posix_timezone.html#a87f30efb4c3260b62d54bf9bc29937cd',1,'LocalTimePosixTimezone::valid()']]]
+  ['onlyondates_0',['onlyOnDates',['../class_local_time_restricted_date.html#ad89edac831d8e4aa4b6786b2f25e041d',1,'LocalTimeRestrictedDate']]],
+  ['onlyondays_1',['onlyOnDays',['../class_local_time_restricted_date.html#af350a8345fd953c67717a0ee0ea9f3f2',1,'LocalTimeRestrictedDate']]]
 ];

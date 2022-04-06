@@ -2,6 +2,100 @@
 
 LocalTime *LocalTime::_instance;
 
+//
+// LocalTimeYMD
+//
+void LocalTimeYMD::fromTimeInfo(const struct tm *pTimeInfo) {
+    ymd.year = pTimeInfo->tm_year;
+    ymd.month = pTimeInfo->tm_mon + 1;
+    ymd.day = pTimeInfo->tm_mday;
+}
+
+void LocalTimeYMD::fromLocalTimeValue(const LocalTimeValue &value) {
+    *this = value.ymd();
+}
+
+int LocalTimeYMD::getDayOfWeek() const {
+    struct tm timeInfo = {0};
+
+    timeInfo.tm_year = ymd.year;
+    timeInfo.tm_mon = ymd.month - 1;
+    timeInfo.tm_mday = ymd.day;
+    
+    time_t time = LocalTime::tmToTime(&timeInfo);
+    LocalTime::timeToTm(time, &timeInfo);
+
+    return timeInfo.tm_wday;
+}
+
+void LocalTimeYMD::addDay(int numberOfDays) {
+    struct tm timeInfo = {0};
+
+    timeInfo.tm_year = ymd.year;
+    timeInfo.tm_mon = ymd.month - 1;
+    timeInfo.tm_mday = ymd.day;
+
+    timeInfo.tm_mday += numberOfDays;
+
+    time_t time = LocalTime::tmToTime(&timeInfo);
+    LocalTime::timeToTm(time, &timeInfo);
+
+    fromTimeInfo(&timeInfo);
+}
+
+
+int LocalTimeYMD::compareTo(const LocalTimeYMD other) const {
+    int cmp;
+
+    if (ymd.year < other.ymd.year) {
+        cmp = -1;
+    }
+    else
+    if (ymd.year > other.ymd.year) {
+        cmp = +1;
+    }
+    else {
+        if (ymd.month < other.ymd.month) {
+            return -1;
+        }
+        else
+        if (ymd.month > other.ymd.month) {
+            return +1;
+        }
+        else {
+            if (ymd.day < other.ymd.day) {
+                cmp = -1;
+            }  
+            else
+            if (ymd.day > other.ymd.day) {
+                cmp = +1;
+            }
+            else {
+                cmp = 0;
+            }
+        }
+    }
+
+    return cmp;
+}
+
+bool LocalTimeYMD::parse(const char *s) {
+    int year, month, day;
+    if (sscanf(s, "%d-%d-%d", &year, &month, &day) == 3) {
+        setYear(year);
+        setMonth(month);
+        setDay(day);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+//
+// LocalTimeHMS
+//
 LocalTimeHMS::LocalTimeHMS() {
 }
 
@@ -10,6 +104,10 @@ LocalTimeHMS::~LocalTimeHMS() {
 
 LocalTimeHMS::LocalTimeHMS(const char *str) {
     parse(str);
+}
+
+LocalTimeHMS::LocalTimeHMS(const LocalTimeValue &value) {
+    *this = value.hms();
 }
 
 void LocalTimeHMS::clear() {
@@ -37,7 +135,7 @@ void LocalTimeHMS::parse(const char *str) {
 }
 
 String LocalTimeHMS::toString() const {
-    return String::format("%d:%02d:%02d", (int)hour, (int)minute, (int)second);
+    return String::format("%02d:%02d:%02d", (int)hour, (int)minute, (int)second);
 }
 
 int LocalTimeHMS::toSeconds() const {
@@ -54,6 +152,11 @@ void LocalTimeHMS::fromTimeInfo(const struct tm *pTimeInfo) {
     minute = (int8_t) pTimeInfo->tm_min;
     second = (int8_t) pTimeInfo->tm_sec;
 }
+
+void LocalTimeHMS::fromLocalTimeValue(const LocalTimeValue &value) {
+    *this = value.hms();
+}
+
 
 void LocalTimeHMS::toTimeInfo(struct tm *pTimeInfo) const {
     if (!ignore) {
@@ -78,6 +181,153 @@ void LocalTimeHMS::adjustTimeInfo(struct tm *pTimeInfo) const {
         
     }
 }
+
+void LocalTimeHMS::fromJson(JSONValue jsonObj) {
+    parse(jsonObj.toString().data());
+}
+
+
+//
+// LocalTimeRestrictedDate
+//
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withOnlyOnDays(LocalTimeDayOfWeek value) { 
+    onlyOnDays = value; 
+    return *this;
+};
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withOnlyOnDates(std::initializer_list<const char *> dates) {
+    for(auto it = dates.begin(); it != dates.end(); ++it) {
+        onlyOnDates.push_back(LocalTimeYMD(*it));    
+    }
+    return *this;
+}
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withOnlyOnDates(std::initializer_list<LocalTimeYMD> dates) {
+    onlyOnDates.insert(onlyOnDates.end(), dates.begin(), dates.end());
+    return *this;
+}
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withExceptDates(std::initializer_list<const char *> dates) {
+    for(auto it = dates.begin(); it != dates.end(); ++it) {
+        exceptDates.push_back(LocalTimeYMD(*it));    
+    }
+    return *this;
+}
+
+LocalTimeRestrictedDate &LocalTimeRestrictedDate::withExceptDates(std::initializer_list<LocalTimeYMD> dates) {
+    exceptDates.insert(exceptDates.end(), dates.begin(), dates.end());
+    return *this;
+}
+
+bool LocalTimeRestrictedDate::isEmpty() const {
+    return onlyOnDays.isEmpty() && onlyOnDates.empty() && exceptDates.empty();
+}
+
+void LocalTimeRestrictedDate::clear() {
+    onlyOnDays.setMask(0);
+    onlyOnDates.clear();
+    exceptDates.clear();
+}
+
+
+bool LocalTimeRestrictedDate::isValid(LocalTimeValue localTimeValue) const {
+    return isValid(localTimeValue.ymd());
+}
+
+
+bool LocalTimeRestrictedDate::isValid(LocalTimeYMD ymd) const {
+    bool result = false;
+
+
+    // Is it in the except days list?
+    if (inExceptDates(ymd)) {
+        result = false;
+    }
+    else {
+        bool isValidDays = onlyOnDays.isSet(ymd);
+        bool isValidDates = inOnlyOnDates(ymd);
+        result = isValidDays || isValidDates;
+    }
+
+    return result;
+}
+
+bool LocalTimeRestrictedDate::inOnlyOnDates(LocalTimeYMD ymd) const {
+    for(auto it = onlyOnDates.begin(); it != onlyOnDates.end(); ++it) {
+        if (*it == ymd) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool LocalTimeRestrictedDate::inExceptDates(LocalTimeYMD ymd) const {
+    for(auto it = exceptDates.begin(); it != exceptDates.end(); ++it) {
+        if (*it == ymd) {
+            return true;
+        }
+    }
+    return false;
+}
+
+LocalTimeYMD LocalTimeRestrictedDate::getExpirationDate() const {
+    LocalTimeYMD result;
+
+    for(auto it = onlyOnDates.begin(); it != onlyOnDates.end(); ++it) {
+        if (result.isEmpty() || *it > result) {
+            result = *it;
+        }
+    }
+    return result;
+}
+
+
+void LocalTimeRestrictedDate::fromJson(JSONValue jsonObj) {
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *)iter.name();
+
+        if (key == "y") {
+            onlyOnDays.setMask((uint8_t)iter.value().toInt());
+        }
+        else
+        if (key == "a" || key == "x") {
+            JSONArrayIterator iter2(iter.value());
+            while(iter2.next()){
+                LocalTimeYMD ymd(iter2.value().toString().data());
+                if (key == "a") {
+                    onlyOnDates.push_back(ymd);
+                }
+                else {
+                    exceptDates.push_back(ymd);
+                }
+            }
+        }
+    }
+    if (isEmpty()) {
+        // If there are no restrictions, set to all days
+        onlyOnDays.setMask(LocalTimeDayOfWeek::MASK_ALL);
+    }
+}
+
+// 
+// LocalTimeHMSRestricted
+//
+void LocalTimeHMSRestricted::fromJson(JSONValue jsonObj) {
+    // Clearing is necessary in case there is no t key so the fi
+    LocalTimeHMS::clear();
+
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *) iter.name();
+        if (key == "t") {
+            LocalTimeHMS::fromJson(iter.value());
+        }
+    }
+
+    LocalTimeRestrictedDate::fromJson(jsonObj);
+}
+
 
 
 //
@@ -300,6 +550,12 @@ void LocalTimeValue::setHMS(LocalTimeHMS hms) {
     }
 }
 
+LocalTimeYMD LocalTimeValue::ymd() const {
+    LocalTimeYMD result;
+    result.fromTimeInfo(this);
+    return result;
+}
+
 
 time_t LocalTimeValue::toUTC(LocalTimePosixTimezone config) const {
     struct tm mutableTimeInfo = *this;
@@ -335,13 +591,516 @@ int LocalTimeValue::ordinal() const {
     return ordinal;
 }
 
+//
+// LocalTimeScheduleItem
+//
+bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
+
+    LocalTimeConvert tempConv(conv);
+    
+    LocalTimeYMD endYMD;
+    
+    LocalTimeYMD expirationDate = getExpirationDate();
+    if (expirationDate.isEmpty()) {
+        endYMD = tempConv.getLocalTimeYMD();
+
+        // Maximum number of days to look ahead in the schedule for the next scheduled time (default: 32 days)
+        endYMD.addDay(LocalTime::instance().getScheduleLookaheadDays());
+    }
+    else {
+        endYMD = expirationDate;
+    }
+    
+    for(;; tempConv.nextDay(LocalTimeHMS("00:00:00"))) {
+        LocalTimeYMD curYMD = tempConv.getLocalTimeYMD();
+        if (curYMD > endYMD) {
+            break;
+        }
+
+        if (!timeRange.isValidDate(curYMD)) {
+            // This is a time range restricted that excludes this date, so skip this date
+            continue;
+        }
+
+        switch(scheduleItemType) {
+        case ScheduleItemType::NONE:
+            break;
+
+        case ScheduleItemType::HOUR_OF_DAY:
+        case ScheduleItemType::MINUTE_OF_HOUR:
+            {
+                bool bResult = false;
+
+                int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
+                if (cmp < 0) {
+                    // Before time range, return beginning of time range
+                    tempConv.atLocalTime(timeRange.hmsStart);
+                    conv.time = tempConv.time;
+                    conv.convert();
+                    return true;
+                }
+                else 
+                if (cmp == 0) {
+                    // In time range hmsStart <= hms <= hmsEnd
+                    // Handle multiples here
+                    struct tm timeInfo;
+                    int startingModulo;
+                     
+                    switch(scheduleItemType) {
+                    case ScheduleItemType::HOUR_OF_DAY:
+                        // Loop here instead of doing the modulo math to correctly handle timezone and daylight saving switch
+                        for(LocalTimeHMS tempHMS = timeRange.hmsStart; tempHMS <= timeRange.hmsEnd; tempHMS.hour += increment) {
+                            tempConv.atLocalTime(tempHMS);
+                            if (tempConv.time > conv.time) {
+                                // Found match
+                                bResult = true;
+                                break;
+                            }
+                        }
+                        break;
+
+                    case ScheduleItemType::MINUTE_OF_HOUR:
+                        // TODO: I think this is wrong for timezones with a minute offset
+                        startingModulo = timeRange.hmsStart.minute % increment;
+
+                        tempConv.time += increment * 60;
+                        tempConv.convert();
+
+                        LocalTime::timeToTm(tempConv.time, &timeInfo);
+                        timeInfo.tm_min -= ((tempConv.localTimeValue.minute() - startingModulo) % increment);
+                        timeInfo.tm_sec = timeRange.hmsStart.second;
+                        tempConv.time = LocalTime::tmToTime(&timeInfo);
+                        tempConv.convert();
+                        if (tempConv.getLocalTimeHMS() < timeRange.hmsEnd) {
+                            bResult = true;
+                        }
+                        break;
+
+                    default:
+                        break;
+                    }
+
+                    if (bResult) {
+                        if (!timeRange.isValidDate(tempConv.getLocalTimeYMD())) {
+                            bResult = false;
+                        }
+                    }
+
+                    if (bResult) {
+                        conv.time = tempConv.time;
+                        conv.convert();
+                        return true;
+                    }
+                }
+                else {
+                    // cmp > 0, after time range, don't check and try next day
+                }
+            }
+            break;            
+            
+        case ScheduleItemType::DAY_OF_WEEK_OF_MONTH:
+            // "dayOfWeek" specifies the day of the week (0 = Sunday, 1 = Monday, ...)
+            // "increment" specifies which one (1 = first, 2 = second, ... or -1 = last, -2 = second to last, ...)
+            // Time is at the HMS of the hmsStart (local time)
+            {
+                int day = LocalTime::dayOfWeekOfMonth(tempConv.localTimeValue.year(), tempConv.localTimeValue.month(), dayOfWeek, increment);
+                if (day == tempConv.localTimeValue.day()) {
+                    tempConv.atLocalTime(timeRange.hmsStart);
+                    if (tempConv.time > conv.time) {
+                        conv.time = tempConv.time;
+                        conv.convert();
+                        return true;
+                    }
+                }
+            }
+            break;
+            
+        case ScheduleItemType::DAY_OF_MONTH:
+            {
+                int tempIncrement = increment;
+                if (tempIncrement < 0) {
+                    tempIncrement = LocalTime::lastDayOfMonth(tempConv.localTimeValue.year(), tempConv.localTimeValue.month()) + tempIncrement + 1;
+                }
+                // "increment" specifies which day of month (1, 2, 3, ...) or 
+                // Time is at the HMS of the hmsStart (local time)
+                if (tempConv.localTimeValue.ymd().getDay() == tempIncrement) {
+                    int cmp = timeRange.compareTo(tempConv.localTimeValue.hms());
+                    if (cmp <= 0) {
+                        // Before the beginning of time range, return beginning of time range
+                        tempConv.atLocalTime(timeRange.hmsStart);
+                        if (tempConv.time > conv.time) {
+                            conv.time = tempConv.time;
+                            conv.convert();
+                            return true;
+                        }
+                    }
+                }
+
+            }
+            break;
+
+        case ScheduleItemType::TIME: 
+            // At a specific time, optionally with day of week or date restrictions            
+            // The first test must be <= otherwise you can't schedule at midnight.
+            // The second test for conv.time must be > to advance to the next schedule.
+            if (tempConv.localTimeValue.hms() <= timeRange.hmsStart) {
+                tempConv.atLocalTime(timeRange.hmsStart);
+                if (tempConv.time > conv.time) {
+                    conv.time = tempConv.time;
+                    conv.convert();
+                    return true;
+                }
+            }
+            break;
+
+        }
+
+        
+    }
+
+    // No next time found (no schedule, or all days excluded within the next getScheduleLookaheadDays() days)
+    return false;
+}
+
+
+void LocalTimeScheduleItem::fromJson(JSONValue jsonObj) {
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *) iter.name();
+        if (key == "m") {
+            scheduleItemType = (ScheduleItemType) iter.value().toInt();
+        }
+        else
+        if (key == "i") {
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "d") {
+            dayOfWeek = iter.value().toInt();
+        }
+        else
+        if (key == "f") {
+            flags = iter.value().toInt();
+        }
+        else
+        if (key == "n") {
+            name = iter.value().toString().data();
+        }
+        else
+        if (key == "mh") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::MINUTE_OF_HOUR;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "hd") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::HOUR_OF_DAY;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "dw") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "dm") {
+            // Shortcut for setting item
+            scheduleItemType = ScheduleItemType::DAY_OF_MONTH;
+            increment = iter.value().toInt();
+        }
+        else
+        if (key == "tm") {
+            // Shortcut for setting time items
+            scheduleItemType = ScheduleItemType::TIME;
+            timeRange.hmsStart = LocalTimeHMS(iter.value().toString().data());
+            timeRange.onlyOnDays = LocalTimeDayOfWeek::MASK_ALL;
+        }
+    }
+
+    timeRange.fromJson(jsonObj);
+}
+
+//
+// LocalTimeSchedule
+//
+
+
+LocalTimeSchedule &LocalTimeSchedule::withMinuteOfHour(int increment, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::MINUTE_OF_HOUR;
+    item.increment = increment;
+    item.timeRange = timeRange;
+    scheduleItems.push_back(item);
+    return *this;
+}
+
+
+LocalTimeSchedule &LocalTimeSchedule::withHourOfDay(int hourMultiple, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::HOUR_OF_DAY;
+    item.increment = hourMultiple;
+    item.timeRange = timeRange;
+    scheduleItems.push_back(item);
+    return *this;
+}
+
+LocalTimeSchedule &LocalTimeSchedule::withDayOfWeekOfMonth(int dayOfWeek, int instance, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_WEEK_OF_MONTH;
+    item.dayOfWeek = dayOfWeek;
+    item.increment = instance;
+    item.timeRange = timeRange;
+    scheduleItems.push_back(item);
+    return *this;
+}
+
+LocalTimeSchedule &LocalTimeSchedule::withDayOfMonth(int dayOfMonth, LocalTimeRange timeRange) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::DAY_OF_MONTH;
+    item.increment = dayOfMonth;
+    item.timeRange = timeRange;
+    scheduleItems.push_back(item);
+    return *this;
+}
+
+
+LocalTimeSchedule &LocalTimeSchedule::withTime(LocalTimeHMSRestricted hms) {
+    LocalTimeScheduleItem item;
+    item.scheduleItemType = LocalTimeScheduleItem::ScheduleItemType::TIME;
+    item.timeRange.fromTime(hms);
+    scheduleItems.push_back(item);
+    
+    return *this;
+}
+
+
+LocalTimeSchedule &LocalTimeSchedule::withTimes(std::initializer_list<LocalTimeHMSRestricted> timesParam) {
+
+    for(auto it = timesParam.begin(); it != timesParam.end(); ++it) {
+        withTime(*it);
+    }
+
+    return *this;
+}
+
+
+void LocalTimeSchedule::fromJson(const char *jsonStr) {
+    JSONValue outerObj = JSONValue::parseCopy(jsonStr);
+
+    fromJson(outerObj);
+}
+
+void LocalTimeSchedule::fromJson(JSONValue jsonArray) {
+    JSONArrayIterator iter(jsonArray);
+    while(iter.next()) {
+        LocalTimeScheduleItem item;
+        item.fromJson(iter.value());
+        scheduleItems.push_back(item);
+    }
+}
+
+
+bool LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &conv) const {
+
+    return getNextScheduledTime(conv, [](LocalTimeScheduleItem &item) {
+        return true;
+    });
+}
+
+bool LocalTimeSchedule::getNextScheduledTime(LocalTimeConvert &conv, std::function<bool(LocalTimeScheduleItem &item)> filter) const {
+    time_t closestTime = 0;
+
+    for(auto it = scheduleItems.begin(); it != scheduleItems.end(); ++it) {
+        LocalTimeScheduleItem item = *it;
+        if (filter(item)) {
+            LocalTimeConvert tmpConvert(conv);
+            bool bResult = item.getNextScheduledTime(tmpConvert);
+            if (bResult && closestTime == 0 || tmpConvert.time < closestTime) {
+                closestTime = tmpConvert.time;
+            }
+        }
+    }
+    
+    if (closestTime != 0) {
+        conv.time = closestTime;
+        conv.convert();
+        return true;
+    }
+    else {
+        return false;
+    }
+
+}
+
+
+bool LocalTimeSchedule::isScheduledTime() {
+    if (!Time.isValid()) {
+        return false;
+    }
+
+    LocalTimeConvert conv;
+    conv.withCurrentTime().convert();
+    return isScheduledTime(conv, Time.now());
+}
+
+bool LocalTimeSchedule::isScheduledTime(LocalTimeConvert &conv, time_t timeNow) {
+    bool result = false;
+
+    if (nextTime != 0 && nextTime <= timeNow) {
+        result = true;
+        nextTime = 0;
+    }
+
+    if (getNextScheduledTime(conv)) {
+        nextTime = conv.time;
+    }
+    
+    return result;
+}
+//
+// LocalTimeScheduleManager
+//
+
+time_t LocalTimeScheduleManager::getNextTimeByName(const char *name, const LocalTimeConvert &conv) {
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if (it->name.equals(name)) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+
+            }
+        }
+    }
+    return 0;
+}
+
+time_t LocalTimeScheduleManager::getNextWake(const LocalTimeConvert &conv) const {
+    time_t nextTime = 0;
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if ((it->flags & LocalTimeSchedule::FLAG_ANY_WAKE) != 0) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+                if (nextTime == 0 || tempConv.time < nextTime) {
+                    nextTime = tempConv.time;
+                }
+            }
+        }
+    }
+    return nextTime;
+}
+
+time_t LocalTimeScheduleManager::getNextFullWake(const LocalTimeConvert &conv) const {
+    time_t nextTime = 0;
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if ((it->flags & LocalTimeSchedule::FLAG_FULL_WAKE) != 0) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+                if (nextTime == 0 || tempConv.time < nextTime) {
+                    nextTime = tempConv.time;
+                }
+            }
+        }
+    }
+    return nextTime;
+}
+
+time_t LocalTimeScheduleManager::getNextDataCapture(const LocalTimeConvert &conv) const {
+    time_t nextTime = 0;
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if (it->name.equals("data")) {
+            LocalTimeConvert tempConv(conv);
+            if (it->getNextScheduledTime(tempConv)) {
+                if (nextTime == 0 || tempConv.time < nextTime) {
+                    nextTime = tempConv.time;
+                }
+            }
+        }
+    }
+    return nextTime;
+}
+
+
+void LocalTimeScheduleManager::forEach(std::function<void(LocalTimeSchedule &schedule)> callback) {
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        callback(*it);
+    }
+}
+
+LocalTimeSchedule &LocalTimeScheduleManager::getScheduleByName(const char *name) {
+
+    for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+        if (it->name.equals(name)) {
+            return *it;
+        }
+    }
+
+    LocalTimeSchedule sch;
+    sch.name = name;
+    schedules.push_back(sch);
+
+    return getScheduleByName(name);
+}
+
+
+void LocalTimeScheduleManager::setFromJsonObject(const JSONValue &jsonObj) {
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *)iter.name();
+
+        for(auto it = schedules.begin(); it != schedules.end(); ++it) {
+            if (it->name.equals(key)) {
+                it->fromJson(iter.value());
+            }
+        }
+    }
+}
+
+
+//
+// LocalTimeRange
+// 
+
+time_t LocalTimeRange::getTimeSpan(const LocalTimeConvert &conv) const {
+    
+    LocalTimeConvert convStart(conv);
+    convStart.atLocalTime(hmsStart);
+
+    LocalTimeConvert convEnd(conv);
+    convEnd.atLocalTime(hmsEnd);
+
+    return convEnd.time - convStart.time;
+}
+
+
+void LocalTimeRange::fromJson(JSONValue jsonObj) {    
+    JSONObjectIterator iter(jsonObj);
+    while(iter.next()) {
+        String key = (const char *)iter.name();
+
+        if (key == "s" || key == "e") {
+            String hmsStr = iter.value().toString().data();
+
+            if (key == "s") {
+                hmsStart = LocalTimeHMS(hmsStr);
+            }
+            else
+            if (key == "e") {
+                hmsEnd = LocalTimeHMS(hmsStr);
+            }
+        }
+    }
+    LocalTimeRestrictedDate::fromJson(jsonObj);
+}
 
 
 
 //
 // LocalTimeConvert
-// 
-
+//
 void LocalTimeConvert::convert() {
     if (!config.isValid()) {
         config = LocalTime::instance().getConfig();
@@ -411,14 +1170,14 @@ void LocalTimeConvert::addSeconds(int seconds) {
     convert();
 }
 
-void LocalTimeConvert::nextMinuteMultiple(int minuteMultiple, int startingModulo) {
-    time += minuteMultiple * 60;
+void LocalTimeConvert::nextMinuteMultiple(int increment, int startingModulo) {
+    time += increment * 60;
 
     struct tm timeInfo;
 
     LocalTime::timeToTm(time, &timeInfo);
 
-    timeInfo.tm_min -= ((timeInfo.tm_min - startingModulo) % minuteMultiple);
+    timeInfo.tm_min -= ((timeInfo.tm_min - startingModulo) % increment);
     timeInfo.tm_sec = 0;
 
     time = LocalTime::tmToTime(&timeInfo);
@@ -479,7 +1238,6 @@ void LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms) {
     nextDay(hms);
 
     if (dstStartOrig > timeOrig && dstStartOrig < time) {
-        // printf("timeOrig=%ld dstStartOrig=%ld time=%ld dstStart=%ld\n", timeOrig, dstStartOrig, time, dstStart);
         time = dstStartOrig;
         convert();
     }
@@ -564,88 +1322,9 @@ void LocalTimeConvert::nextLocalTime(LocalTimeHMS hms) {
     }
 }
 
-bool LocalTimeConvert::nextSchedule(const Schedule &schedule) {
-    time_t origTime = time;
+bool LocalTimeConvert::nextSchedule(const LocalTimeSchedule &schedule) {
 
-    for(int tries = 0; tries < 2; tries++) {
-        // Check the minute multiples
-        ScheduleItemMinuteMultiple foundItem;
-
-        // 86400 + 3600 for fall back on time change = 90000, plus some extra
-        time_t smallestTimeSpan = 100000; 
-
-        time_t closestTime = 0;
-
-
-        for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
-            ScheduleItemMinuteMultiple item = *it;
-            if (inLocalTimeRange(item.timeRange)) {
-                // This minute multiple applies
-                time_t timeSpan = item.getTimeSpan(*this);
-                //printf("found minute multiple timeSpan=%d\n", (int)timeSpan);
-                if (timeSpan < smallestTimeSpan) {
-                    foundItem = item;
-                    smallestTimeSpan = timeSpan;
-                }
-            }
-        }
-
-        if (foundItem.isValid()) {
-            LocalTimeConvert tmpConvert(*this);
-            tmpConvert.nextMinuteMultiple(foundItem.minuteMultiple, foundItem.timeRange.hmsStart.minute % foundItem.minuteMultiple);
-            //printf("converting with multiple %d was %d now %d\n", foundItem.minuteMultiple, (int)origTime, (int)tmpConvert.time);
-            if (closestTime == 0 || tmpConvert.time < closestTime) {
-                closestTime = tmpConvert.time;
-            }
-        } 
-        else {
-            // Not in a time range. Is there a time range after the current time?
-            for(auto it = schedule.minuteMultipleItems.begin(); it != schedule.minuteMultipleItems.end(); ++it) {
-                ScheduleItemMinuteMultiple item = *it;
-                LocalTimeConvert tmpConvert(*this);
-                tmpConvert.atLocalTime(item.timeRange.hmsStart);
-                if (time < tmpConvert.time) {
-                    time_t timeSpan = (tmpConvert.time - time);
-                    if (timeSpan < smallestTimeSpan) {
-                        foundItem = item;
-                        smallestTimeSpan = timeSpan;
-                    }
-                }
-            }
-            if (foundItem.isValid()) {
-                LocalTimeConvert tmpConvert(*this);
-                tmpConvert.atLocalTime(foundItem.timeRange.hmsStart);
-                if (closestTime == 0 || tmpConvert.time < closestTime) {
-                    closestTime = tmpConvert.time;
-                }
-            } 
-        }
-
-        // Check the times
-        for(auto it = schedule.times.begin(); it != schedule.times.end(); ++it) {
-            LocalTimeHMS tmpHMS = *it;
-
-            LocalTimeConvert tmpConvert(*this);
-            tmpConvert.nextTime(tmpHMS);
-            if (closestTime == 0 || tmpConvert.time < closestTime) {
-                closestTime = tmpConvert.time;
-            }        
-        }
-
-        if (closestTime != 0) {
-            time = closestTime;
-            convert();
-            return true;
-        }
-
-        // Try times in the next day starting at midnight
-        nextDay(LocalTimeHMS("00:00:00"));
-    }
-
-    time = origTime;
-    convert();
-
-    return false;
+    return schedule.getNextScheduledTime(*this);
 }
 
 
@@ -655,33 +1334,6 @@ void LocalTimeConvert::atLocalTime(LocalTimeHMS hms) {
         time = localTimeValue.toUTC(config);
         convert();
     }
-}
-
-bool LocalTimeConvert::inLocalTimeRange(TimeRange localTimeRange) {
-    time_t origTime = time;
-
-    localTimeValue.setHMS(localTimeRange.hmsStart);
-    time_t minTime = localTimeValue.toUTC(config);
-
-    localTimeValue.setHMS(localTimeRange.hmsEnd);
-    time_t maxTime = localTimeValue.toUTC(config);
-
-    time = origTime;
-    convert();
-
-    return (minTime <= origTime) && (origTime <= maxTime);
-}
-
-bool LocalTimeConvert::beforeLocalTimeRange(TimeRange localTimeRange) {
-    time_t origTime = time;
-
-    localTimeValue.setHMS(localTimeRange.hmsStart);
-    time_t minTime = localTimeValue.toUTC(config);
-
-    time = origTime;
-    convert();
-
-    return (origTime < minTime);
 }
 
 
@@ -869,5 +1521,65 @@ int LocalTime::lastDayOfMonth(int year, int month) {
         case 11:
             return 30;
     }
+    return 0;
+}
+
+// [static]
+int LocalTime::dayOfWeekOfMonth(int year, int month, int dayOfWeek, int ordinal) {
+    struct tm timeInfo = {0};
+
+    if (dayOfWeek < 0 || dayOfWeek >= 7) {
+        // Invalid values of dayOfWeek can cause infinite loop below
+        return 0;
+    }
+
+    int lastDay = lastDayOfMonth(year, month);
+
+    if (ordinal > 0) {
+        timeInfo.tm_year = year - 1900;
+        timeInfo.tm_mon = month - 1;
+        timeInfo.tm_mday = 1;
+        tmToTime(&timeInfo);
+
+        while(timeInfo.tm_wday != dayOfWeek) {
+            timeInfo.tm_mday++;
+            tmToTime(&timeInfo);
+        }
+
+        for(int loops = 1; loops <= 5; loops++) {
+            if (loops >= ordinal) {
+                return timeInfo.tm_mday;
+            }
+            timeInfo.tm_mday += 7;
+            if (timeInfo.tm_mday > lastDay) {
+                // This ordinal does not exist
+                return 0;
+            }
+        }
+    }
+    else
+    if (ordinal < 0) {
+        timeInfo.tm_year = year - 1900;
+        timeInfo.tm_mon = month - 1;
+        timeInfo.tm_mday = lastDay;
+        tmToTime(&timeInfo);
+
+        while(timeInfo.tm_wday != dayOfWeek) {
+            timeInfo.tm_mday--;
+            tmToTime(&timeInfo);
+        }
+        for(int loops = 1; loops <= 5; loops++) {
+            if (loops >= -ordinal) {
+                return timeInfo.tm_mday;
+            }
+            timeInfo.tm_mday -= 7;
+            if (timeInfo.tm_mday < 1) {
+                // This ordinal does not exist
+                return 0;
+            }
+        }
+    }
+
+    
     return 0;
 }
