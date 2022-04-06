@@ -1782,7 +1782,7 @@ A `LocalTimeDayOfWeek` specifies zero or more days of the week (Sunday, Monday, 
 Common mask values:
 
 | Value Hex | Value Decimal | Constant | Description |
-| :--- | ---: | :--- |
+| :--- | ---: | :--- | :--- |
 | 0x01 | 1 | MASK_SUNDAY | Sunday |
 | 0x02 | 2 | MASK_MONDAY | Monday |
 | 0x04 | 4 | MASK_TUESDAY | Tuesday |
