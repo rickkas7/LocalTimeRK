@@ -407,7 +407,7 @@ For example, every 2 hours (00:00, 02:00, 04:00) local time.
 schedule.withHourOfDay(2);
 ```
 
-Every 2 hours, but starting at 01:30 local time (01:30, 03:30, 05:03, ...).
+Every 2 hours, but starting at 01:30 local time (01:30, 03:30, 05:30, ...).
 
 ```cpp
 schedule.withHourOfDay(2, LocalTimeRange(LocalTimeHMS("01:30:00"), LocalTimeHMS("23:59:59")));
