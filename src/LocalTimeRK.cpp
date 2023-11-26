@@ -96,6 +96,10 @@ bool LocalTimeYMD::parse(const char *s) {
 //
 // LocalTimeHMS
 //
+const LocalTimeHMS LocalTimeHMS::startOfDay = LocalTimeHMS("00:00:00");
+const LocalTimeHMS LocalTimeHMS::endOfDay = LocalTimeHMS("23:59:59");
+
+
 LocalTimeHMS::LocalTimeHMS() {
 }
 
@@ -611,7 +615,7 @@ bool LocalTimeScheduleItem::getNextScheduledTime(LocalTimeConvert &conv) const {
         endYMD = expirationDate;
     }
     
-    for(;; tempConv.nextDay(LocalTimeHMS("00:00:00"))) {
+    for(;; tempConv.nextDay(LocalTimeHMS::startOfDay)) {
         LocalTimeYMD curYMD = tempConv.getLocalTimeYMD();
         if (curYMD > endYMD) {
             break;
@@ -1072,7 +1076,13 @@ time_t LocalTimeRange::getTimeSpan(const LocalTimeConvert &conv) const {
     LocalTimeConvert convEnd(conv);
     convEnd.atLocalTime(hmsEnd);
 
-    return convEnd.time - convStart.time;
+    if (!rangeCrossesMidnight()) {
+        return convEnd.time - convStart.time;
+    }
+    else {        
+        convEnd.nextDay();
+        return convEnd.time - convStart.time;
+    }
 }
 
 
@@ -1221,6 +1231,12 @@ void LocalTimeConvert::nextTime(LocalTimeHMS hms) {
     }
 }
 
+void LocalTimeConvert::prevDay(LocalTimeHMS hms) {
+    time -= 86400;
+    convert();
+
+    atLocalTime(hms);
+}
 
 
 void LocalTimeConvert::nextDay(LocalTimeHMS hms) {

@@ -946,10 +946,12 @@ void test1() {
 		// This crosses spring forward, so 2 hours on the clock is actually 1 hour
 		LocalTimeRange timeRange(LocalTimeHMS("1:10:52"), LocalTimeHMS("3:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
+		assertInt("", timeRange.rangeCrossesMidnight(), false);
 	}
 	{
 		LocalTimeRange timeRange(LocalTimeHMS("3:10:52"), LocalTimeHMS("4:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 3600);
+		assertInt("", timeRange.rangeCrossesMidnight(), false);
 	}
 	// Right before fall back
 	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2021-11-07 18:10:52")).convert(); // 12:10:52 AM EDT
@@ -957,6 +959,43 @@ void test1() {
 		// This crosses fall back, so 3 hours on the clock is actually 4 hours
 		LocalTimeRange timeRange(LocalTimeHMS("00:10:52"), LocalTimeHMS("3:10:52"));
 		assertInt("", timeRange.getTimeSpan(conv), 4 * 3600);
+		assertInt("", timeRange.rangeCrossesMidnight(), false);
+	}
+
+	// 0.1.0 - LocalTimeRange with midnight crossing
+	{
+		LocalTimeRange timeRange(LocalTimeHMS("20:00:00"), LocalTimeHMS("04:00:00")); // 8 PM to 4 AM
+
+		assertInt("", timeRange.rangeCrossesMidnight(), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("20:00:00")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("20:00:01")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("23:59:59")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("00:00:00")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("00:00:01")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("00:00:00")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("03:59:59")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("04:00:00")), true);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("04:00:01")), false);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("05:00:00")), false);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("12:00:00")), false);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("19:00:00")), false);
+		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("19:50:59")), false);
+		assertInt("", timeRange.getTimeSpan(conv), 8 * 3600);
+	}
+	// getTimeSpan with midnight crossing over a daylight saving change does not currently work properly; need to investigate
+
+	{
+		LocalTimeRange timeRange;
+		assertInt("", timeRange.isWholeDay(), true);
+
+		timeRange.hmsStart = LocalTimeHMS("00:00:01");
+		assertInt("", timeRange.isWholeDay(), false);
+
+		timeRange.clear();
+		assertInt("", timeRange.isWholeDay(), true);
+
+		timeRange.hmsEnd = LocalTimeHMS("00:00:01");
+		assertInt("", timeRange.isWholeDay(), false);
 	}
 
 	// LocalTimeRange expiration
