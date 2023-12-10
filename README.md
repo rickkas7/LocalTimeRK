@@ -2131,6 +2131,10 @@ It can also have any number of specific times in the day ("at 08:17:30 local tim
 
 ## Version history
 
+### 0.1.1 (2023-12-10)
+
+- Added LocalDateTimeRange as a container to hold a UTC time range.
+
 ### 0.1.0 (2023-11-25)
 
 - Added support for LocalTimeRange that crosses midnight (9:00 PM to 5:00 AM, for example).

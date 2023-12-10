@@ -2464,4 +2464,91 @@ protected:
 };
 
 
+/**
+ * @brief Container for a date and time range. Specifies a date and time start and a date and time end
+ * 
+ * See also LocalTimeRange, which is a time range in the day, with optional date restrictions.
+ */
+class LocalDateTimeRange {
+public:
+    LocalDateTimeRange() {};
+
+    /**
+     * @brief Set the startTime and endTime (UTC) when constructing the object
+     * 
+     * @param startTime time_t UTC
+     * @param endTime time_t UTC
+     */
+    LocalDateTimeRange(time_t startTime, time_t endTime) : startTime(startTime), endTime(endTime) {};
+
+    /**
+     * @brief Construct an object with startTime and endTime in local time from string
+     * 
+     * @param startStr String time, local time, typically in "YYYY-MM-DD HH:MM:SS" format
+     * @param endStr String time, local time, typically in "YYYY-MM-DD HH:MM:SS" format
+     * @param config Optional timezone information, otherwise uses the system default timezone
+     */
+    LocalDateTimeRange(const char *startStr, const char *endStr, LocalTimePosixTimezone config = LocalTime::instance().getConfig()) {
+        withTimeStringLocal(startStr, endStr, config);    
+    }
+
+    /**
+     * @brief Set the startTime and endTime in local time from string
+     * 
+     * @param startStr String time, local time, typically in "YYYY-MM-DD HH:MM:SS" format
+     * @param endStr String time, local time, typically in "YYYY-MM-DD HH:MM:SS" format
+     * @param config Optional timezone information, otherwise uses the system default timezone
+     */
+    LocalDateTimeRange &withTimeStringLocal(const char *startStr, const char *endStr, LocalTimePosixTimezone config = LocalTime::instance().getConfig()) {
+        LocalTimeValue value;
+
+        value.fromString(startStr);
+        startTime = value.toUTC(config);
+
+        value.fromString(endStr);
+        endTime = value.toUTC(config);
+
+        return *this;
+    }
+
+
+    /**
+     * @brief Set the startTime and endTime in UTC from string
+     * 
+     * @param startStr String time UTC, typically in "YYYY-MM-DD HH:MM:SS" format (cannot include timezone in string)
+     * @param endStr String time UTC, typically in "YYYY-MM-DD HH:MM:SS" format (cannot include timezone in string)
+     */
+    LocalDateTimeRange &withTimeStringUTC(const char *startStr, const char *endStr) {
+        startTime = LocalTime::stringToTime(startStr);
+        endTime = LocalTime::stringToTime(endStr);
+        return *this;
+    }
+
+    /**
+     * @brief Returns true if startTime and endTime are valid (non-zero and startTime <= endTime)
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool isValid() const { return (startTime != 0) && (endTime != 0) && (startTime <= endTime); };
+
+    /**
+     * @brief Determines if t (time_t in UTC) is in the range specified by this object
+     * 
+     * @param t time_t UTC to compare
+     * @return true 
+     * @return false 
+     * 
+     * Check is inclusive of startTime and exclusive of endTime: startTime <= t < endTime.
+     */
+    bool isInRange(time_t t) const { 
+        return isValid() && (startTime <= t) && (t < endTime); 
+    };
+
+    time_t startTime = 0;
+    time_t endTime = 0;
+};
+
+
+
 #endif /* __LOCALTIMERK_H */

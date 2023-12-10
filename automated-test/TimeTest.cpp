@@ -1260,6 +1260,17 @@ void test1() {
 		assertInt("", t1.getExpirationDate() == LocalTimeYMD("2022-04-09"), true);
 	}
 
+	// LocalDateTimeRange
+	{
+		LocalDateTimeRange r("2023-12-10 13:00:00", "2023-12-15 07:00:00", tzConfig);
+
+		assertInt("", r.isInRange(LocalTime::stringToTime("2023-12-10 17:00:00")), false); // Parameter is UTC
+		assertInt("", r.isInRange(LocalTime::stringToTime("2023-12-10 17:59:59")), false); // Parameter is UTC
+		assertInt("", r.isInRange(LocalTime::stringToTime("2023-12-10 18:00:00")), true); // Parameter is UTC
+		assertInt("", r.isInRange(LocalTime::stringToTime("2023-12-10 19:00:00")), true); // Parameter is UTC
+		assertInt("", r.isInRange(LocalTime::stringToTime("2023-12-15 11:59:59")), true); // Parameter is UTC
+		assertInt("", r.isInRange(LocalTime::stringToTime("2023-12-15 12:00:00")), false); // Parameter is UTC
+	}
 
 
 	// Scheduling
