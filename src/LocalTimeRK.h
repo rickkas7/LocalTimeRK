@@ -1948,6 +1948,36 @@ public:
      */
     void nextTime(LocalTimeHMS hms);
 
+   /**
+     * @brief Moves the current time to the next minute
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
+    void nextMinute() { nextMinuteMultiple(1); };
+
+    /**
+     * @brief Moves the current time to the next hour
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
+    void nextHour() { nextMinuteMultiple(60); };
+
+    /**
+     * @brief Moves the current time to the next day at midnight
+     * 
+     * Upon completion, all fields are updated appropriately. For example:
+     * - time specifies the time_t of the new time at UTC
+     * - localTimeValue contains the broken-out values for the local time
+     * - isDST() return true if the new time is in daylight saving time
+     */
+    void nextDayMidnight() { nextTime(LocalTimeHMS("00:00:00")); };
+
     /**
      * @brief Moves the current time the closest local time om hmsList. This could be today or tomorrow.
      * 
@@ -2468,6 +2498,10 @@ protected:
  * @brief Container for a date and time range. Specifies a date and time start and a date and time end
  * 
  * See also LocalTimeRange, which is a time range in the day, with optional date restrictions.
+ * 
+ * This will be changed in the future to do the time conversion later, because if you do this at 
+ * global object construction time the timezone will not have been set yet. Instead, the strings
+ * will be stored and a flag set and it updated the first time isInRange is used.
  */
 class LocalDateTimeRange {
 public:

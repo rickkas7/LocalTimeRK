@@ -2131,6 +2131,10 @@ It can also have any number of specific times in the day ("at 08:17:30 local tim
 
 ## Version history
 
+### 0.1.2 (2024-08-01)
+
+- Added LocalTimeConvert methods: nextMinute, nextHour, and nextDayMidnight. Example 3 shows how to use them.
+
 ### 0.1.1 (2023-12-10)
 
 - Added LocalDateTimeRange as a container to hold a UTC time range.

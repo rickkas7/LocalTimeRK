@@ -962,6 +962,35 @@ void test1() {
 		assertInt("", timeRange.rangeCrossesMidnight(), false);
 	}
 
+	// 0.1.2 - minutely, hourly, daily tests
+	conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2024-08-01 09:26:45")).convert();
+	{
+		conv.nextMinute();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=1 tm_hour=9 tm_min=27 tm_sec=0 tm_wday=4");	
+
+		conv.nextMinute();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=1 tm_hour=9 tm_min=28 tm_sec=0 tm_wday=4");	
+
+		conv.nextHour();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=1 tm_hour=10 tm_min=0 tm_sec=0 tm_wday=4");	
+
+		conv.nextHour();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=1 tm_hour=11 tm_min=0 tm_sec=0 tm_wday=4");	
+
+		conv.nextHour();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=1 tm_hour=12 tm_min=0 tm_sec=0 tm_wday=4");	
+
+		conv.nextDayMidnight();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=2 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=5");	
+
+		conv.nextDayMidnight();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=3 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=6");	
+
+		conv.nextMinute();
+		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=3 tm_hour=4 tm_min=1 tm_sec=0 tm_wday=6");	
+
+	}
+
 	// 0.1.0 - LocalTimeRange with midnight crossing
 	{
 		LocalTimeRange timeRange(LocalTimeHMS("20:00:00"), LocalTimeHMS("04:00:00")); // 8 PM to 4 AM
