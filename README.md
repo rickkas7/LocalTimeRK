@@ -2131,6 +2131,13 @@ It can also have any number of specific times in the day ("at 08:17:30 local tim
 
 ## Version history
 
+### 0.1.3 (2024-11-06)
+
+- Fixed a bug where nextDayMidnight(), nextDay(), and nextTimeList() could return the same day on daylight saving 
+fall back because the day has more than 86400 seconds. Now does a calendar date calculation instead of relying
+on a specific number of seconds in a day.
+- Also a similar problem for prevDay().
+
 ### 0.1.2 (2024-08-01)
 
 - Added LocalTimeConvert methods: nextMinute, nextHour, and nextDayMidnight. Example 3 shows how to use them.

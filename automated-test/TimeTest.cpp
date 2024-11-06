@@ -990,9 +990,42 @@ void test1() {
 		assertTime("", conv.time, "tm_year=124 tm_mon=7 tm_mday=3 tm_hour=4 tm_min=1 tm_sec=0 tm_wday=6");	
 
 	}
+	/*
+	{
+		// Test atLocalTime to make sure it really works across time changes
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2024-11-03 04:01:00")).convert(); // parameter is UTC, so this is 00:01
+		conv.atLocalTime(LocalTimeHMS("01:00:00"));
+		assertTime("", conv.time, "tm_year=124 tm_mon=10 tm_mday=3 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=6");	
+	}
+	*/
+	{
+		// nextDayMidnight over time change
+		// https://community.particle.io/t/daylight-savings-timing-issue/68571
+
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2024-11-02 04:01:00")).convert(); // parameter is UTC, so this is 00:01
+		conv.nextDayMidnight();
+
+		assertTime("", conv.time, "tm_year=124 tm_mon=10 tm_mday=3 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=0");	
+
+		conv.nextDayMidnight();
+		assertTime("", conv.time, "tm_year=124 tm_mon=10 tm_mday=4 tm_hour=5 tm_min=0 tm_sec=0 tm_wday=1");	
+	}
+	{
+		// prevDay on the first day of the month
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2024-11-01 04:00:00")).convert(); // parameter is UTC
+		conv.prevDay();
+		assertTime("", conv.time, "tm_year=124 tm_mon=9 tm_mday=31 tm_hour=4 tm_min=0 tm_sec=0 tm_wday=4");	
+
+		// prevDay across time change
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2024-11-03 10:00:00")).convert(); // parameter is UTC, is 5:00 AM
+		conv.prevDay();
+		assertTime("", conv.time, "tm_year=124 tm_mon=10 tm_mday=2 tm_hour=9 tm_min=0 tm_sec=0 tm_wday=6");	// is before EDT->EST so this is still 5:00 AM
+	}
+
 
 	// 0.1.0 - LocalTimeRange with midnight crossing
 	{
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2024-11-01 04:00:00")).convert();
 		LocalTimeRange timeRange(LocalTimeHMS("20:00:00"), LocalTimeHMS("04:00:00")); // 8 PM to 4 AM
 
 		assertInt("", timeRange.rangeCrossesMidnight(), true);
@@ -1011,7 +1044,13 @@ void test1() {
 		assertInt("", timeRange.isInRangeHMS(LocalTimeHMS("19:50:59")), false);
 		assertInt("", timeRange.getTimeSpan(conv), 8 * 3600);
 	}
-	// getTimeSpan with midnight crossing over a daylight saving change does not currently work properly; need to investigate
+	{
+		// time span is an extra hour because of fall back
+		conv.withConfig(tzConfig).withTime(LocalTime::stringToTime("2024-11-02 09:00:00")).convert();
+		LocalTimeRange timeRange(LocalTimeHMS("20:00:00"), LocalTimeHMS("04:00:00")); // 8 PM to 4 AM
+		assertInt("", timeRange.getTimeSpan(conv), 9 * 3600);
+	}
+
 
 	{
 		LocalTimeRange timeRange;

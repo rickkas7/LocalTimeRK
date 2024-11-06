@@ -1200,7 +1200,11 @@ void LocalTimeConvert::nextTimeList(std::initializer_list<LocalTimeHMS> _hmsList
     std::vector<LocalTimeHMS> hmsList = _hmsList;
 
     time_t origTime = time;
-    time_t resultTime = origTime + 86400;
+
+    nextDay();
+    time_t resultTime = time;
+    time = origTime;
+    convert();
 
     for(auto it = hmsList.begin(); it != hmsList.end(); ++it) {
         LocalTimeHMS hms = *it;
@@ -1219,31 +1223,42 @@ void LocalTimeConvert::nextTimeList(std::initializer_list<LocalTimeHMS> _hmsList
     convert();
 }
 
+// nextTime is used by nextDayMidnight with a HMS of 00:00:00
 
 void LocalTimeConvert::nextTime(LocalTimeHMS hms) {
     time_t origTime = time;
 
-    atLocalTime(hms);
+    localTimeValue.setHMS(hms);
+    time = localTimeValue.toUTC(config);
+    convert();
+
     if (time <= origTime) {
-        time += 86400;
+        // Day rolled backwards, so move back forward
+        localTimeValue.tm_mday++;
+        time = localTimeValue.toUTC(config);
         convert();
-        atLocalTime(hms);
     }
 }
 
 void LocalTimeConvert::prevDay(LocalTimeHMS hms) {
-    time -= 86400;
-    convert();
+    time_t origTime = time;
 
-    atLocalTime(hms);
+    localTimeValue.setHMS(hms);
+    localTimeValue.tm_mday--;
+
+    time = localTimeValue.toUTC(config);
+    convert();
 }
 
 
 void LocalTimeConvert::nextDay(LocalTimeHMS hms) {
-    time += 86400;
-    convert();
+    time_t origTime = time;
 
-    atLocalTime(hms);
+    localTimeValue.setHMS(hms);
+    localTimeValue.tm_mday++;
+
+    time = localTimeValue.toUTC(config);
+    convert();
 }
 
 void LocalTimeConvert::nextDayOrTimeChange(LocalTimeHMS hms) {
